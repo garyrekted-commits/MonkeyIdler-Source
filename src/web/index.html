@@ -7,7 +7,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0d0d0f;--bg2:#141416;--bg3:#1a1a1e;--bg4:#222228;--bg5:#2a2a32;
+  --bg:#0d0d0f;--bg2:#141416;--bg3:#1a1a1e;--bg4:#222228;--bg5:#2a2a32;--card:#1e1e24;
   --border:#2a2a32;--text:#e8e8ec;--text2:#a0a0ad;--text3:#5c5c6a;
   --accent:#7c6aff;--accent2:#9585ff;--accent-bg:rgba(124,106,255,.1);
   --green:#2dd4a8;--green-bg:rgba(45,212,168,.12);
@@ -787,16 +787,18 @@ function renderAcctGames(username){
     const f=q?games.filter(x=>x.name.toLowerCase().includes(q)):games;
     const gc=$("gc-"+username);if(gc)gc.textContent=idling.length+" idling / "+games.length+" owned";
     if(!f.length){el.innerHTML='<div class="empty">'+(games.length===0?"Start idling to load games.":"No matches.")+'</div>';return}
-    const s=[...f].sort((a,b)=>{const ai=idling.includes(a.appid)?0:1,bi=idling.includes(b.appid)?0:1;return ai!==bi?ai-bi:a.name.localeCompare(b.name)});
+    const s=[...f].sort((a,b)=>{const ai=idling.includes(a.appid)?0:1,bi=idling.includes(b.appid)?0:1;if(ai!==bi)return ai-bi;return(b.playtimeForever||0)-(a.playtimeForever||0)});
     el.innerHTML=s.map(x=>{
         const goal=goals[String(x.appid)];
         const currentH=(x.playtimeForever||0)/60;
         const pct=goal?Math.min(100,Math.round(currentH/goal*100)):0;
         const goalHtml=goal?`<div class="goal-badge">${Math.round(currentH)}/${goal}h</div><div class="goal-bar"><div class="goal-fill" style="width:${pct}%"></div></div>`:"";
+        const hrs=(x.playtimeForever||0)/60;
+        const hrsStr=hrs>=1?hrs.toFixed(1)+"h":(x.playtimeForever||0)+"m";
         return `<div class="game-tile ${idling.includes(x.appid)?"active":""}" onclick="toggleGame('${username}',${x.appid})" oncontextmenu="event.preventDefault();showGoalCtx(event,'${username}',${x.appid},'${esc(x.name)}',${x.playtimeForever||0})" title="${esc(x.name)}">
         <span class="gb badge badge-green">Idling</span>${goalHtml}
         <img src="${x.img}" alt="" loading="lazy" onerror="this.style.display='none'">
-        <div class="gn">${esc(x.name)}</div></div>`;
+        <div class="gn">${esc(x.name)}<span style="float:right;color:var(--text3);font-size:.58rem">${hrsStr}</span></div></div>`;
     }).join("");
 }
 
@@ -816,10 +818,12 @@ function renderIdlingGames(username){
         const currentH=g?(g.playtimeForever||0)/60:0;
         const pct=goal?Math.min(100,Math.round(currentH/goal*100)):0;
         const goalHtml=goal?`<div class="goal-badge">${Math.round(currentH)}/${goal}h</div><div class="goal-bar"><div class="goal-fill" style="width:${pct}%"></div></div>`:"";
+        const hrsVal=g?(g.playtimeForever||0)/60:0;
+        const hrsStr=hrsVal>=1?hrsVal.toFixed(1)+"h":(g?(g.playtimeForever||0):0)+"m";
         return `<div class="game-tile active" ondblclick="toggleGame('${username}',${id})" title="Double-click to stop: ${name}">
         <span class="gb badge badge-red">&#10005;</span>${goalHtml}
         <img src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">
-        <div class="gn">${name}</div></div>`;
+        <div class="gn">${name}<span style="float:right;color:var(--text3);font-size:.58rem">${hrsStr}</span></div></div>`;
     }).join("");
 }
 

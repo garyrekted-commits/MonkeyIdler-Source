@@ -11,6 +11,7 @@ const path     = require("path");
 const readline = require("readline");
 
 const dataDir      = global.dataDir || ".";
+const { readSecure, writeSecure } = require("./dataCrypt.js");
 const configPath   = path.join(dataDir, "config.json");
 const accountsPath = path.join(dataDir, "accounts.txt");
 
@@ -27,19 +28,19 @@ function loadConfig() {
             logPlaytimeToFile: true,
             accountSettings: {}
         };
-        fs.writeFileSync(configPath, JSON.stringify(defaults, null, 4));
+        writeSecure(configPath, JSON.stringify(defaults, null, 4));
         return defaults;
     }
-    return JSON.parse(fs.readFileSync(configPath, "utf8"));
+    return JSON.parse(readSecure(configPath));
 }
 
 function saveConfig(config) {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 4) + "\n");
+    writeSecure(configPath, JSON.stringify(config, null, 4) + "\n");
 }
 
 function loadAccounts() {
     if (!fs.existsSync(accountsPath)) return [];
-    const lines = fs.readFileSync(accountsPath, "utf8").split("\n");
+    const lines = readSecure(accountsPath).split("\n");
     const accounts = [];
     for (const raw of lines) {
         const line = raw.trim();
@@ -61,7 +62,7 @@ function saveAccounts(accounts) {
         if (a.sharedSecret) line += `:${a.sharedSecret}`;
         return line;
     });
-    fs.writeFileSync(accountsPath, header + "\n" + lines.join("\n") + "\n");
+    writeSecure(accountsPath, header + "\n" + lines.join("\n") + "\n");
 }
 
 

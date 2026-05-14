@@ -24,6 +24,7 @@ const SteamUser = require("steam-user");
 const EResult   = SteamUser.EResult;
 
 const dataDir = global.dataDir || ".";
+const { readSecure, writeSecure } = require("./dataCrypt.js");
 const sessionHandler = require("./sessions/sessionHandler.js");
 const controller     = require("./controller.js");
 
@@ -347,7 +348,7 @@ Bot.prototype.startGoalCheck = function() {
     this.goalCheckInterval = setInterval(() => {
         let goals = this.acctConfig.playtimeGoals;
         try {
-            const cfg = JSON.parse(fs.readFileSync(path.join(dataDir, "config.json"), "utf8"));
+            const cfg = JSON.parse(readSecure(path.join(dataDir, "config.json")));
             const acctCfg = (cfg.accountSettings && cfg.accountSettings[this.logOnOptions.accountName]) || {};
             goals = acctCfg.playtimeGoals || {};
             this.acctConfig.playtimeGoals = goals;
@@ -383,13 +384,13 @@ Bot.prototype.startGoalCheck = function() {
         this.client.gamesPlayed(remaining);
 
         try {
-            const cfg = JSON.parse(fs.readFileSync(path.join(dataDir, "config.json"), "utf8"));
+            const cfg = JSON.parse(readSecure(path.join(dataDir, "config.json")));
             if (cfg.accountSettings && cfg.accountSettings[this.logOnOptions.accountName]) {
                 const acctCfg = cfg.accountSettings[this.logOnOptions.accountName];
                 if (acctCfg.playingGames) {
                     acctCfg.playingGames = acctCfg.playingGames.filter(id => !removed.find(r => r.appid === id));
                 }
-                fs.writeFileSync(path.join(dataDir, "config.json"), JSON.stringify(cfg, null, 4) + "\n");
+                writeSecure(path.join(dataDir, "config.json"), JSON.stringify(cfg, null, 4) + "\n");
             }
         } catch (e) { /* ignore config write errors */ }
 

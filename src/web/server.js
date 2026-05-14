@@ -10,6 +10,7 @@ const path    = require("path");
 const express = require("express");
 
 const dataDir      = global.dataDir || ".";
+const { readSecure, writeSecure } = require("../dataCrypt.js");
 const configPath   = path.join(dataDir, "config.json");
 const accountsPath = path.join(dataDir, "accounts.txt");
 const playtimePath = path.join(dataDir, "playtime.txt");
@@ -99,23 +100,23 @@ function loadConfig() {
     if (_configCache) return _configCache;
     if (!fs.existsSync(configPath)) {
         const defaults = { playingGames: [], onlinestatus: 1, afkMessage: "", loginDelay: 2000, relogDelay: 15000, useLocalIP: true, logPlaytimeToFile: true, accountSettings: {} };
-        fs.writeFileSync(configPath, JSON.stringify(defaults, null, 4) + "\n");
+        writeSecure(configPath, JSON.stringify(defaults, null, 4) + "\n");
         _configCache = defaults;
         return defaults;
     }
-    _configCache = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    _configCache = JSON.parse(readSecure(configPath));
     return _configCache;
 }
 
 function saveConfig(config) {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 4) + "\n");
+    writeSecure(configPath, JSON.stringify(config, null, 4) + "\n");
     _configCache = config;
 }
 
 function loadAccounts() {
     if (_accountsCache) return _accountsCache;
     if (!fs.existsSync(accountsPath)) return [];
-    const lines = fs.readFileSync(accountsPath, "utf8").split("\n");
+    const lines = readSecure(accountsPath).split("\n");
     const accounts = [];
     for (const raw of lines) {
         const line = raw.trim();
@@ -134,7 +135,7 @@ function saveAccounts(accounts) {
         if (a.sharedSecret) line += `:${a.sharedSecret}`;
         return line;
     });
-    fs.writeFileSync(accountsPath, header + "\n" + lines.join("\n") + "\n");
+    writeSecure(accountsPath, header + "\n" + lines.join("\n") + "\n");
     _accountsCache = accounts;
 }
 

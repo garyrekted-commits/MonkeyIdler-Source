@@ -71,6 +71,12 @@ for (const [file, content] of Object.entries(defaults)) {
     if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, content, "utf8");
 }
 
+// Encrypt sensitive data files (migrates plaintext to encrypted on first run)
+const { migrateFile } = require("./src/dataCrypt.js");
+["config.json", "accounts.txt"].forEach(f => {
+    try { migrateFile(path.join(dataDir, f)); } catch (e) { /* ignore */ }
+});
+
 const { startServer }        = require("./src/web/server.js");
 const controller = require("./src/controller.js");
 controller.isRunning = false;

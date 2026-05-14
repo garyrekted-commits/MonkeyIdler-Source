@@ -22,7 +22,8 @@ const logger = require("output-logger");
 const EventEmitter = require("events");
 
 const dataDir = global.dataDir || ".";
-let config = JSON.parse(fs.readFileSync(path.join(dataDir, "config.json"), "utf8"));
+const { readSecure } = require("./dataCrypt.js");
+let config = JSON.parse(readSecure(path.join(dataDir, "config.json")));
 
 // Export both values to make them accessable from bot.js
 module.exports.nextacc    = 0;
@@ -78,7 +79,7 @@ function importLogininfo() {
 
         // Import data from accounts.txt
         if (fs.existsSync(path.join(dataDir, "accounts.txt"))) {
-            let data = fs.readFileSync(path.join(dataDir, "accounts.txt"), "utf8").split("\n");
+            let data = readSecure(path.join(dataDir, "accounts.txt")).split("\n");
 
             if (data.length > 0 && data[0].startsWith("//Comment")) data = data.slice(1); // Remove comment from array
 
@@ -198,7 +199,7 @@ module.exports.startOne = async function(username) {
     // Check if already running
     if (allBots.find(b => b.logOnOptions.accountName === username)) return false;
 
-    config = JSON.parse(fs.readFileSync(path.join(dataDir, "config.json"), "utf8"));
+    config = JSON.parse(readSecure(path.join(dataDir, "config.json")));
     if (!global.logger) global.logger = logger;
 
     const logininfo = await importLogininfo();
@@ -229,7 +230,7 @@ module.exports.startOne = async function(username) {
 
 module.exports.start = async () => {
     // Re-read config from disk in case the interactive menu changed it
-    config = JSON.parse(fs.readFileSync(path.join(dataDir, "config.json"), "utf8"));
+    config = JSON.parse(readSecure(path.join(dataDir, "config.json")));
 
     module.exports.isRunning = true;
 
