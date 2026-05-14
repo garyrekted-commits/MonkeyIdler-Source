@@ -1,6 +1,6 @@
 {
     "name": "steam-idler",
-    "version": "1.12.0",
+    "version": "1.12.1",
     "description": "Steam game idler with desktop GUI and multi account support",
     "main": "idler.js",
     "dependencies": {
@@ -94,10 +94,17 @@
             "artifactName": "MonkeyIdler-Setup.${ext}"
         },
         "compression": "maximum",
-        "asar": true
+        "asar": true,
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "garyrekted-commits",
+                "repo": "MonkeyIdler-Source"
+            }
+        ]
     },
     "author": "3urobeat",
     "license": "GPL-3.0",
-    "homepage": "https://github.com/3urobeat",
-    "repository": "https://github.com/3urobeat/steam-idler"
+    "homepage": "https://github.com/garyrekted-commits/MonkeyIdler-Source",
+    "repository": "https://github.com/garyrekted-commits/MonkeyIdler-Source"
 }
