@@ -512,11 +512,15 @@ async function refreshAll(){
     const btn=$("btnRefresh");
     if(btn){btn.disabled=true;btn.textContent="Refreshing...";}
     Object.keys(homeProfiles).forEach(k=>delete homeProfiles[k]);
+    lastBotsFingerprint="";lastAcctFingerprint="";
     await Promise.all(accounts.map(a=>A("POST","/api/accounts/"+encodeURIComponent(a.username)+"/refresh").catch(()=>{})));
     await Promise.all(accounts.map(a=>A("GET","/api/accounts/"+encodeURIComponent(a.username)+"/profile").then(d=>{
-        if(d&&d.online){homeProfiles[a.username]=d}
+        if(d)homeProfiles[a.username]=d;
     }).catch(()=>{})));
+    await poll();
+    renderHome();
     renderHomeCards();
+    renderAllAcctPages();
     if(btn){btn.disabled=false;btn.innerHTML="&#8635; Refresh";}
 }
 const profileFetching=new Set();
@@ -994,7 +998,6 @@ function filterFriends(username){renderFriends(username)}
 function selectChatTarget(username,steamId,name){
     chatTargets[username]=steamId;
     const cr=$("cr-"+username);if(cr)cr.textContent=name+" ("+steamId+")";
-    const ci=$("ci-"+username);if(ci)ci.focus();
     const ct=$("cmt-target-"+username);if(ct)ct.value=steamId;
 }
 async function viewFriendProfile(username,steamId){
