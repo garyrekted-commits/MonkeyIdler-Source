@@ -43,9 +43,11 @@ const Bot = function(logOnOptions, loginindex, proxies, acctConfig) {
     // Populated by loggedOn event handler, is used by logPlaytime to calculate playtime report for this account
     this.startedPlayingTimestamp = 0;
     this.playedAppIDs = [];
+    this.steamLevel = 0;
 
     // Cached list of owned games, populated after login
     this.ownedGames = [];
+    this.goalCheckInterval = null;
 
     // Create new steam-user bot object. Disable autoRelogin as we have our own queue system
     this.client = new SteamUser({ autoRelogin: false, renewRefreshTokens: true, httpProxy: this.proxy, protocol: SteamUser.EConnectionProtocol.WebSocket }); // Forcing protocol for now: https://dev.doctormckay.com/topic/4187-disconnect-due-to-encryption-error-causes-relog-to-break-error-already-logged-on/?do=findComment&comment=10917
@@ -92,7 +94,8 @@ Bot.prototype.attachEventListeners = function() {
     });
 
     this.client.on("loggedOn", () => { // This account is now logged on
-        controller.nextacc++; // The next account can start
+        controller.nextacc++;
+        controller.loginEvents.emit("nextacc", controller.nextacc);
 
         // If this is a relog then remove this account from the queue and let the next account be able to relog
         if (controller.relogQueue.includes(this.loginindex)) {
@@ -105,6 +108,15 @@ Bot.prototype.attachEventListeners = function() {
 
         // Set online status if enabled (https://github.com/DoctorMcKay/node-steam-user/blob/master/enums/EPersonaState.js)
         if (this.acctConfig.onlinestatus) this.client.setPersona(this.acctConfig.onlinestatus);
+
+        // Fetch Steam level for the dashboard
+        this.client.getSteamLevels([this.client.steamID]).then(res => {
+            const sid64 = this.client.steamID.getSteamID64();
+            this.steamLevel = (res && res.users && res.users[sid64]) || 0;
+            logger("info", `[${this.logOnOptions.accountName}] Steam Level: ${this.steamLevel}`);
+        }).catch(err => {
+            logger("warn", `[${this.logOnOptions.accountName}] Failed to fetch Steam level: ${err}`);
+        });
 
         // Fetch full owned games library for the dashboard
         this.client.getUserOwnedApps(this.client.steamID, { includePlayedFreeGames: true, includeFreeSub: false }, (err, res) => {
@@ -132,6 +144,7 @@ Bot.prototype.attachEventListeners = function() {
                 this.playedAppIDs = [];
                 this.startedPlayingTimestamp = 0;
             }
+            this.startGoalCheck();
         };
 
         // Get all licenses this account owns
@@ -227,7 +240,7 @@ Bot.prototype.attachEventListeners = function() {
 
     this.client.on("disconnected", (eresult, msg) => { // Handle relogging
         if (controller.relogQueue.includes(this.loginindex)) return; // Don't handle this event if account is already waiting for relog
-
+        this.stopGoalCheck();
         logger("info", `[${this.logOnOptions.accountName}] Lost connection to Steam. Message: ${msg}. Trying to relog in ${this.acctConfig.relogDelay / 1000} seconds...`);
         this.handleRelog();
     });
@@ -256,7 +269,8 @@ Bot.prototype.attachEventListeners = function() {
             }
 
             logger("error", `[${this.logOnOptions.accountName}] Error logging in! ${err}. Continuing with next account...`);
-            controller.nextacc++; // The next account can start
+            controller.nextacc++;
+            controller.loginEvents.emit("nextacc", controller.nextacc);
 
         } else { // Connection loss
 
@@ -324,6 +338,74 @@ Bot.prototype.handleRelog = function() {
 
 
 /**
+ * Starts a 60-second interval that checks playtime goals and removes games that reached their target
+ */
+Bot.prototype.startGoalCheck = function() {
+    if (this.goalCheckInterval) clearInterval(this.goalCheckInterval);
+    this.goalCheckInterval = setInterval(() => {
+        let goals = this.acctConfig.playtimeGoals;
+        try {
+            const cfg = JSON.parse(fs.readFileSync("./config.json", "utf8"));
+            const acctCfg = (cfg.accountSettings && cfg.accountSettings[this.logOnOptions.accountName]) || {};
+            goals = acctCfg.playtimeGoals || {};
+            this.acctConfig.playtimeGoals = goals;
+        } catch (e) { /* use existing */ }
+        if (!goals || Object.keys(goals).length === 0) return;
+        if (!this.playedAppIDs || this.playedAppIDs.length === 0) return;
+        if (!this.client.steamID) return;
+
+        const sessionHours = this.startedPlayingTimestamp > 0
+            ? (Date.now() - this.startedPlayingTimestamp) / 3600000
+            : 0;
+
+        const removed = [];
+        for (const [appidStr, targetHours] of Object.entries(goals)) {
+            const appid = parseInt(appidStr);
+            if (!this.playedAppIDs.includes(appid)) continue;
+            const owned = (this.ownedGames || []).find(g => g.appid === appid);
+            const lifetimeMinutes = owned ? owned.playtimeForever : 0;
+            const currentHours = (lifetimeMinutes / 60) + sessionHours;
+            if (currentHours >= targetHours) {
+                removed.push({ appid, name: owned ? owned.name : "App " + appid, target: targetHours });
+            }
+        }
+
+        if (removed.length === 0) return;
+
+        let remaining = this.playedAppIDs.filter(id => !removed.find(r => r.appid === id));
+        removed.forEach(r => {
+            logger("info", `[${this.logOnOptions.accountName}] Playtime goal reached for ${r.name} (${r.target}h) -- stopped idling`);
+        });
+
+        this.playedAppIDs = remaining;
+        this.client.gamesPlayed(remaining);
+
+        // Update config on disk to remove these games from playingGames
+        try {
+            const cfg = JSON.parse(fs.readFileSync("./config.json", "utf8"));
+            if (cfg.accountSettings && cfg.accountSettings[this.logOnOptions.accountName]) {
+                const acctCfg = cfg.accountSettings[this.logOnOptions.accountName];
+                if (acctCfg.playingGames) {
+                    acctCfg.playingGames = acctCfg.playingGames.filter(id => !removed.find(r => r.appid === id));
+                }
+                fs.writeFileSync("./config.json", JSON.stringify(cfg, null, 4) + "\n");
+            }
+        } catch (e) { /* ignore config write errors */ }
+
+        if (remaining.length === 0) {
+            this.logPlaytimeToFile();
+        }
+    }, 60000);
+};
+
+Bot.prototype.stopGoalCheck = function() {
+    if (this.goalCheckInterval) {
+        clearInterval(this.goalCheckInterval);
+        this.goalCheckInterval = null;
+    }
+};
+
+/**
  * Updates the games being played live without restarting the bot
  * @param {Array} games Array of appids and/or custom game name strings
  */
@@ -336,6 +418,7 @@ Bot.prototype.setGamesPlayed = function(games) {
     } else if (games.length === 0) {
         this.logPlaytimeToFile();
     }
+    this.startGoalCheck();
 };
 
 
@@ -383,7 +466,9 @@ Bot.prototype.logPlaytimeToFile = function() {
         // Append session summary to playtime.txt
         const str = `[${this.logOnOptions.accountName}] Session Summary (${formatDate(this.startedPlayingTimestamp)} - ${formatDate(Date.now())}) ~ Played for ${Math.trunc((Date.now() - this.startedPlayingTimestamp) / 1000)} seconds: ${util.inspect(this.playedAppIDs, false, 2, false)}`; // Inspect() formats array properly
 
-        fs.appendFileSync("./playtime.txt", str + "\n");
+        fs.appendFile("./playtime.txt", str + "\n", (err) => {
+            if (err) logger("warn", `[${this.logOnOptions.accountName}] Failed to write playtime: ${err.message}`);
+        });
     }
 
     // Reset startedPlayingTimestamp

@@ -34,6 +34,7 @@ function broadcastLog(entry) {
 }
 
 function broadcastStatus() {
+    if (sseClients.length === 0) return;
     try {
         const controller = require("../controller.js");
         const status = controller.getAllStatus();
@@ -88,22 +89,30 @@ module.exports.requestSteamGuardCode = requestSteamGuardCode;
 module.exports.hasPendingCode        = hasPendingCode;
 module.exports.cancelPendingCode     = cancelPendingCode;
 
-// --- Helpers ---
+// --- Helpers (with in-memory caching) ---
+
+let _configCache = null;
+let _accountsCache = null;
 
 function loadConfig() {
+    if (_configCache) return _configCache;
     if (!fs.existsSync(configPath)) {
         const defaults = { playingGames: [], onlinestatus: 1, afkMessage: "", loginDelay: 2000, relogDelay: 15000, useLocalIP: true, logPlaytimeToFile: true, accountSettings: {} };
         fs.writeFileSync(configPath, JSON.stringify(defaults, null, 4) + "\n");
+        _configCache = defaults;
         return defaults;
     }
-    return JSON.parse(fs.readFileSync(configPath, "utf8"));
+    _configCache = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    return _configCache;
 }
 
 function saveConfig(config) {
     fs.writeFileSync(configPath, JSON.stringify(config, null, 4) + "\n");
+    _configCache = config;
 }
 
 function loadAccounts() {
+    if (_accountsCache) return _accountsCache;
     if (!fs.existsSync(accountsPath)) return [];
     const lines = fs.readFileSync(accountsPath, "utf8").split("\n");
     const accounts = [];
@@ -113,6 +122,7 @@ function loadAccounts() {
         const parts = line.split(":");
         accounts.push({ username: parts[0], password: parts[1] || "", sharedSecret: parts[2] || "" });
     }
+    _accountsCache = accounts;
     return accounts;
 }
 
@@ -124,6 +134,7 @@ function saveAccounts(accounts) {
         return line;
     });
     fs.writeFileSync(accountsPath, header + "\n" + lines.join("\n") + "\n");
+    _accountsCache = accounts;
 }
 
 // --- Routes ---
@@ -359,9 +370,53 @@ app.get("/api/status", (req, res) => {
 app.get("/api/accounts/:username/games", (req, res) => {
     const controller = require("../controller.js");
     const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
-    if (!bot) return res.json({ games: [], idling: [] });
+    if (!bot) return res.json({ games: [], idling: [], goals: {} });
     const idling = (bot.playedAppIDs || []).filter(g => typeof g === "number");
-    res.json({ games: bot.ownedGames || [], idling });
+    const config = loadConfig();
+    const acctCfg = (config.accountSettings && config.accountSettings[req.params.username]) || {};
+    const goals = acctCfg.playtimeGoals || {};
+    res.json({ games: bot.ownedGames || [], idling, goals });
+});
+
+// Playtime goals CRUD
+app.get("/api/accounts/:username/goals", (req, res) => {
+    const controller = require("../controller.js");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    const config = loadConfig();
+    const acctCfg = (config.accountSettings && config.accountSettings[req.params.username]) || {};
+    const goals = acctCfg.playtimeGoals || {};
+    const progress = {};
+    if (bot) {
+        const sessionHours = bot.startedPlayingTimestamp > 0
+            ? (Date.now() - bot.startedPlayingTimestamp) / 3600000
+            : 0;
+        for (const [appidStr, targetHours] of Object.entries(goals)) {
+            const appid = parseInt(appidStr);
+            const owned = (bot.ownedGames || []).find(g => g.appid === appid);
+            const lifetimeMinutes = owned ? owned.playtimeForever : 0;
+            const isIdling = (bot.playedAppIDs || []).includes(appid);
+            const currentHours = (lifetimeMinutes / 60) + (isIdling ? sessionHours : 0);
+            progress[appidStr] = { target: targetHours, current: Math.round(currentHours * 10) / 10 };
+        }
+    }
+    res.json({ goals, progress });
+});
+
+app.put("/api/accounts/:username/goals", (req, res) => {
+    const { appid, hours } = req.body;
+    if (appid === undefined) return res.status(400).json({ error: "appid required" });
+    const config = loadConfig();
+    if (!config.accountSettings) config.accountSettings = {};
+    const username = req.params.username;
+    if (!config.accountSettings[username]) config.accountSettings[username] = {};
+    if (!config.accountSettings[username].playtimeGoals) config.accountSettings[username].playtimeGoals = {};
+    if (!hours || hours <= 0) {
+        delete config.accountSettings[username].playtimeGoals[String(appid)];
+    } else {
+        config.accountSettings[username].playtimeGoals[String(appid)] = hours;
+    }
+    saveConfig(config);
+    res.json({ ok: true, goals: config.accountSettings[username].playtimeGoals });
 });
 
 // Toggle a game for idling on a specific account
@@ -439,8 +494,98 @@ app.get("/api/accounts/:username/profile", (req, res) => {
         stateName: ["Offline","Online","Busy","Away","Snooze","Looking to Trade","Looking to Play"][me.persona_state || 0] || "Offline",
         gameName: me.game_name || "",
         profileUrl: "https://steamcommunity.com/profiles/" + sid64,
-        level: bot.client.level || 0
+        level: bot.steamLevel || 0
     });
+});
+
+// Steam deals - cached for 30 minutes
+let dealsCache = {};
+function steamFetch(url) {
+    const https = require("https");
+    const parsed = new URL(url);
+    const opts = { hostname: parsed.hostname, path: parsed.pathname + parsed.search, headers: { "User-Agent": "MonkeyIdler/1.0" } };
+    return new Promise((resolve, reject) => {
+        https.get(opts, (r) => {
+            let d = "";
+            r.on("data", c => d += c);
+            r.on("end", () => { try { resolve(JSON.parse(d)); } catch (e) { reject(e); } });
+        }).on("error", reject);
+    });
+}
+app.get("/api/deals", async (req, res) => {
+    const page = parseInt(req.query.page) || 0;
+    const cacheKey = `page_${page}`;
+    if (dealsCache[cacheKey] && Date.now() < dealsCache[cacheKey].expires) {
+        return res.json(dealsCache[cacheKey].data);
+    }
+    try {
+        const pageSize = 60;
+        const url = `https://www.cheapshark.com/api/1.0/deals?storeID=1&onSale=1&pageSize=${pageSize}&pageNumber=${page}&sortBy=Savings&desc=0`;
+        const raw = await steamFetch(url);
+        const deals = raw.filter(g => g.steamAppID && g.steamAppID !== "0").map(g => ({
+            name: g.title,
+            appid: parseInt(g.steamAppID),
+            image: `https://cdn.akamai.steamstatic.com/steam/apps/${g.steamAppID}/header.jpg`,
+            originalPrice: Math.round(parseFloat(g.normalPrice) * 100),
+            finalPrice: Math.round(parseFloat(g.salePrice) * 100),
+            discountPercent: Math.round(parseFloat(g.savings)),
+            metacritic: g.metacriticScore ? parseInt(g.metacriticScore) : null,
+            rating: g.steamRatingPercent ? parseInt(g.steamRatingPercent) : null,
+            dealID: g.dealID
+        }));
+        const result = { deals, page, hasMore: raw.length === pageSize };
+        dealsCache[cacheKey] = { data: result, expires: Date.now() + 30 * 60 * 1000 };
+        res.json(result);
+    } catch (e) {
+        console.error("Failed to fetch Steam deals:", e.message);
+        res.status(500).json({ error: "Failed to fetch deals" });
+    }
+});
+
+// Steam game details (cached 30 min)
+const appDetailsCache = {};
+app.get("/api/deals/:appid", async (req, res) => {
+    const appid = req.params.appid;
+    if (appDetailsCache[appid] && Date.now() < appDetailsCache[appid].expires) {
+        return res.json(appDetailsCache[appid].data);
+    }
+    try {
+        const body = await steamFetch(`https://store.steampowered.com/api/appdetails?appids=${appid}&cc=us&l=english`);
+        const entry = body[appid];
+        if (!entry || !entry.success) return res.status(404).json({ error: "Game not found" });
+        const d = entry.data;
+        const result = {
+            name: d.name,
+            appid: d.steam_appid,
+            description: d.short_description || "",
+            headerImage: d.header_image || "",
+            screenshots: (d.screenshots || []).slice(0, 6).map(s => s.path_thumbnail),
+            genres: (d.genres || []).map(g => g.description),
+            developers: d.developers || [],
+            publishers: d.publishers || [],
+            releaseDate: d.release_date ? d.release_date.date : "",
+            storeUrl: `https://store.steampowered.com/app/${appid}`,
+            price: d.price_overview || null
+        };
+        appDetailsCache[appid] = { data: result, expires: Date.now() + 30 * 60 * 1000 };
+        res.json(result);
+    } catch (e) {
+        console.error("Failed to fetch game details:", e.message);
+        res.status(500).json({ error: "Failed to fetch game details" });
+    }
+});
+
+// Refresh profile data (re-fetches Steam level)
+app.post("/api/accounts/:username/refresh", async (req, res) => {
+    const controller = require("../controller.js");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    if (!bot || !bot.client.steamID) return res.json({ ok: false });
+    try {
+        const result = await bot.client.getSteamLevels([bot.client.steamID]);
+        const sid64 = bot.client.steamID.getSteamID64();
+        bot.steamLevel = (result && result.users && result.users[sid64]) || 0;
+    } catch (e) { /* ignore */ }
+    res.json({ ok: true, level: bot.steamLevel || 0 });
 });
 
 // Get web session cookies for authenticated browsing
@@ -728,16 +873,22 @@ app.get("/api/accounts/:username/chat", (req, res) => {
     res.json({ messages: msgs });
 });
 
-// Playtime history
+// Playtime history (cached, invalidated when file changes)
+let _playtimeCache = null;
+let _playtimeMtime = 0;
 app.get("/api/playtime", (req, res) => {
     if (!fs.existsSync(playtimePath)) return res.json([]);
+    const mtime = fs.statSync(playtimePath).mtimeMs;
+    if (_playtimeCache && mtime === _playtimeMtime) return res.json(_playtimeCache);
     const lines = fs.readFileSync(playtimePath, "utf8").split("\n").filter(Boolean);
     const entries = lines.map(line => {
         const match = line.match(/^\[(.+?)\] Session Summary \((.+?) - (.+?)\) ~ Played for (\d+) seconds: (.+)$/);
         if (!match) return { raw: line };
         return { account: match[1], start: match[2], end: match[3], seconds: parseInt(match[4]), games: match[5] };
     });
-    res.json(entries.reverse());
+    _playtimeCache = entries.reverse();
+    _playtimeMtime = mtime;
+    res.json(_playtimeCache);
 });
 
 // --- Start server ---

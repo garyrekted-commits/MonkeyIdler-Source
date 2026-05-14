@@ -18,12 +18,16 @@
 // Handles creating bot objects, providing them with data and relogging
 const fs     = require("fs");
 const logger = require("output-logger");
+const EventEmitter = require("events");
 
 let config = JSON.parse(fs.readFileSync("./config.json", "utf8"));
 
 // Export both values to make them accessable from bot.js
 module.exports.nextacc    = 0;
 module.exports.relogQueue = []; // Queue tracking disconnected accounts to relog them after eachother with a delay
+
+const loginEvents = new EventEmitter();
+module.exports.loginEvents = loginEvents;
 
 // Configure my logging lib
 logger.options({
@@ -241,36 +245,43 @@ module.exports.start = async () => {
     // Start creating a bot object for each account
     logger("", "", true);
 
-    Object.values(logininfo).forEach((e, i) => {
-        setTimeout(() => {
+    const entries = Object.values(logininfo);
 
-            const readycheckinterval = setInterval(() => {
-                if (this.nextacc == i) { // Check if it is our turn
-                    clearInterval(readycheckinterval);
+    const loginAccount = (i) => {
+        if (i >= entries.length) return;
+        const e = entries[i];
 
-                    // Build per-account config by merging global defaults with any accountSettings overrides
-                    const acctOverrides = (config.accountSettings && config.accountSettings[e.accountName]) || {};
-                    const acctConfig = {
-                        playingGames:     acctOverrides.playingGames     ?? config.playingGames,
-                        onlinestatus:     acctOverrides.onlinestatus     ?? config.onlinestatus,
-                        afkMessage:       acctOverrides.afkMessage       ?? config.afkMessage,
-                        loginDelay:       acctOverrides.loginDelay       ?? config.loginDelay,
-                        relogDelay:       acctOverrides.relogDelay       ?? config.relogDelay,
-                        logPlaytimeToFile: acctOverrides.logPlaytimeToFile ?? config.logPlaytimeToFile
-                    };
+        const proceed = () => {
+            const acctOverrides = (config.accountSettings && config.accountSettings[e.accountName]) || {};
+            const acctConfig = {
+                playingGames:     acctOverrides.playingGames     ?? config.playingGames,
+                onlinestatus:     acctOverrides.onlinestatus     ?? config.onlinestatus,
+                afkMessage:       acctOverrides.afkMessage       ?? config.afkMessage,
+                loginDelay:       acctOverrides.loginDelay       ?? config.loginDelay,
+                relogDelay:       acctOverrides.relogDelay       ?? config.relogDelay,
+                logPlaytimeToFile: acctOverrides.logPlaytimeToFile ?? config.logPlaytimeToFile
+            };
 
-                    // Create new bot object
-                    const botfile = require("./bot.js");
-                    const bot = new botfile(e, i, proxies, acctConfig);
+            const botfile = require("./bot.js");
+            const bot = new botfile(e, i, proxies, acctConfig);
+            bot.login();
+            allBots.push(bot);
+        };
 
-                    bot.login();
-
-                    allBots.push(bot);
+        if (this.nextacc >= i) {
+            proceed();
+        } else {
+            const onNext = () => {
+                if (module.exports.nextacc >= i) {
+                    loginEvents.removeListener("nextacc", onNext);
+                    proceed();
                 }
-            }, 250);
+            };
+            loginEvents.on("nextacc", onNext);
+        }
+    };
 
-        }, 1000);
-    });
+    entries.forEach((_, i) => setTimeout(() => loginAccount(i), 1000));
 };
 
 // Log playtime for all accounts on exit

@@ -72,6 +72,7 @@ input:focus,select:focus{border-color:var(--accent)}
 .section.collapsed .section-head{border-bottom:none}
 .section-body{padding:14px}
 .full{grid-column:1/-1}
+.log-hidden{display:none!important}
 
 /* Forms */
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -183,7 +184,62 @@ input:focus,select:focus{border-color:var(--accent)}
 .game-tile .gb{position:absolute;top:4px;right:4px;display:none}
 .game-tile.active .gb{display:block}
 .game-tile[ondblclick]:hover{border-color:var(--red);opacity:.85}
+.game-tile .goal-bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(0,0,0,.4)}
+.game-tile .goal-fill{height:100%;background:var(--accent);border-radius:0 2px 2px 0;transition:width .3s}
+.game-tile .goal-badge{position:absolute;top:4px;left:4px;background:rgba(124,106,255,.85);color:#fff;font-size:.55rem;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap}
+.goal-ctx{position:fixed;z-index:300;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);display:none;min-width:200px}
+.goal-ctx.show{display:block}
+.goal-ctx h4{font-size:.72rem;color:var(--text);margin-bottom:8px;font-weight:600}
+.goal-ctx .goal-row{display:flex;align-items:center;gap:8px}
+.goal-ctx input{width:80px;text-align:center}
+.goal-ctx .goal-info{font-size:.62rem;color:var(--text3);margin-top:6px}
 .empty{text-align:center;color:var(--text3);padding:30px 16px;font-size:.78rem}
+
+/* Deals page - Steam style */
+.deal-spotlight{background:linear-gradient(135deg,#1b2838 0%,#2a475e 100%);border-radius:10px;overflow:hidden;margin-bottom:16px;cursor:pointer;display:flex;border:1px solid rgba(102,192,244,.1);transition:box-shadow .2s}
+.deal-spotlight:hover{box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.deal-spotlight-img{width:460px;min-height:215px;object-fit:cover;flex-shrink:0}
+@media(max-width:700px){.deal-spotlight{flex-direction:column}.deal-spotlight-img{width:100%}}
+.deal-spotlight-body{padding:20px 24px;display:flex;flex-direction:column;justify-content:center;flex:1;min-width:0}
+.deal-spotlight-name{font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:6px}
+.deal-spotlight-desc{font-size:.75rem;color:#8f98a0;line-height:1.5;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.deal-spotlight-prices{display:flex;align-items:center;gap:10px}
+.deal-controls{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.deal-controls select,.deal-controls input{background:#1b2838;color:#c7d5e0;border:1px solid rgba(102,192,244,.2);border-radius:4px;padding:6px 10px;font-size:.75rem;outline:none}
+.deal-controls select:focus,.deal-controls input:focus{border-color:rgba(102,192,244,.5)}
+.deal-controls input{flex:1;min-width:160px;max-width:280px}
+.deal-controls label{font-size:.7rem;color:#8f98a0}
+.deal-count{font-size:.7rem;color:#8f98a0;margin-left:auto}
+.deal-list{display:flex;flex-direction:column;gap:2px}
+.deal-row{display:flex;align-items:center;background:#1b2838;border-radius:4px;padding:0;cursor:pointer;transition:background .12s;overflow:hidden}
+.deal-row:hover{background:#2a475e}
+.deal-row-img{width:120px;height:45px;object-fit:cover;flex-shrink:0}
+.deal-row-info{flex:1;padding:8px 14px;min-width:0}
+.deal-row-name{font-size:.78rem;font-weight:600;color:#c7d5e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.deal-row-prices{display:flex;align-items:center;gap:0;flex-shrink:0;padding-right:12px}
+.deal-badge{background:#4c6b22;color:#a4d007;font-size:.82rem;font-weight:700;padding:6px 8px;text-align:center;min-width:48px}
+.deal-price-col{display:flex;flex-direction:column;align-items:flex-end;padding:4px 10px;background:rgba(0,0,0,.25)}
+.deal-original{font-size:.62rem;color:#8f98a0;text-decoration:line-through}
+.deal-final{font-size:.78rem;font-weight:700;color:#a4d007}
+.deal-free{font-size:.78rem;font-weight:700;color:#a4d007}
+.deal-modal{width:600px;max-width:92vw;max-height:85vh;overflow-y:auto;padding:0;border-radius:10px}
+.deal-modal::-webkit-scrollbar{width:4px}.deal-modal::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.deal-modal-img{width:100%;aspect-ratio:460/215;object-fit:cover;display:block;border-radius:10px 10px 0 0}
+.deal-modal-content{padding:18px 20px 20px}
+.deal-modal-title{font-size:1.1rem;font-weight:700;color:#c7d5e0;margin-bottom:4px}
+.deal-modal-prices{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.deal-modal-desc{font-size:.78rem;color:var(--text2);line-height:1.55;margin-bottom:16px}
+.deal-modal-meta{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.7rem;color:var(--text3);margin-bottom:16px}
+.deal-modal-meta span{color:var(--text2)}
+.deal-modal-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px}
+.deal-modal-tag{background:var(--bg4);color:var(--text2);font-size:.62rem;padding:3px 8px;border-radius:10px;border:1px solid var(--border)}
+.deal-modal-screens{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px}
+.deal-modal-screens::-webkit-scrollbar{height:3px}.deal-modal-screens::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.deal-modal-screens img{height:100px;border-radius:4px;flex-shrink:0;cursor:pointer;transition:opacity .12s;border:1px solid var(--border)}
+.deal-modal-screens img:hover{opacity:.8}
+.deal-modal-actions{display:flex;gap:10px}
+.btn-steam{background:linear-gradient(135deg,#1b2838,#2a475e);color:#66c0f4;border:1px solid rgba(102,192,244,.3);padding:10px 24px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;transition:filter .15s;text-decoration:none;display:inline-block;text-align:center}
+.btn-steam:hover{filter:brightness(1.3)}
 
 /* Playtime table */
 .pt{width:100%;border-collapse:collapse;font-size:.72rem}
@@ -214,6 +270,7 @@ input:focus,select:focus{border-color:var(--accent)}
     <div class="sb-item active" data-page="home" onclick="navTo(this)">&#127968; Overview</div>
     <div class="sb-item" data-page="logs" onclick="navTo(this)">&#128220; All Logs</div>
     <div class="sb-item" data-page="playtime" onclick="navTo(this)">&#9201; Playtime</div>
+    <div class="sb-item" data-page="deals" onclick="navTo(this)">&#128176; Deals</div>
     <div class="sb-item" data-page="settings" onclick="navTo(this)">&#9881; Global Settings</div>
     <div id="sbAccounts" style="display:none"></div>
     <div class="sb-spacer"></div>
@@ -230,6 +287,7 @@ input:focus,select:focus{border-color:var(--accent)}
         <span style="font-size:.75rem;color:var(--text3)" id="globalStatus">Stopped</span>
         <button class="btn-green btn-sm" id="btnStartAll" onclick="startAll()">Start All</button>
         <button class="btn-red btn-sm" id="btnStopAll" onclick="stopAll()" style="display:none">Stop All</button>
+        <button class="btn-sm" id="btnRefresh" onclick="refreshAll()" style="background:#2a475e;color:#c7d5e0;border:1px solid rgba(102,192,244,.25);margin-left:auto" title="Refresh all account data">&#8635; Refresh</button>
     </div>
     <div class="content">
         <!-- Home/Overview -->
@@ -250,6 +308,27 @@ input:focus,select:focus{border-color:var(--accent)}
         <div class="page" id="page-playtime">
             <h2 style="font-size:.88rem;margin-bottom:10px">Playtime History</h2>
             <div id="ptAll"><div class="empty">No data yet.</div></div>
+        </div>
+
+        <!-- Deals -->
+        <div class="page" id="page-deals">
+            <div id="dealSpotlight"></div>
+            <div class="deal-controls">
+                <label>Sort by</label>
+                <select id="dealSort" onchange="renderDeals()">
+                    <option value="discount">Discount %</option>
+                    <option value="priceAsc">Price: Low to High</option>
+                    <option value="priceDesc">Price: High to Low</option>
+                    <option value="name">Name</option>
+                </select>
+                <input type="text" id="dealSearch" placeholder="Search deals..." oninput="renderDeals()">
+                <button class="btn-ghost btn-sm" onclick="loadDeals(true)">Refresh</button>
+                <span class="deal-count" id="dealCount"></span>
+            </div>
+            <div class="deal-list" id="dealsList"><div class="empty">Loading deals...</div></div>
+            <div id="dealLoadMore" style="text-align:center;padding:16px;display:none">
+                <button class="btn-steam" onclick="loadMoreDeals()" id="btnLoadMore">Load More Deals</button>
+            </div>
         </div>
 
         <!-- Global Settings -->
@@ -312,6 +391,23 @@ input:focus,select:focus{border-color:var(--accent)}
     <div class="f-actions"><button class="btn-accent" onclick="submitGuard()">Submit</button><button class="btn-ghost" onclick="skipGuard()">Skip</button></div>
 </div></div>
 
+<!-- Deal Detail Modal -->
+<div class="modal-bg" id="dealModal" onclick="if(event.target===this)hideModal('dealModal')"><div class="modal deal-modal" id="dealModalInner">
+    <div id="dealModalContent"><div class="empty">Loading...</div></div>
+</div></div>
+
+<!-- Goal Context Menu -->
+<div class="goal-ctx" id="goalCtx">
+    <h4 id="goalCtxTitle">Set Playtime Goal</h4>
+    <div class="goal-row">
+        <input type="number" id="goalCtxHours" min="0" step="1" placeholder="Hours">
+        <span style="font-size:.72rem;color:var(--text2)">hours</span>
+        <button class="btn-accent btn-sm" onclick="saveGoal()">Save</button>
+        <button class="btn-ghost btn-sm" onclick="removeGoal()">Clear</button>
+    </div>
+    <div class="goal-info" id="goalCtxInfo"></div>
+</div>
+
 <script>
 let isRunning=false,accounts=[],config={},bots=[],evtSource=null,allLogs=[],guardUser="";
 const A=async(m,u,b)=>{try{const o={method:m,headers:{"Content-Type":"application/json"}};if(b)o.body=JSON.stringify(b);const r=await fetch(u,o);return await r.json()}catch(e){console.error("API error:",e);return{}}};
@@ -333,19 +429,24 @@ function navTo(el){
     el.classList.add("active");
     const p=$("page-"+el.dataset.page);if(p)p.classList.add("active");
     $("pageTitle").textContent=el.textContent.replace(/[^\w\s]/g,"").trim();
-    // Refresh data on every nav
-    loadConfig();loadAccounts();
+    if(el.dataset.page==="deals")loadDeals();
     const u=el.dataset.user;
     if(u)loadAcctPage(u);
 }
 
 // --- SSE ---
 let pollSince=0,pollTimer=null;
+const POLL_INTERVAL=5000;
 function startPolling(){
     if(pollTimer)return;
-    pollTimer=setInterval(poll,2000);
+    pollTimer=setInterval(poll,POLL_INTERVAL);
     poll();
 }
+function stopPolling(){if(pollTimer){clearInterval(pollTimer);pollTimer=null}}
+document.addEventListener("visibilitychange",()=>{
+    if(document.hidden)stopPolling();
+    else{startPolling()}
+});
 async function poll(){
     try{
         const d=await A("GET","/api/poll?since="+pollSince+"&chatSince="+chatSeq);
@@ -355,7 +456,11 @@ async function poll(){
         pollSince=d.total;
         isRunning=d.isRunning;
         bots=d.bots||[];
-        renderHome();updateGlobal();renderAllAcctPages();
+        const bf=botsFingerprint(),af=acctFingerprint();
+        const botsChanged=bf!==lastBotsFingerprint,acctChanged=af!==lastAcctFingerprint;
+        if(acctChanged){lastAcctFingerprint=af;renderHome()}
+        if(botsChanged||acctChanged){lastBotsFingerprint=bf;renderHomeCards();renderAllAcctPages()}
+        updateGlobal();
         if(d.guard&&d.guard.length>0)showGuardModal(d.guard[0]);
         if(d.qrDone){cancelQrLogin();hideModal("addModal");await loadAccounts();}
         if(d.chatSeq)chatSeq=d.chatSeq;
@@ -398,15 +503,32 @@ function renderSidebar(){
     accounts.forEach(a=>{if(!$("page-acct-"+a.username))createAcctPage(a.username)});
 }
 const homeProfiles={};
+let lastBotsFingerprint="",lastAcctFingerprint="";
+function botsFingerprint(){return JSON.stringify(bots.map(b=>b.username+b.state+b.playtimeSeconds+(b.gameNames||[]).join(",")))}
+function acctFingerprint(){return accounts.map(a=>a.username).join(",")}
+
+async function refreshAll(){
+    const btn=$("btnRefresh");
+    if(btn){btn.disabled=true;btn.textContent="Refreshing...";}
+    Object.keys(homeProfiles).forEach(k=>delete homeProfiles[k]);
+    await Promise.all(accounts.map(a=>A("POST","/api/accounts/"+encodeURIComponent(a.username)+"/refresh").catch(()=>{})));
+    await Promise.all(accounts.map(a=>A("GET","/api/accounts/"+encodeURIComponent(a.username)+"/profile").then(d=>{
+        if(d&&d.online){homeProfiles[a.username]=d}
+    }).catch(()=>{})));
+    renderHomeCards();
+    if(btn){btn.disabled=false;btn.innerHTML="&#8635; Refresh";}
+}
+const profileFetching=new Set();
 function renderHome(){
     const el=$("homeList");
     if(!accounts.length){el.innerHTML='<div class="empty">No accounts yet.</div>';return}
-    // Fetch profile data for each account
     accounts.forEach(a=>{
-        if(!homeProfiles[a.username]){
+        if(!homeProfiles[a.username]&&!profileFetching.has(a.username)){
+            profileFetching.add(a.username);
             A("GET","/api/accounts/"+encodeURIComponent(a.username)+"/profile").then(d=>{
+                profileFetching.delete(a.username);
                 if(d&&d.online){homeProfiles[a.username]=d;renderHomeCards()}
-            });
+            }).catch(()=>profileFetching.delete(a.username));
         }
     });
     renderHomeCards();
@@ -454,6 +576,7 @@ function createAcctPage(username){
         <span style="font-size:.75rem;color:var(--text3)" id="pt-${username}">--</span>
         <button class="btn-green btn-sm" id="startBtn-${username}" onclick="startOne('${username}')">Start</button>
         <button class="btn-red btn-sm" id="stopBtn-${username}" onclick="stopOne('${username}')" style="display:none">Stop</button>
+        <button class="btn-ghost btn-sm" onclick="toggleAcctLogs('${username}')" title="Toggle logs">&#128220; Logs</button>
         <button class="btn-ghost btn-sm" onclick="removeAcct('${username}')">Remove</button>
     </div>
     <div class="profile-card" id="pc-${username}">
@@ -596,8 +719,8 @@ function createAcctPage(username){
                 <div style="font-size:.65rem;color:var(--text3);margin-top:4px">Replying to: <span id="cr-${username}">--</span></div>
             </div>
         </div>
-        <div class="section">
-            <div class="section-head"><h3>Logs</h3><button class="btn-ghost btn-sm" onclick="$('log-${username}').innerHTML=''">Clear</button></div>
+        <div class="section log-hidden" id="logSection-${username}">
+            <div class="section-head"><h3>Logs</h3><button class="btn-ghost btn-sm" onclick="$('log-${username}').innerHTML=''">Clear</button><button class="btn-ghost btn-sm" onclick="toggleAcctLogs('${username}')" style="margin-left:auto">Hide</button></div>
             <div class="section-body"><div class="log-box" id="log-${username}"></div></div>
         </div>
         <div class="section full">
@@ -615,10 +738,10 @@ async function loadAcctPage(username){
     const ag=$("ag-"+username);if(ag)ag.value=o.playingGames?o.playingGames.join(", "):"";
     const as=$("as-"+username);if(as)as.value=o.onlinestatus!==undefined?String(o.onlinestatus):"";
     const aa=$("aa-"+username);if(aa)aa.value=o.afkMessage!==undefined?o.afkMessage:"";
-    // Load games
+    // Load games + goals
     const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/games");
     const el=$("gg-"+username);if(!el)return;
-    el._games=d.games||[];el._idling=d.idling||[];
+    el._games=d.games||[];el._idling=d.idling||[];el._goals=d.goals||{};
     renderAcctGames(username);
     renderIdlingGames(username);
     updateAcctStatus(username);
@@ -635,15 +758,21 @@ async function loadAcctPage(username){
 function renderAcctGames(username){
     const el=$("gg-"+username);if(!el||!el._games)return;
     const q=($("gs-"+username)?.value||"").toLowerCase();
-    const games=el._games,idling=el._idling||[];
+    const games=el._games,idling=el._idling||[],goals=el._goals||{};
     const f=q?games.filter(x=>x.name.toLowerCase().includes(q)):games;
     const gc=$("gc-"+username);if(gc)gc.textContent=idling.length+" idling / "+games.length+" owned";
     if(!f.length){el.innerHTML='<div class="empty">'+(games.length===0?"Start idling to load games.":"No matches.")+'</div>';return}
     const s=[...f].sort((a,b)=>{const ai=idling.includes(a.appid)?0:1,bi=idling.includes(b.appid)?0:1;return ai!==bi?ai-bi:a.name.localeCompare(b.name)});
-    el.innerHTML=s.map(x=>`<div class="game-tile ${idling.includes(x.appid)?"active":""}" onclick="toggleGame('${username}',${x.appid})" title="${esc(x.name)}">
-        <span class="gb badge badge-green">Idling</span>
+    el.innerHTML=s.map(x=>{
+        const goal=goals[String(x.appid)];
+        const currentH=(x.playtimeForever||0)/60;
+        const pct=goal?Math.min(100,Math.round(currentH/goal*100)):0;
+        const goalHtml=goal?`<div class="goal-badge">${Math.round(currentH)}/${goal}h</div><div class="goal-bar"><div class="goal-fill" style="width:${pct}%"></div></div>`:"";
+        return `<div class="game-tile ${idling.includes(x.appid)?"active":""}" onclick="toggleGame('${username}',${x.appid})" oncontextmenu="event.preventDefault();showGoalCtx(event,'${username}',${x.appid},'${esc(x.name)}',${x.playtimeForever||0})" title="${esc(x.name)}">
+        <span class="gb badge badge-green">Idling</span>${goalHtml}
         <img src="${x.img}" alt="" loading="lazy" onerror="this.style.display='none'">
-        <div class="gn">${esc(x.name)}</div></div>`).join("");
+        <div class="gn">${esc(x.name)}</div></div>`;
+    }).join("");
 }
 
 function renderIdlingGames(username){
@@ -651,14 +780,19 @@ function renderIdlingGames(username){
     const ig=$("ig-"+username);if(!ig)return;
     const idling=gg?gg._idling||[]:[];
     const games=gg?gg._games||[]:[];
+    const goals=gg?gg._goals||{}:{};
     const ic=$("ic-"+username);if(ic)ic.textContent=idling.length+" game"+(idling.length!==1?"s":"");
     if(!idling.length){ig.innerHTML='<div class="empty">Not idling any games.</div>';return}
     ig.innerHTML=idling.map(id=>{
         const g=games.find(x=>x.appid===id);
         const name=g?esc(g.name):"App "+id;
         const img=g?g.img:"https://cdn.akamai.steamstatic.com/steam/apps/"+id+"/header.jpg";
+        const goal=goals[String(id)];
+        const currentH=g?(g.playtimeForever||0)/60:0;
+        const pct=goal?Math.min(100,Math.round(currentH/goal*100)):0;
+        const goalHtml=goal?`<div class="goal-badge">${Math.round(currentH)}/${goal}h</div><div class="goal-bar"><div class="goal-fill" style="width:${pct}%"></div></div>`:"";
         return `<div class="game-tile active" ondblclick="toggleGame('${username}',${id})" title="Double-click to stop: ${name}">
-        <span class="gb badge badge-red">&#10005;</span>
+        <span class="gb badge badge-red">&#10005;</span>${goalHtml}
         <img src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">
         <div class="gn">${name}</div></div>`;
     }).join("");
@@ -669,6 +803,40 @@ async function toggleGame(username,appid){
     if(r.idling){const el=$("gg-"+username);if(el){el._idling=r.idling.filter(g=>typeof g==="number");renderAcctGames(username);renderIdlingGames(username)}await loadConfig()}
 }
 
+// --- Playtime Goals ---
+let goalCtxUser="",goalCtxAppid=0;
+function showGoalCtx(ev,username,appid,name,playtimeMin){
+    const ctx=$("goalCtx");
+    goalCtxUser=username;goalCtxAppid=appid;
+    $("goalCtxTitle").textContent="Goal: "+name;
+    const gg=$("gg-"+username);
+    const goals=gg?gg._goals||{}:{};
+    const existing=goals[String(appid)]||"";
+    $("goalCtxHours").value=existing;
+    const hrs=Math.round(playtimeMin/60*10)/10;
+    $("goalCtxInfo").textContent="Current playtime: "+hrs+"h"+(existing?" · Goal: "+existing+"h":"");
+    ctx.style.left=Math.min(ev.clientX,window.innerWidth-220)+"px";
+    ctx.style.top=Math.min(ev.clientY,window.innerHeight-120)+"px";
+    ctx.classList.add("show");
+}
+function hideGoalCtx(){$("goalCtx").classList.remove("show")}
+document.addEventListener("click",ev=>{if(!ev.target.closest(".goal-ctx"))hideGoalCtx()});
+
+async function saveGoal(){
+    const hours=parseFloat($("goalCtxHours").value)||0;
+    if(hours<=0)return alert("Enter a positive number of hours.");
+    await A("PUT","/api/accounts/"+encodeURIComponent(goalCtxUser)+"/goals",{appid:goalCtxAppid,hours});
+    const gg=$("gg-"+goalCtxUser);
+    if(gg){if(!gg._goals)gg._goals={};gg._goals[String(goalCtxAppid)]=hours;renderAcctGames(goalCtxUser);renderIdlingGames(goalCtxUser)}
+    hideGoalCtx();
+}
+async function removeGoal(){
+    await A("PUT","/api/accounts/"+encodeURIComponent(goalCtxUser)+"/goals",{appid:goalCtxAppid,hours:0});
+    const gg=$("gg-"+goalCtxUser);
+    if(gg&&gg._goals){delete gg._goals[String(goalCtxAppid)];renderAcctGames(goalCtxUser);renderIdlingGames(goalCtxUser)}
+    hideGoalCtx();
+}
+
 function updateAcctStatus(username){
     const b=bots.find(x=>x.username===username),st=b?b.state:"offline";
     const badge=$("st-"+username);
@@ -676,6 +844,16 @@ function updateAcctStatus(username){
     const pt=$("pt-"+username);if(pt)pt.textContent=b&&b.playtimeSeconds>0?"Session: "+fmtDur(b.playtimeSeconds):"--";
     const startB=$("startBtn-"+username),stopB=$("stopBtn-"+username);
     if(startB&&stopB){if(b){startB.style.display="none";stopB.style.display=""}else{startB.style.display="";stopB.style.display="none"}}
+}
+function toggleAcctLogs(username){
+    const el=$("logSection-"+username);if(!el)return;
+    el.classList.toggle("log-hidden");
+    if(!el.classList.contains("log-hidden")){
+        const box=$("log-"+username);
+        if(box&&box.children.length===0){
+            allLogs.filter(l=>(l.message||"").includes("["+username+"]")).forEach(l=>appendLogTo("log-"+username,l));
+        }
+    }
 }
 
 // --- Profile card ---
@@ -807,6 +985,7 @@ function renderFriends(username){
             <div class="friend-dot ${cls}"></div>
             ${f.avatar?'<img class="friend-avatar" src="'+f.avatar+'" onerror="this.style.display=\'none\'">':'<div class="friend-avatar"></div>'}
             <div class="friend-info"><div class="friend-name">${esc(f.name)}</div><div class="friend-status ${cls}">${statusText}</div></div>
+            <button class="btn-steam btn-sm" style="padding:3px 8px;font-size:.6rem;flex-shrink:0" onclick="event.stopPropagation();viewFriendProfile('${username}','${f.steamId}')" title="View profile">&#128100;</button>
         </div>`;
     }).join("");
 }
@@ -816,6 +995,16 @@ function selectChatTarget(username,steamId,name){
     const cr=$("cr-"+username);if(cr)cr.textContent=name+" ("+steamId+")";
     const ci=$("ci-"+username);if(ci)ci.focus();
     const ct=$("cmt-target-"+username);if(ct)ct.value=steamId;
+}
+async function viewFriendProfile(username,steamId){
+    const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/websession");
+    if(!d||!d.cookies){alert(d&&d.error?d.error:"Could not get web session. Try again in a moment.");return}
+    const url="https://steamcommunity.com/profiles/"+steamId;
+    if(window.electronAPI&&window.electronAPI.openSteamProfile){
+        window.electronAPI.openSteamProfile({cookies:d.cookies,url});
+    } else {
+        window.open(url,"_blank");
+    }
 }
 
 // --- Chat relay ---
@@ -969,7 +1158,6 @@ function showAddTab(tab){
 }
 
 // --- QR Login ---
-let qrPollTimer=null;
 async function startQrLogin(){
     $("qrContainer").innerHTML='<span style="color:var(--text3)">Generating...</span>';
     $("qrStatus").textContent="";
@@ -979,15 +1167,8 @@ async function startQrLogin(){
     const imgUrl="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+encodeURIComponent(r.qrUrl);
     $("qrContainer").innerHTML='<img src="'+imgUrl+'" alt="QR Code" style="border-radius:6px;background:#fff;padding:8px">';
     $("qrStatus").textContent="Waiting for you to scan...";
-    // Poll for completion via the polling endpoint -- qrlogin_done event
-    if(qrPollTimer)clearInterval(qrPollTimer);
-    qrPollTimer=setInterval(async()=>{
-        const d=await A("GET","/api/poll?since="+pollSince);
-        if(d&&d.logs){d.logs.forEach(pushLog);pollSince=d.total}
-    },2000);
 }
 function cancelQrLogin(){
-    if(qrPollTimer){clearInterval(qrPollTimer);qrPollTimer=null}
     A("POST","/api/qrlogin/cancel");
     $("qrContainer").innerHTML='<button class="btn-accent" onclick="startQrLogin()">Generate QR Code</button>';
     $("qrStatus").textContent="";
@@ -1042,6 +1223,125 @@ async function skipGuard(){await A("POST","/api/steamguard/"+encodeURIComponent(
 async function checkGuard(){const p=await A("GET","/api/steamguard");if(p&&p.length>0)showGuardModal(p[0])}
 
 // --- Playtime ---
+let allDeals=[],dealsLoaded=false,dealsPage=0,dealsHasMore=true,dealsLoading=false;
+async function loadDeals(force){
+    if(dealsLoaded&&!force)return;
+    if(force){allDeals=[];dealsPage=0;dealsHasMore=true;}
+    $("dealsList").innerHTML='<div class="empty">Loading deals...</div>';
+    $("dealSpotlight").innerHTML="";
+    $("dealLoadMore").style.display="none";
+    dealsLoading=true;
+    const r=await A("GET","/api/deals?page=0");
+    dealsLoading=false;
+    if(!r||!r.deals||r.error){$("dealsList").innerHTML='<div class="empty">No deals available right now.</div>';return}
+    allDeals=r.deals;
+    dealsPage=0;
+    dealsHasMore=r.hasMore;
+    dealsLoaded=true;
+    renderDeals();
+}
+async function loadMoreDeals(){
+    if(dealsLoading||!dealsHasMore)return;
+    dealsPage++;
+    const btn=$("btnLoadMore");
+    if(btn){btn.disabled=true;btn.textContent="Loading...";}
+    dealsLoading=true;
+    const r=await A("GET","/api/deals?page="+dealsPage);
+    dealsLoading=false;
+    if(btn){btn.disabled=false;btn.textContent="Load More Deals";}
+    if(!r||!r.deals)return;
+    const seen=new Set(allDeals.map(d=>d.appid));
+    for(const d of r.deals){if(!seen.has(d.appid)){allDeals.push(d);seen.add(d.appid)}}
+    dealsHasMore=r.hasMore;
+    renderDeals();
+}
+function dealRowHtml(d){
+    const capsule=`https://cdn.akamai.steamstatic.com/steam/apps/${d.appid}/capsule_231x87.jpg`;
+    const orig=d.originalPrice>0?(d.originalPrice/100).toFixed(2):"";
+    const fin=d.finalPrice>0?"$"+(d.finalPrice/100).toFixed(2):"Free";
+    return `<div class="deal-row" onclick="showDeal(${d.appid})">
+        <img class="deal-row-img" src="${capsule}" alt="${esc(d.name)}" loading="lazy">
+        <div class="deal-row-info"><div class="deal-row-name" title="${esc(d.name)}">${esc(d.name)}</div></div>
+        <div class="deal-row-prices">
+            <div class="deal-badge">-${d.discountPercent}%</div>
+            <div class="deal-price-col">
+                ${orig?'<div class="deal-original">$'+orig+'</div>':''}
+                <div class="${d.finalPrice>0?'deal-final':'deal-free'}">${fin}</div>
+            </div>
+        </div>
+    </div>`;
+}
+function renderDeals(){
+    if(!allDeals.length)return;
+    const q=($("dealSearch")||{}).value||"";
+    const sort=($("dealSort")||{}).value||"discount";
+    let filtered=allDeals;
+    if(q.trim())filtered=allDeals.filter(d=>d.name.toLowerCase().includes(q.toLowerCase()));
+    let sorted=[...filtered];
+    if(sort==="discount")sorted.sort((a,b)=>b.discountPercent-a.discountPercent);
+    else if(sort==="priceAsc")sorted.sort((a,b)=>a.finalPrice-b.finalPrice);
+    else if(sort==="priceDesc")sorted.sort((a,b)=>b.finalPrice-a.finalPrice);
+    else if(sort==="name")sorted.sort((a,b)=>a.name.localeCompare(b.name));
+    const top=sorted[0];
+    if(top&&!q.trim()){
+        const capsule=`https://cdn.akamai.steamstatic.com/steam/apps/${top.appid}/header.jpg`;
+        const orig=top.originalPrice>0?"$"+(top.originalPrice/100).toFixed(2):"";
+        const fin=top.finalPrice>0?"$"+(top.finalPrice/100).toFixed(2):"Free";
+        $("dealSpotlight").innerHTML=`<div class="deal-spotlight" onclick="showDeal(${top.appid})">
+            <img class="deal-spotlight-img" src="${capsule}" alt="${esc(top.name)}">
+            <div class="deal-spotlight-body">
+                <div class="deal-spotlight-name">${esc(top.name)}</div>
+                <div class="deal-spotlight-desc">Featured Deal</div>
+                <div class="deal-spotlight-prices">
+                    <div class="deal-badge">-${top.discountPercent}%</div>
+                    <div class="deal-price-col">
+                        ${orig?'<div class="deal-original">'+orig+'</div>':''}
+                        <div class="deal-final">${fin}</div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    } else {
+        $("dealSpotlight").innerHTML="";
+    }
+    const ct=$("dealCount");if(ct)ct.textContent=sorted.length+" deal"+(sorted.length!==1?"s":"");
+    if(!sorted.length){$("dealsList").innerHTML='<div class="empty">No matches found.</div>';$("dealLoadMore").style.display="none";return}
+    $("dealsList").innerHTML=sorted.map(dealRowHtml).join("");
+    $("dealLoadMore").style.display=dealsHasMore?"block":"none";
+}
+async function showDeal(appid){
+    const el=$("dealModalContent");
+    el.innerHTML='<div style="padding:40px"><div class="empty">Loading game details...</div></div>';
+    showModal("dealModal");
+    const d=await A("GET","/api/deals/"+appid);
+    if(!d||d.error){el.innerHTML='<div style="padding:40px"><div class="empty">Failed to load game details.</div></div>';return}
+    const priceHtml=d.price?`<div class="deal-modal-prices">
+        ${d.price.discount_percent?'<div class="deal-badge">-'+d.price.discount_percent+'%</div>':''}
+        ${d.price.initial_formatted?'<div class="deal-original">'+d.price.initial_formatted+'</div>':''}
+        <div class="deal-final">${d.price.final_formatted||'Free'}</div>
+    </div>`:'';
+    const screensHtml=d.screenshots&&d.screenshots.length?`<div class="deal-modal-screens">${d.screenshots.map(s=>'<img src="'+s+'" loading="lazy">').join("")}</div>`:'';
+    const tagsHtml=d.genres&&d.genres.length?`<div class="deal-modal-tags">${d.genres.map(g=>'<span class="deal-modal-tag">'+esc(g)+'</span>').join("")}</div>`:'';
+    el.innerHTML=`
+        <img class="deal-modal-img" src="${d.headerImage}" alt="${esc(d.name)}">
+        <div class="deal-modal-content">
+            <div class="deal-modal-title">${esc(d.name)}</div>
+            ${priceHtml}
+            <div class="deal-modal-desc">${d.description}</div>
+            ${tagsHtml}
+            <div class="deal-modal-meta">
+                ${d.developers&&d.developers.length?'<div>Developer: <span>'+esc(d.developers.join(", "))+'</span></div>':''}
+                ${d.publishers&&d.publishers.length?'<div>Publisher: <span>'+esc(d.publishers.join(", "))+'</span></div>':''}
+                ${d.releaseDate?'<div>Released: <span>'+esc(d.releaseDate)+'</span></div>':''}
+            </div>
+            ${screensHtml}
+            <div class="deal-modal-actions">
+                <button class="btn-steam" onclick="window.open('${d.storeUrl}','_blank')">View on Steam Store</button>
+                <button class="btn-ghost" onclick="hideModal('dealModal')">Close</button>
+            </div>
+        </div>`;
+}
+
 async function loadPlaytime(){
     const d=await A("GET","/api/playtime"),c=$("ptAll");
     if(!d||!d.length){c.innerHTML='<div class="empty">No data yet.</div>';return}
@@ -1052,7 +1352,7 @@ async function loadPlaytime(){
 
 function showModal(id){$(id).classList.add("show")}
 function hideModal(id){$(id).classList.remove("show")}
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){hideModal("addModal");hideModal("guardModal")}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){hideModal("addModal");hideModal("guardModal");hideModal("dealModal");hideGoalCtx()}});
 $("guardCode").addEventListener("keydown",e=>{if(e.key==="Enter")submitGuard()});
 
 // --- Auto-updater ---

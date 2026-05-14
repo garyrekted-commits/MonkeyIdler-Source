@@ -100,11 +100,13 @@ ipcMain.handle("window-close", () => { if (mainWindow) mainWindow.close(); });
 ipcMain.handle("check-for-update", () => { autoUpdater.checkForUpdates().catch(() => {}); });
 ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(false, true); });
 
-// Open an authenticated Steam profile browser window
+// Open an authenticated Steam profile browser window (reuse a single partition)
+let profileSession = null;
 ipcMain.handle("open-steam-profile", async (event, { cookies, url }) => {
-    const profileSession = session.fromPartition("steam-profile-" + Date.now());
+    if (!profileSession) profileSession = session.fromPartition("steam-profile");
+    await profileSession.clearStorageData();
     for (const cookieStr of cookies) {
-        const [nameVal, ...rest] = cookieStr.split(";");
+        const [nameVal] = cookieStr.split(";");
         const [name, ...valParts] = nameVal.split("=");
         const value = valParts.join("=");
         await profileSession.cookies.set({
