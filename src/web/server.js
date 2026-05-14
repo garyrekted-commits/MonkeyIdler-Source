@@ -574,6 +574,87 @@ app.get("/api/deals", async (req, res) => {
     }
 });
 
+// Popular Steam deals (from Steam featured API)
+let popularDealsCache = { data: null, expires: 0 };
+app.get("/api/deals/popular", async (req, res) => {
+    if (popularDealsCache.data && Date.now() < popularDealsCache.expires) {
+        return res.json(popularDealsCache.data);
+    }
+    try {
+        const body = await steamFetch("https://store.steampowered.com/api/featuredcategories?cc=us&l=english");
+        const deals = [];
+        const sections = ["specials", "top_sellers", "coming_soon", "new_releases"];
+        for (const key of sections) {
+            if (body[key] && body[key].items) {
+                for (const item of body[key].items) {
+                    if (!item.id || deals.some(d => d.appid === item.id)) continue;
+                    const disc = item.discount_percent || 0;
+                    if (disc <= 0 && key === "specials") continue;
+                    deals.push({
+                        name: item.name,
+                        appid: item.id,
+                        image: item.header_image || item.large_capsule_image || `https://cdn.akamai.steamstatic.com/steam/apps/${item.id}/header.jpg`,
+                        originalPrice: item.original_price || 0,
+                        finalPrice: item.final_price || 0,
+                        discountPercent: disc,
+                        section: key
+                    });
+                }
+            }
+        }
+        const result = { deals };
+        popularDealsCache = { data: result, expires: Date.now() + 30 * 60 * 1000 };
+        res.json(result);
+    } catch (e) {
+        console.error("Failed to fetch popular deals:", e.message);
+        res.status(500).json({ error: "Failed to fetch popular deals" });
+    }
+});
+
+// Steam storefront default list (top sellers, new releases, etc.)
+let storeFrontCache = { data: null, expires: 0 };
+app.get("/api/deals/storefront", async (req, res) => {
+    if (storeFrontCache.data && Date.now() < storeFrontCache.expires) {
+        return res.json(storeFrontCache.data);
+    }
+    try {
+        const body = await steamFetch("https://store.steampowered.com/api/featured?cc=us&l=english");
+        const deals = [];
+        if (body.featured_win) {
+            for (const item of body.featured_win) {
+                if (!item.id || deals.some(d => d.appid === item.id)) continue;
+                deals.push({
+                    name: item.name,
+                    appid: item.id,
+                    image: item.header_image || item.large_capsule_image || `https://cdn.akamai.steamstatic.com/steam/apps/${item.id}/header.jpg`,
+                    originalPrice: item.original_price || item.final_price || 0,
+                    finalPrice: item.final_price || 0,
+                    discountPercent: item.discount_percent || 0
+                });
+            }
+        }
+        if (body.featured_mac) {
+            for (const item of body.featured_mac) {
+                if (!item.id || deals.some(d => d.appid === item.id)) continue;
+                deals.push({
+                    name: item.name,
+                    appid: item.id,
+                    image: item.header_image || item.large_capsule_image || `https://cdn.akamai.steamstatic.com/steam/apps/${item.id}/header.jpg`,
+                    originalPrice: item.original_price || item.final_price || 0,
+                    finalPrice: item.final_price || 0,
+                    discountPercent: item.discount_percent || 0
+                });
+            }
+        }
+        const result = { deals };
+        storeFrontCache = { data: result, expires: Date.now() + 30 * 60 * 1000 };
+        res.json(result);
+    } catch (e) {
+        console.error("Failed to fetch storefront:", e.message);
+        res.status(500).json({ error: "Failed to fetch storefront" });
+    }
+});
+
 // Steam game details (cached 30 min)
 const appDetailsCache = {};
 app.get("/api/deals/:appid", async (req, res) => {
@@ -1255,32 +1336,368 @@ app.get("/api/accounts/:username/group/comment/progress", (req, res) => {
     res.json(prog);
 });
 
-// --- Art Maker proxy ---
-app.get("/api/artwork/proxy", async (req, res) => {
+// --- Art Maker proxy (streaming) ---
+app.get("/api/artwork/proxy", (req, res) => {
     const url = req.query.url;
     if (!url) return res.status(400).json({ error: "url required" });
-    try {
-        const https = require("https");
-        const http = require("http");
-        const mod = url.startsWith("https") ? https : http;
-        const fetchUrl = (u, redirects = 0) => new Promise((resolve, reject) => {
-            if (redirects > 5) return reject(new Error("Too many redirects"));
-            mod.get(u, { headers: { "User-Agent": "Mozilla/5.0" } }, (resp) => {
-                if (resp.statusCode >= 300 && resp.statusCode < 400 && resp.headers.location) {
-                    return fetchUrl(resp.headers.location, redirects + 1).then(resolve).catch(reject);
-                }
-                const chunks = [];
-                resp.on("data", c => chunks.push(c));
-                resp.on("end", () => resolve({ buffer: Buffer.concat(chunks), type: resp.headers["content-type"] || "image/png" }));
-                resp.on("error", reject);
-            }).on("error", reject);
+    const https = require("https");
+    const http = require("http");
+    const followRedirects = (u, redirects) => {
+        if (redirects > 5) { res.status(500).json({ error: "Too many redirects" }); return; }
+        const mod = u.startsWith("https") ? https : http;
+        mod.get(u, { headers: { "User-Agent": "Mozilla/5.0" } }, (resp) => {
+            if (resp.statusCode >= 300 && resp.statusCode < 400 && resp.headers.location) {
+                return followRedirects(resp.headers.location, redirects + 1);
+            }
+            const ct = resp.headers["content-type"] || "application/octet-stream";
+            res.set("Content-Type", ct);
+            res.set("Cache-Control", "public, max-age=86400");
+            if (resp.headers["content-length"]) res.set("Content-Length", resp.headers["content-length"]);
+            if (resp.headers["accept-ranges"]) res.set("Accept-Ranges", resp.headers["accept-ranges"]);
+            resp.pipe(res);
+        }).on("error", (e) => {
+            if (!res.headersSent) res.status(500).json({ error: e.message });
         });
-        const { buffer, type } = await fetchUrl(url);
-        res.set("Content-Type", type);
-        res.set("Cache-Control", "public, max-age=86400");
-        res.send(buffer);
+    };
+    followRedirects(url, 0);
+});
+
+// --- Fetch profile backgrounds from inventory ---
+app.get("/api/accounts/:username/backgrounds", async (req, res) => {
+    const controller = require("../controller.js");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    if (!bot || !bot.client.steamID) return res.json({ backgrounds: [], error: "Bot not online" });
+    const sid64 = bot.client.steamID.getSteamID64();
+    const https = require("https");
+    if (!bot.webCookies) {
+        try { bot.client.webLogOn(); } catch (e) {}
+        return res.json({ backgrounds: [], error: "Web session not ready. Please wait a moment and try again." });
+    }
+    const cookieStr = bot.webCookies.join("; ");
+
+    function httpsGet(hostname, path, cookies) {
+        return new Promise((resolve, reject) => {
+            const headers = { "User-Agent": "Mozilla/5.0" };
+            if (cookies) headers.Cookie = cookies;
+            https.get({ hostname, path, headers }, (r) => {
+                let d = ""; r.on("data", c => d += c);
+                r.on("end", () => resolve(d));
+            }).on("error", () => resolve(""));
+        });
+    }
+
+    try {
+        const backgrounds = [];
+        const animatedAppIds = new Set();
+        const movieMap = {};
+
+        const communityItemMap = {};
+
+        // Extract access token from steamLoginSecure cookie to call IPlayerService
+        const loginCookie = bot.webCookies.find(c => c.startsWith("steamLoginSecure="));
+        if (loginCookie) {
+            const tokenParts = loginCookie.split("=")[1].split("%7C%7C");
+            if (tokenParts.length > 1) {
+                const accessToken = decodeURIComponent(tokenParts[1]);
+                try {
+                    const profileItemsJson = await httpsGet("api.steampowered.com",
+                        `/IPlayerService/GetProfileItemsOwned/v1?access_token=${encodeURIComponent(accessToken)}`);
+                    const profileItems = JSON.parse(profileItemsJson);
+                    const piBgs = profileItems.response?.profile_backgrounds || [];
+                    const piMiniBgs = profileItems.response?.mini_profile_backgrounds || [];
+                    for (const bg of [...piBgs, ...piMiniBgs]) {
+                        const bgName = (bg.name || bg.item_title || "").toLowerCase();
+                        if (bg.communityitemid) {
+                            communityItemMap[String(bg.communityitemid)] = bg;
+                            if (bgName) communityItemMap["name:" + bgName] = bg;
+                            if (bgName && bg.appid) communityItemMap["name:" + bgName + ":" + bg.appid] = bg;
+                        }
+                        if (bg.movie_webm) {
+                            const cdnUrl = "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/" + bg.movie_webm;
+                            if (bg.communityitemid) movieMap[String(bg.communityitemid)] = cdnUrl;
+                            if (bgName) movieMap["name:" + bgName] = cdnUrl;
+                            if (bg.appid) animatedAppIds.add(String(bg.appid));
+                        }
+                    }
+                } catch (e) {}
+            }
+        }
+
+        const bgPage = await new Promise((resolve, reject) => {
+            https.get({
+                hostname: "steamcommunity.com",
+                path: `/profiles/${sid64}/inventory/json/753/6?l=english&count=5000`,
+                headers: { "User-Agent": "Mozilla/5.0", "Cookie": cookieStr }
+            }, (r) => { let d = ""; r.on("data", c => d += c); r.on("end", () => resolve(d)); }).on("error", reject);
+        });
+
+        try {
+            const inv = JSON.parse(bgPage);
+            // Build a map of classid -> assetid from rgInventory
+            const assetIdMap = {};
+            if (inv.rgInventory) {
+                for (const asset of Object.values(inv.rgInventory)) {
+                    if (asset.classid) assetIdMap[asset.classid] = asset.id;
+                }
+            }
+            if (inv.success && inv.rgDescriptions) {
+                for (const key of Object.keys(inv.rgDescriptions)) {
+                    const item = inv.rgDescriptions[key];
+                    const t = (item.type || "").toLowerCase();
+                    if (t.includes("animated") && item.market_fee_app) {
+                        animatedAppIds.add(String(item.market_fee_app));
+                    }
+                }
+                for (const key of Object.keys(inv.rgDescriptions)) {
+                    const item = inv.rgDescriptions[key];
+                    const typeLower = (item.type || "").toLowerCase();
+                    if (typeLower.includes("background")) {
+                        let imgUrl = "";
+                        let movieUrl = "";
+                        if (item.actions) {
+                            for (const a of item.actions) {
+                                if (a.link && a.link.includes("image")) imgUrl = a.link;
+                            }
+                        }
+                        if (!imgUrl && item.icon_url) imgUrl = "https://community.fastly.steamstatic.com/economy/image/" + item.icon_url;
+                        if (!imgUrl && item.icon_url_large) imgUrl = "https://community.fastly.steamstatic.com/economy/image/" + item.icon_url_large;
+                        const fullImg = item.icon_url_large ? "https://community.fastly.steamstatic.com/economy/image/" + item.icon_url_large : imgUrl;
+
+                        // Extract movie/video URL for animated backgrounds
+                        if (item.descriptions) {
+                            for (const d of item.descriptions) {
+                                const val = d.value || "";
+                                const webmMatch = val.match(/(https?:\/\/[^\s"'<>]+\.webm)/i);
+                                const mp4Match = val.match(/(https?:\/\/[^\s"'<>]+\.mp4)/i);
+                                if (webmMatch) movieUrl = webmMatch[1];
+                                else if (mp4Match) movieUrl = mp4Match[1];
+                            }
+                        }
+                        if (!movieUrl && item.owner_descriptions) {
+                            for (const d of item.owner_descriptions) {
+                                const val = d.value || "";
+                                const webmMatch = val.match(/(https?:\/\/[^\s"'<>]+\.webm)/i);
+                                const mp4Match = val.match(/(https?:\/\/[^\s"'<>]+\.mp4)/i);
+                                if (webmMatch) movieUrl = webmMatch[1];
+                                else if (mp4Match) movieUrl = mp4Match[1];
+                            }
+                        }
+                        let isAnimated = typeLower.includes("animated");
+                        if (!isAnimated && item.descriptions) {
+                            isAnimated = item.descriptions.some(d => (d.value || "").toLowerCase().includes("animated"));
+                        }
+                        if (!isAnimated && item.owner_descriptions) {
+                            isAnimated = item.owner_descriptions.some(d => (d.value || "").toLowerCase().includes("animated"));
+                        }
+                        if (!isAnimated && item.tags) {
+                            isAnimated = item.tags.some(t => {
+                                const tn = (t.localized_tag_name || "").toLowerCase();
+                                const itn = (t.internal_name || "").toLowerCase();
+                                return tn.includes("animated") || itn.includes("animated") || tn === "animated" || itn === "animated";
+                            });
+                        }
+                        if (!isAnimated && item.market_name && item.market_name.toLowerCase().includes("animated")) {
+                            isAnimated = true;
+                        }
+                        if (!isAnimated && item.name && item.name.toLowerCase().includes("animated")) {
+                            isAnimated = true;
+                        }
+                        // Check movieMap from IPlayerService (match by communityitemid or name)
+                        if (!movieUrl) {
+                            if (item.classid && movieMap[item.classid]) {
+                                movieUrl = movieMap[item.classid];
+                            }
+                            if (!movieUrl) {
+                                const itemNameLC = (item.market_name || item.name || "").toLowerCase()
+                                    .replace(/\s*\(profile background\)\s*/i, "").replace(/\s*- background\s*/i, "").trim();
+                                if (itemNameLC && movieMap["name:" + itemNameLC]) {
+                                    movieUrl = movieMap["name:" + itemNameLC];
+                                }
+                            }
+                        }
+                        if (!isAnimated && movieUrl) {
+                            isAnimated = true;
+                        }
+                        // Cross-reference: if this app has known animated items, flag event/sale backgrounds
+                        if (!isAnimated && item.market_fee_app && animatedAppIds.has(String(item.market_fee_app))) {
+                            const itemName = (item.market_name || item.name || "").toLowerCase();
+                            const eventKeywords = ["sale","fest","steam 3000","retrowave","deck","scream","winter","spring","summer","autumn","halloween","holiday","peak"];
+                            const isEvent = eventKeywords.some(k => itemName.includes(k) || typeLower.includes(k));
+                            if (isEvent) isAnimated = true;
+                        }
+                        // Look up communityitemid: first try IPlayerService, then fall back to inventory assetid
+                        let ciid = "";
+                        const lookupName = (item.market_name || item.name || "").toLowerCase()
+                            .replace(/\s*\(profile background\)\s*/i, "").replace(/\s*\(mini profile background\)\s*/i, "")
+                            .replace(/\s*- background\s*/i, "").replace(/\s*- mini profile\s*/i, "").trim();
+                        if (lookupName && item.market_fee_app && communityItemMap["name:" + lookupName + ":" + item.market_fee_app]) {
+                            ciid = String(communityItemMap["name:" + lookupName + ":" + item.market_fee_app].communityitemid);
+                        } else if (lookupName && communityItemMap["name:" + lookupName]) {
+                            ciid = String(communityItemMap["name:" + lookupName].communityitemid);
+                        }
+                        if (!ciid && item.classid && assetIdMap[item.classid]) {
+                            ciid = assetIdMap[item.classid];
+                        }
+
+                        backgrounds.push({
+                            name: item.market_name || item.name || "Background",
+                            appName: item.tags ? (item.tags.find(t => t.category === "Game") || {}).localized_tag_name || "" : "",
+                            icon: imgUrl,
+                            full: fullImg,
+                            movie: movieUrl || "",
+                            classid: item.classid || "",
+                            appid: item.market_fee_app || "",
+                            communityitemid: ciid,
+                            type: item.type || "",
+                            animated: isAnimated
+                        });
+                    }
+                }
+            }
+        } catch (e) {}
+
+        res.json({ backgrounds });
+    } catch (e) {
+        res.json({ backgrounds: [], error: e.message });
+    }
+});
+
+// --- Apply profile background to Steam via IPlayerService API ---
+app.post("/api/accounts/:username/profile/background", async (req, res) => {
+    const controller = require("../controller.js");
+    const https = require("https");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    if (!bot || !bot.client.steamID) return res.status(400).json({ error: "Bot not online" });
+    if (!bot.webCookies) { bot.client.webLogOn(); return res.status(202).json({ error: "Requesting web session, try again" }); }
+    const { communityitemid } = req.body;
+    if (!communityitemid) return res.status(400).json({ error: "No communityitemid provided" });
+    try {
+        const loginCookie = bot.webCookies.find(c => c.startsWith("steamLoginSecure="));
+        if (!loginCookie) return res.status(400).json({ error: "No steamLoginSecure cookie" });
+        const tokenParts = loginCookie.split("=")[1].split("%7C%7C");
+        if (tokenParts.length < 2) return res.status(400).json({ error: "Could not extract access token" });
+        const accessToken = decodeURIComponent(tokenParts[1]);
+
+        const body = `access_token=${encodeURIComponent(accessToken)}&communityitemid=${communityitemid}`;
+
+        const result = await new Promise((resolve, reject) => {
+            const postReq = https.request({
+                hostname: "api.steampowered.com",
+                path: "/IPlayerService/SetProfileBackground/v1/",
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Content-Length": Buffer.byteLength(body)
+                }
+            }, (resp) => {
+                let d = ""; resp.on("data", c => d += c);
+                resp.on("end", () => resolve({ status: resp.statusCode, data: d }));
+            });
+            postReq.on("error", reject);
+            postReq.write(body);
+            postReq.end();
+        });
+
+        console.log("[BG] SetProfileBackground response:", result.status, result.data.substring(0, 300));
+
+        if (result.status === 200) {
+            try {
+                const parsed = JSON.parse(result.data);
+                if (parsed.response !== undefined) return res.json({ ok: true });
+                return res.json({ ok: false, error: "Unexpected response" });
+            } catch(e) {
+                if (result.data.trim() === "" || result.data.includes("{}")) return res.json({ ok: true });
+                return res.json({ ok: false, error: "Parse error: " + result.data.substring(0, 100) });
+            }
+        } else {
+            return res.json({ ok: false, error: "Steam API returned HTTP " + result.status + ": " + result.data.substring(0, 200) });
+        }
     } catch (e) {
         res.status(500).json({ error: e.message });
+    }
+});
+
+// --- Apply artwork showcase to Steam profile ---
+app.post("/api/accounts/:username/profile/showcase", async (req, res) => {
+    const controller = require("../controller.js");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    if (!bot || !bot.client.steamID) return res.status(400).json({ error: "Bot not online" });
+    if (!bot.webCookies) { bot.client.webLogOn(); return res.status(202).json({ error: "Requesting web session, try again" }); }
+    const https = require("https");
+    const sid64 = bot.client.steamID.getSteamID64();
+    const cookieStr = bot.webCookies.join("; ");
+    const sessionId = bot.webCookies.find(c => c.startsWith("sessionid="))?.split("=")[1];
+
+    try {
+        // First fetch current profile showcases to find/update the artwork showcase slot
+        const editPage = await new Promise((resolve, reject) => {
+            https.get({
+                hostname: "steamcommunity.com",
+                path: `/profiles/${sid64}/edit/showcases`,
+                headers: { "User-Agent": "Mozilla/5.0", "Cookie": cookieStr }
+            }, (r) => {
+                let d = ""; r.on("data", c => d += c);
+                r.on("end", () => resolve(d));
+            }).on("error", reject);
+        });
+
+        // Find the current showcase config
+        const configMatch = editPage.match(/g_rgShowcaseConfig\s*=\s*(\[[\s\S]*?\]);/);
+        let showcaseSlot = 0;
+        if (configMatch) {
+            try {
+                const config = JSON.parse(configMatch[1]);
+                const artIdx = config.findIndex(s => s.nAppId === 6 || s.nShowcaseType === 6);
+                if (artIdx >= 0) showcaseSlot = artIdx;
+            } catch (e) {}
+        }
+
+        // Enable the artwork showcase (type 6 = featured artwork)
+        const webSessionId = bot.webSessionId || sessionId;
+        const formEntries = {
+            sessionid: webSessionId,
+            json: "1",
+            customization_type: "6",
+            slot: String(showcaseSlot),
+        };
+        const body = Object.entries(formEntries).map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v)).join("&");
+
+        const result = await new Promise((resolve, reject) => {
+            const postReq = https.request({
+                hostname: "steamcommunity.com",
+                path: `/profiles/${sid64}/ajaxsetshowcase/`,
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Content-Length": Buffer.byteLength(body),
+                    "Cookie": cookieStr,
+                    "Origin": "https://steamcommunity.com",
+                    "Referer": `https://steamcommunity.com/profiles/${sid64}/edit/showcases`,
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+            }, (resp) => {
+                let d = ""; resp.on("data", c => d += c);
+                resp.on("end", () => resolve({ status: resp.statusCode, headers: resp.headers, data: d }));
+            });
+            postReq.on("error", reject);
+            postReq.write(body);
+            postReq.end();
+        });
+
+        console.log("[SHOWCASE] Response:", result.status, result.data.substring(0, 300));
+        if (result.status === 200) {
+            try {
+                const parsed = JSON.parse(result.data);
+                if (parsed.success === 1 || parsed.success === true) return res.json({ ok: true });
+                return res.json({ ok: true, note: "Showcase may need manual setup" });
+            } catch(e) {
+                return res.json({ ok: true });
+            }
+        }
+        // 302 = session redirect; return partial success so upload flow continues
+        res.json({ ok: true, note: "Showcase auto-enable not supported. Enable 'Artwork Showcase' from your Steam profile edit page." });
+    } catch (e) {
+        res.json({ ok: true, note: "Showcase: " + e.message + ". Enable manually from Steam profile." });
     }
 });
 
@@ -1297,12 +1714,18 @@ app.post("/api/accounts/:username/artwork/upload", express.raw({ type: "image/*"
         const imgBuf = req.body;
         const ext = (req.headers["content-type"] || "").includes("png") ? "png" : "jpg";
 
+        const isAnimated = req.query.animated === "true";
+        const sessionId = bot.webSessionId || bot.webCookies.find(c => c.startsWith("sessionid="))?.split("=")[1] || "";
         let body = "";
-        body += `--${boundary}\r\nContent-Disposition: form-data; name="sessionid"\r\n\r\n${bot.webSessionId}\r\n`;
+        body += `--${boundary}\r\nContent-Disposition: form-data; name="sessionid"\r\n\r\n${sessionId}\r\n`;
         body += `--${boundary}\r\nContent-Disposition: form-data; name="l"\r\n\r\nenglish\r\n`;
         body += `--${boundary}\r\nContent-Disposition: form-data; name="title"\r\n\r\n${title}\r\n`;
         body += `--${boundary}\r\nContent-Disposition: form-data; name="file_type"\r\n\r\n0\r\n`;
         body += `--${boundary}\r\nContent-Disposition: form-data; name="visibility"\r\n\r\n0\r\n`;
+        if (isAnimated) {
+            body += `--${boundary}\r\nContent-Disposition: form-data; name="image_width"\r\n\r\n1000\r\n`;
+            body += `--${boundary}\r\nContent-Disposition: form-data; name="image_height"\r\n\r\n1\r\n`;
+        }
         const bodyStart = Buffer.from(body);
         const fileHeader = Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="artwork.${ext}"\r\nContent-Type: image/${ext}\r\n\r\n`);
         const bodyEnd = Buffer.from(`\r\n--${boundary}--\r\n`);
@@ -1332,13 +1755,45 @@ app.post("/api/accounts/:username/artwork/upload", express.raw({ type: "image/*"
             r.write(fullBody);
             r.end();
         });
+        console.log("[ARTWORK] Upload response:", result.status, result.data.substring(0, 200));
         if (result.status === 200 || result.status === 302) {
             res.json({ ok: true });
         } else {
-            res.status(400).json({ error: "Upload failed (HTTP " + result.status + ")" });
+            res.status(400).json({ error: "Upload failed (HTTP " + result.status + "): " + result.data.substring(0, 200) });
         }
     } catch (e) {
         res.status(500).json({ error: e.message });
+    }
+});
+
+// --- GIF search via Tenor v1 ---
+app.get("/api/gif/search", async (req, res) => {
+    const https = require("https");
+    const q = req.query.q || "";
+    if (!q) return res.json({ results: [] });
+    const key = "LIVDSRZULELA";
+    const url = `/v1/search?q=${encodeURIComponent(q)}&key=${key}&limit=30&media_filter=minimal`;
+    try {
+        const data = await new Promise((resolve, reject) => {
+            https.get({ hostname: "g.tenor.com", path: url }, (resp) => {
+                let d = ""; resp.on("data", c => d += c);
+                resp.on("end", () => resolve(d));
+            }).on("error", reject);
+        });
+        const parsed = JSON.parse(data);
+        const results = (parsed.results || []).map(r => {
+            const media = r.media?.[0] || {};
+            return {
+                id: r.id,
+                title: r.content_description || r.title || "",
+                preview: media.tinygif?.url || media.nanogif?.url || "",
+                full: media.gif?.url || media.mediumgif?.url || "",
+                dims: media.gif?.dims || [0, 0]
+            };
+        });
+        res.json({ results });
+    } catch (e) {
+        res.json({ results: [], error: e.message });
     }
 });
 

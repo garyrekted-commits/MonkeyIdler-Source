@@ -92,8 +92,10 @@ Bot.prototype.login = async function() {
 Bot.prototype.attachEventListeners = function() {
 
     this.webCookies = null;
+    this.webSessionId = null;
     this.client.on("webSession", (sessionID, cookies) => {
         this.webCookies = cookies;
+        this.webSessionId = sessionID;
     });
 
     this.client.on("loggedOn", () => { // This account is now logged on
