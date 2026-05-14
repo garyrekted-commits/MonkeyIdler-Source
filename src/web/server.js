@@ -1388,41 +1388,46 @@ app.get("/api/accounts/:username/backgrounds", async (req, res) => {
 
     try {
         const backgrounds = [];
-        const animatedAppIds = new Set();
-        const movieMap = {};
+        const CDN = "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/";
+        const addedCiids = new Set();
 
-        const communityItemMap = {};
-
-        // Extract access token from steamLoginSecure cookie to call IPlayerService
+        // 1. Build primary list from IPlayerService (guaranteed full-res CDN URLs)
         const loginCookie = bot.webCookies.find(c => c.startsWith("steamLoginSecure="));
+        let accessToken = "";
         if (loginCookie) {
             const tokenParts = loginCookie.split("=")[1].split("%7C%7C");
-            if (tokenParts.length > 1) {
-                const accessToken = decodeURIComponent(tokenParts[1]);
-                try {
-                    const profileItemsJson = await httpsGet("api.steampowered.com",
-                        `/IPlayerService/GetProfileItemsOwned/v1?access_token=${encodeURIComponent(accessToken)}`);
-                    const profileItems = JSON.parse(profileItemsJson);
-                    const piBgs = profileItems.response?.profile_backgrounds || [];
-                    const piMiniBgs = profileItems.response?.mini_profile_backgrounds || [];
-                    for (const bg of [...piBgs, ...piMiniBgs]) {
-                        const bgName = (bg.name || bg.item_title || "").toLowerCase();
-                        if (bg.communityitemid) {
-                            communityItemMap[String(bg.communityitemid)] = bg;
-                            if (bgName) communityItemMap["name:" + bgName] = bg;
-                            if (bgName && bg.appid) communityItemMap["name:" + bgName + ":" + bg.appid] = bg;
-                        }
-                        if (bg.movie_webm) {
-                            const cdnUrl = "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/" + bg.movie_webm;
-                            if (bg.communityitemid) movieMap[String(bg.communityitemid)] = cdnUrl;
-                            if (bgName) movieMap["name:" + bgName] = cdnUrl;
-                            if (bg.appid) animatedAppIds.add(String(bg.appid));
-                        }
-                    }
-                } catch (e) {}
-            }
+            if (tokenParts.length > 1) accessToken = decodeURIComponent(tokenParts[1]);
         }
 
+        const piBgs = [];
+        if (accessToken) {
+            try {
+                const profileItemsJson = await httpsGet("api.steampowered.com",
+                    `/IPlayerService/GetProfileItemsOwned/v1?access_token=${encodeURIComponent(accessToken)}`);
+                const profileItems = JSON.parse(profileItemsJson);
+                piBgs.push(...(profileItems.response?.profile_backgrounds || []));
+            } catch (e) {}
+        }
+
+        for (const bg of piBgs) {
+            if (!bg.image_large) continue;
+            const isAnimated = !!bg.movie_webm;
+            backgrounds.push({
+                name: bg.item_title || bg.name || "Background",
+                appName: "",
+                icon: bg.image_small ? CDN + bg.image_small : CDN + bg.image_large,
+                full: CDN + bg.image_large,
+                movie: bg.movie_webm ? CDN + bg.movie_webm : "",
+                classid: "",
+                appid: String(bg.appid || ""),
+                communityitemid: String(bg.communityitemid || ""),
+                type: isAnimated ? "Animated Profile Background" : "Profile Background",
+                animated: isAnimated
+            });
+            if (bg.communityitemid) addedCiids.add(String(bg.communityitemid));
+        }
+
+        // 2. Fetch inventory for game names and any backgrounds missing from IPlayerService
         const bgPage = await new Promise((resolve, reject) => {
             https.get({
                 hostname: "steamcommunity.com",
@@ -1433,7 +1438,6 @@ app.get("/api/accounts/:username/backgrounds", async (req, res) => {
 
         try {
             const inv = JSON.parse(bgPage);
-            // Build a map of classid -> assetid from rgInventory
             const assetIdMap = {};
             if (inv.rgInventory) {
                 for (const asset of Object.values(inv.rgInventory)) {
@@ -1441,117 +1445,80 @@ app.get("/api/accounts/:username/backgrounds", async (req, res) => {
                 }
             }
             if (inv.success && inv.rgDescriptions) {
+                // Build appid->gameName map from inventory tags
+                const appNameMap = {};
                 for (const key of Object.keys(inv.rgDescriptions)) {
                     const item = inv.rgDescriptions[key];
-                    const t = (item.type || "").toLowerCase();
-                    if (t.includes("animated") && item.market_fee_app) {
-                        animatedAppIds.add(String(item.market_fee_app));
+                    if (item.tags && item.market_fee_app) {
+                        const gameTag = item.tags.find(t => t.category === "Game");
+                        if (gameTag) appNameMap[String(item.market_fee_app)] = gameTag.localized_tag_name || "";
                     }
                 }
+
+                // Enrich IPlayerService backgrounds with game names
+                for (const bg of backgrounds) {
+                    if (!bg.appName && bg.appid && appNameMap[bg.appid]) {
+                        bg.appName = appNameMap[bg.appid];
+                    }
+                }
+
+                // Add any inventory backgrounds not already covered by IPlayerService
                 for (const key of Object.keys(inv.rgDescriptions)) {
                     const item = inv.rgDescriptions[key];
                     const typeLower = (item.type || "").toLowerCase();
-                    if (typeLower.includes("background")) {
-                        let imgUrl = "";
-                        let movieUrl = "";
-                        if (item.actions) {
-                            for (const a of item.actions) {
-                                if (a.link && a.link.includes("image")) imgUrl = a.link;
-                            }
-                        }
-                        if (!imgUrl && item.icon_url) imgUrl = "https://community.fastly.steamstatic.com/economy/image/" + item.icon_url;
-                        if (!imgUrl && item.icon_url_large) imgUrl = "https://community.fastly.steamstatic.com/economy/image/" + item.icon_url_large;
-                        const fullImg = item.icon_url_large ? "https://community.fastly.steamstatic.com/economy/image/" + item.icon_url_large : imgUrl;
+                    if (!typeLower.includes("background")) continue;
+                    if (typeLower.includes("mini profile")) continue;
 
-                        // Extract movie/video URL for animated backgrounds
-                        if (item.descriptions) {
-                            for (const d of item.descriptions) {
-                                const val = d.value || "";
-                                const webmMatch = val.match(/(https?:\/\/[^\s"'<>]+\.webm)/i);
-                                const mp4Match = val.match(/(https?:\/\/[^\s"'<>]+\.mp4)/i);
-                                if (webmMatch) movieUrl = webmMatch[1];
-                                else if (mp4Match) movieUrl = mp4Match[1];
-                            }
-                        }
-                        if (!movieUrl && item.owner_descriptions) {
-                            for (const d of item.owner_descriptions) {
-                                const val = d.value || "";
-                                const webmMatch = val.match(/(https?:\/\/[^\s"'<>]+\.webm)/i);
-                                const mp4Match = val.match(/(https?:\/\/[^\s"'<>]+\.mp4)/i);
-                                if (webmMatch) movieUrl = webmMatch[1];
-                                else if (mp4Match) movieUrl = mp4Match[1];
-                            }
-                        }
-                        let isAnimated = typeLower.includes("animated");
-                        if (!isAnimated && item.descriptions) {
-                            isAnimated = item.descriptions.some(d => (d.value || "").toLowerCase().includes("animated"));
-                        }
-                        if (!isAnimated && item.owner_descriptions) {
-                            isAnimated = item.owner_descriptions.some(d => (d.value || "").toLowerCase().includes("animated"));
-                        }
-                        if (!isAnimated && item.tags) {
-                            isAnimated = item.tags.some(t => {
-                                const tn = (t.localized_tag_name || "").toLowerCase();
-                                const itn = (t.internal_name || "").toLowerCase();
-                                return tn.includes("animated") || itn.includes("animated") || tn === "animated" || itn === "animated";
-                            });
-                        }
-                        if (!isAnimated && item.market_name && item.market_name.toLowerCase().includes("animated")) {
-                            isAnimated = true;
-                        }
-                        if (!isAnimated && item.name && item.name.toLowerCase().includes("animated")) {
-                            isAnimated = true;
-                        }
-                        // Check movieMap from IPlayerService (match by communityitemid or name)
-                        if (!movieUrl) {
-                            if (item.classid && movieMap[item.classid]) {
-                                movieUrl = movieMap[item.classid];
-                            }
-                            if (!movieUrl) {
-                                const itemNameLC = (item.market_name || item.name || "").toLowerCase()
-                                    .replace(/\s*\(profile background\)\s*/i, "").replace(/\s*- background\s*/i, "").trim();
-                                if (itemNameLC && movieMap["name:" + itemNameLC]) {
-                                    movieUrl = movieMap["name:" + itemNameLC];
-                                }
-                            }
-                        }
-                        if (!isAnimated && movieUrl) {
-                            isAnimated = true;
-                        }
-                        // Cross-reference: if this app has known animated items, flag event/sale backgrounds
-                        if (!isAnimated && item.market_fee_app && animatedAppIds.has(String(item.market_fee_app))) {
-                            const itemName = (item.market_name || item.name || "").toLowerCase();
-                            const eventKeywords = ["sale","fest","steam 3000","retrowave","deck","scream","winter","spring","summer","autumn","halloween","holiday","peak"];
-                            const isEvent = eventKeywords.some(k => itemName.includes(k) || typeLower.includes(k));
-                            if (isEvent) isAnimated = true;
-                        }
-                        // Look up communityitemid: first try IPlayerService, then fall back to inventory assetid
-                        let ciid = "";
-                        const lookupName = (item.market_name || item.name || "").toLowerCase()
-                            .replace(/\s*\(profile background\)\s*/i, "").replace(/\s*\(mini profile background\)\s*/i, "")
-                            .replace(/\s*- background\s*/i, "").replace(/\s*- mini profile\s*/i, "").trim();
-                        if (lookupName && item.market_fee_app && communityItemMap["name:" + lookupName + ":" + item.market_fee_app]) {
-                            ciid = String(communityItemMap["name:" + lookupName + ":" + item.market_fee_app].communityitemid);
-                        } else if (lookupName && communityItemMap["name:" + lookupName]) {
-                            ciid = String(communityItemMap["name:" + lookupName].communityitemid);
-                        }
-                        if (!ciid && item.classid && assetIdMap[item.classid]) {
-                            ciid = assetIdMap[item.classid];
-                        }
+                    const ciid = item.classid && assetIdMap[item.classid] ? assetIdMap[item.classid] : "";
+                    if (ciid && addedCiids.has(ciid)) continue;
 
-                        backgrounds.push({
-                            name: item.market_name || item.name || "Background",
-                            appName: item.tags ? (item.tags.find(t => t.category === "Game") || {}).localized_tag_name || "" : "",
-                            icon: imgUrl,
-                            full: fullImg,
-                            movie: movieUrl || "",
-                            classid: item.classid || "",
-                            appid: item.market_fee_app || "",
-                            communityitemid: ciid,
-                            type: item.type || "",
-                            animated: isAnimated
+                    // Check if already added by matching appid + name
+                    const invName = (item.market_name || item.name || "").toLowerCase();
+                    const alreadyAdded = backgrounds.some(b =>
+                        b.appid === String(item.market_fee_app || "") &&
+                        b.name.toLowerCase() === invName.replace(/\s*\(profile background\)\s*/i, "").trim()
+                    );
+                    if (alreadyAdded) continue;
+
+                    let imgUrl = "";
+                    if (item.icon_url) imgUrl = "https://community.fastly.steamstatic.com/economy/image/" + item.icon_url;
+                    if (!imgUrl && item.icon_url_large) imgUrl = "https://community.fastly.steamstatic.com/economy/image/" + item.icon_url_large;
+                    const fullImg = item.icon_url_large
+                        ? "https://community.fastly.steamstatic.com/economy/image/" + item.icon_url_large
+                        : imgUrl;
+
+                    let movieUrl = "";
+                    for (const descs of [item.descriptions, item.owner_descriptions]) {
+                        if (!descs || movieUrl) continue;
+                        for (const d of descs) {
+                            const val = d.value || "";
+                            const webmMatch = val.match(/(https?:\/\/[^\s"'<>]+\.webm)/i);
+                            const mp4Match = val.match(/(https?:\/\/[^\s"'<>]+\.mp4)/i);
+                            if (webmMatch) { movieUrl = webmMatch[1]; break; }
+                            else if (mp4Match) { movieUrl = mp4Match[1]; break; }
+                        }
+                    }
+
+                    let isAnimated = typeLower.includes("animated") || !!movieUrl;
+                    if (!isAnimated && item.tags) {
+                        isAnimated = item.tags.some(t => {
+                            const tn = (t.localized_tag_name || t.internal_name || "").toLowerCase();
+                            return tn.includes("animated");
                         });
                     }
+
+                    backgrounds.push({
+                        name: item.market_name || item.name || "Background",
+                        appName: item.tags ? (item.tags.find(t => t.category === "Game") || {}).localized_tag_name || "" : "",
+                        icon: imgUrl,
+                        full: fullImg,
+                        movie: movieUrl || "",
+                        classid: item.classid || "",
+                        appid: item.market_fee_app || "",
+                        communityitemid: ciid,
+                        type: item.type || "",
+                        animated: isAnimated
+                    });
                 }
             }
         } catch (e) {}

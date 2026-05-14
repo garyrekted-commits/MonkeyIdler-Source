@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.min.js"></script>
 <title>Monkey Idler</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -65,55 +66,61 @@ input:focus,select:focus{border-color:var(--accent)}
 .topnav-tab[data-page="settings"]{color:var(--text2)}
 .topnav-tab[data-page="settings"].active{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
 
-/* Art Maker */
-.am-page{background:var(--bg3);width:100%;min-height:500px;border-radius:var(--radius);padding:20px 24px;position:relative;overflow:hidden;box-sizing:border-box}
-.am-page>*:not(.am-bg-video){position:relative;z-index:1}
-.am-header{margin-bottom:18px}
-.am-header-info h2{font-size:1rem;color:var(--text);margin:0 0 2px}
-.am-header-info p{font-size:.72rem;color:var(--text2);margin:4px 0 0}
-.am-type-btn{background:var(--bg4);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.68rem;transition:all .15s}
-.am-type-btn.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
-.am-type-btn:hover{color:var(--text)}
-.am-body{display:flex;gap:20px}
-.am-canvas-col{flex:2;min-width:0}
-.am-sidebar-col{flex:0 0 250px;display:flex;flex-direction:column;gap:10px}
-.am-canvas-wrap{
-  position:relative;background:#000;border:1px solid var(--border);
-  border-radius:8px;overflow:hidden;
-}
-.am-canvas-wrap video,.am-canvas-wrap img{display:block;width:100%;height:auto}
-.am-crop-overlay{
-  position:absolute;border:2px solid rgba(232,115,14,.7);
-  background:rgba(232,115,14,.08);pointer-events:none;transition:none;
-}
-.am-crop-overlay.main{border-color:rgba(232,115,14,.7);background:rgba(232,115,14,.08)}
-.am-crop-overlay.side{border-color:rgba(45,212,168,.7);background:rgba(45,212,168,.08)}
-.am-crop-label{
-  position:absolute;top:2px;left:4px;font-size:.58rem;font-weight:700;
-  padding:1px 4px;border-radius:3px;color:#fff;
-}
-.am-crop-label.main{background:rgba(232,115,14,.8)}
-.am-crop-label.side{background:rgba(45,212,168,.8)}
-.am-dropzone{
-  border:2px dashed var(--border);border-radius:8px;padding:60px 20px;
-  text-align:center;color:var(--text3);font-size:.76rem;
-  background:var(--bg);min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-}
-.am-side-btn{
-  display:block;width:100%;padding:10px;background:var(--bg4);border:1px solid var(--border);
-  color:var(--text);border-radius:8px;cursor:pointer;font-size:.72rem;text-align:center;transition:all .15s;
-}
-.am-side-btn:hover{background:var(--bg5);border-color:var(--text3)}
-.am-status{font-size:.68rem;color:var(--text2);text-align:center;margin-top:6px}
-.am-bg-item{display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s}
-.am-bg-item:hover{background:rgba(255,255,255,.04)}
-.am-bg-item.selected{background:rgba(232,115,14,.1);border-left:3px solid var(--accent)}
-.am-bg-item:last-child{border-bottom:none}
-.am-bg-item img{width:80px;height:45px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0}
-.am-bg-item .bg-info{flex:1;min-width:0}
-.am-bg-item .bg-name{font-size:.65rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.am-bg-item .bg-game{font-size:.55rem;color:var(--text3)}
-.am-divider{height:1px;background:var(--border);margin:4px 0}
+/* Background Cropper */
+.bc-hidden{display:none!important}
+.bc-wrap{display:flex;height:100%;gap:0}
+.bc-preview-window{flex:1;overflow-x:hidden;overflow-y:auto;background:#12151a;border-radius:12px;position:relative}
+.bc-preview-window::-webkit-scrollbar{width:0;height:0}
+.bc-profile{width:976px;margin:0 auto;position:relative;min-height:1080px;overflow:hidden}
+.bc-profile-bg{position:absolute;left:0;top:0;width:100%;display:flex;justify-content:center;z-index:-1;pointer-events:none}
+.bc-profile-bg img,.bc-profile-bg video{display:block}
+.bc-profile-overlay{position:relative;z-index:1;pointer-events:none}
+.bc-profile-overlay svg{display:block;width:976px}
+.bc-profile-body{width:976px;margin:0 auto;padding:30px 23px 40px;box-sizing:border-box;display:flex;position:relative;z-index:2}
+.bc-artbox{border-radius:5px;overflow:hidden;position:relative;width:506px;background:rgba(0,0,0,.15)}
+.bc-artbox img,.bc-artbox video,.bc-artbox canvas{display:block;width:100%;height:auto}
+.bc-sidebar-art{margin-left:10px;border-radius:5px;overflow:hidden;position:relative;width:100px;background:rgba(0,0,0,.15)}
+.bc-sidebar-art img,.bc-sidebar-art video,.bc-sidebar-art canvas{display:block;width:100%;height:auto}
+.bc-empty-art{display:flex;align-items:center;justify-content:center;min-height:300px;color:rgba(255,255,255,.2);font-size:.72rem;text-align:center;padding:20px}
+.bc-menu{width:260px;background:#12151a;border-left:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.bc-menu::-webkit-scrollbar{width:4px}.bc-menu::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+.bc-menu-section{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.bc-menu-title{font-size:.62rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:10px}
+.bc-menu-btn{display:block;width:100%;padding:9px 14px;border-radius:6px;font-size:.72rem;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:rgba(255,255,255,.8);transition:all .15s;text-align:center;margin-bottom:6px}
+.bc-menu-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff}
+.bc-menu-btn.accent{background:rgba(232,115,14,.15);border-color:rgba(232,115,14,.3);color:var(--accent)}
+.bc-menu-btn.accent:hover{background:rgba(232,115,14,.25)}
+.bc-menu-btn.green{background:rgba(45,212,168,.12);border-color:rgba(45,212,168,.25);color:var(--green)}
+.bc-menu-btn.green:hover{background:rgba(45,212,168,.2)}
+.bc-menu-btn:disabled{opacity:.4;cursor:default}
+.bc-menu-select{width:100%;padding:7px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#ccc;border-radius:6px;font-size:.72rem;margin-bottom:6px;font-family:inherit}
+.bc-menu-select:focus{border-color:var(--accent);outline:none}
+.bc-bg-tabs{display:flex;gap:0;margin-bottom:0}
+.bc-bg-tab{flex:1;padding:6px;font-size:.6rem;font-weight:600;text-align:center;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:rgba(255,255,255,.4);transition:all .15s}
+.bc-bg-tab:first-child{border-radius:6px 0 0 0}
+.bc-bg-tab:last-child{border-radius:0 6px 0 0}
+.bc-bg-tab.active{background:rgba(232,115,14,.1);color:var(--accent);border-color:rgba(232,115,14,.3)}
+.bc-bg-tab:hover{color:rgba(255,255,255,.7)}
+.bc-bg-list{max-height:300px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-top:none;border-radius:0 0 6px 6px;background:rgba(0,0,0,.2)}
+.bc-bg-list::-webkit-scrollbar{width:3px}.bc-bg-list::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+.bc-bg-item{display:flex;align-items:center;gap:8px;padding:7px 8px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.03);transition:all .12s}
+.bc-bg-item:hover{background:rgba(255,255,255,.04)}
+.bc-bg-item.selected{background:rgba(232,115,14,.08);border-left:3px solid var(--accent)}
+.bc-bg-item:last-child{border-bottom:none}
+.bc-bg-item img{width:64px;height:36px;object-fit:cover;border-radius:4px;border:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.bc-bg-info{flex:1;min-width:0}
+.bc-bg-name{font-size:.62rem;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bc-bg-game{font-size:.5rem;color:rgba(255,255,255,.3);margin-top:1px}
+.bc-bg-badge{font-size:.46rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+.bc-status-msg{font-size:.65rem;color:rgba(255,255,255,.4);text-align:center;padding:6px 0;min-height:18px}
+.bc-progress{margin-top:8px}
+.bc-progress-label{font-size:.65rem;color:rgba(255,255,255,.5);margin-bottom:4px;display:flex;justify-content:space-between}
+.bc-progress-bar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.bc-progress-fill{height:100%;background:var(--accent);width:0%;transition:width .2s;border-radius:2px}
+.bc-zoom{display:flex;align-items:center;gap:8px;padding:0 16px 14px}
+.bc-zoom input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,.1);outline:none}
+.bc-zoom input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--accent);cursor:pointer}
+.bc-zoom-val{font-size:.62rem;color:rgba(255,255,255,.4);min-width:30px;text-align:right;font-variant-numeric:tabular-nums}
 
 /* Sidebar */
 .sidebar{width:200px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
@@ -592,43 +599,79 @@ input:focus,select:focus{border-color:var(--accent)}
             </div>
         </div>
 
-        <!-- Art Maker -->
+        <!-- Background Cropper -->
         <div class="page" id="page-artmaker">
-            <div class="am-page">
-                <div class="am-header">
-                    <div class="am-header-info">
-                        <h2>Profile Backgrounds</h2>
-                        <p>Load your profile backgrounds, preview them, and apply to Steam.</p>
+            <div class="bc-wrap">
+                <!-- Preview window (Steam profile mock) -->
+                <div class="bc-preview-window" id="bc-preview-window">
+                    <div class="bc-profile" id="bc-profile">
+                        <!-- Background image/video behind the overlay -->
+                        <div class="bc-profile-bg" id="bc-profile-bg"></div>
+                        <!-- SVG overlay mask - Steam profile shape with artwork cutouts -->
+                        <div class="bc-profile-overlay" id="bc-profile-overlay"></div>
                     </div>
                 </div>
-                <div class="am-body">
-                    <div class="am-canvas-col">
-                        <div class="am-canvas-wrap" id="am-canvas-wrap" style="display:none">
-                            <video id="am-video" loop muted playsinline crossorigin="anonymous" style="width:100%;border-radius:8px"></video>
-                            <img id="am-still" style="width:100%;border-radius:8px;display:none">
+
+                <!-- Right menu panel -->
+                <div class="bc-menu">
+                    <div class="bc-zoom">
+                        <span style="font-size:.55rem;color:rgba(255,255,255,.3)">&#128269;</span>
+                        <input type="range" id="bc-zoom" min="25" max="150" value="75" oninput="bcSetZoom(this.value)">
+                        <span class="bc-zoom-val" id="bc-zoom-val">75%</span>
+                    </div>
+
+                    <div class="bc-menu-section">
+                        <div class="bc-menu-title">Account</div>
+                        <select class="bc-menu-select" id="bc-bg-acct">
+                            <option value="">Select account...</option>
+                        </select>
+                        <button class="bc-menu-btn" onclick="bcLoadBackgrounds()">Load Backgrounds</button>
+                    </div>
+
+                    <div class="bc-menu-section" id="bc-bg-panel" style="display:none">
+                        <div class="bc-menu-title">Backgrounds</div>
+                        <div class="bc-bg-tabs">
+                            <button class="bc-bg-tab active" id="bc-bg-tab-static" onclick="bcSwitchBgTab('static')">Static</button>
+                            <button class="bc-bg-tab" id="bc-bg-tab-animated" onclick="bcSwitchBgTab('animated')">Animated</button>
                         </div>
-                        <div class="am-dropzone" id="am-dropzone" style="pointer-events:none;cursor:default">
-                            <div style="font-size:1.6rem;margin-bottom:6px;opacity:.5">&#127912;</div>
-                            Select a background from the list to preview
+                        <div class="bc-bg-list" id="bc-bg-list"></div>
+                    </div>
+
+                    <div class="bc-menu-section">
+                        <div class="bc-menu-title">Download</div>
+                        <button class="bc-menu-btn accent" onclick="bcDownload('all')" id="bc-dl-all-btn" disabled>Download All (ZIP)</button>
+                        <button class="bc-menu-btn" onclick="bcDownload('main')" id="bc-dl-main-btn" disabled>Artwork Middle</button>
+                        <button class="bc-menu-btn" onclick="bcDownload('side')" id="bc-dl-side-btn" disabled>Artwork Right</button>
+                        <button class="bc-menu-btn bc-hidden" onclick="bcConvertToGif('main')" id="bc-gif-btn">Convert Main to GIF</button>
+                        <button class="bc-menu-btn bc-hidden" onclick="bcConvertToGif('side')" id="bc-gif-side-btn">Convert Side to GIF</button>
+                        <div class="bc-progress bc-hidden" id="bc-gif-progress">
+                            <div class="bc-progress-label">
+                                <span id="bc-gif-status">Converting...</span>
+                                <span id="bc-gif-pct">0%</span>
+                            </div>
+                            <div class="bc-progress-bar"><div class="bc-progress-fill" id="bc-gif-bar"></div></div>
                         </div>
                     </div>
-                    <div class="am-sidebar-col" id="am-sidebar-col">
-                        <select id="am-bg-acct" style="font-size:.72rem;width:100%;padding:8px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px">
-                            <option value="">Select account for backgrounds...</option>
-                        </select>
-                        <button class="am-side-btn" onclick="amLoadBackgrounds()">&#127912; Load Profile Backgrounds</button>
-                        <div id="am-bg-panel" style="display:none">
-                            <div style="display:flex;gap:0;margin-bottom:0">
-                                <button class="am-type-btn active" id="am-bg-tab-static" onclick="amSwitchBgTab('static')" style="flex:1;border-radius:3px 0 0 0;font-size:.6rem;padding:5px">Static</button>
-                                <button class="am-type-btn" id="am-bg-tab-animated" onclick="amSwitchBgTab('animated')" style="flex:1;border-radius:0 3px 0 0;font-size:.6rem;padding:5px">Animated</button>
-                            </div>
-                            <div id="am-bg-list" style="max-height:450px;overflow-y:auto;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;background:var(--bg)"></div>
-                        </div>
-                        <button class="am-side-btn" style="font-size:.62rem;padding:4px 8px;opacity:.6;display:none" id="am-bg-clear-btn" onclick="amClearProfileBg()">Clear Background</button>
 
-                        <div class="am-divider"></div>
-                        <button class="am-side-btn" onclick="amApplyToSteam()" style="background:var(--accent);color:#fff;border-color:var(--accent)">&#10003; Apply to Steam Profile</button>
-                        <div class="am-status" id="am-status"></div>
+                    <div class="bc-menu-section">
+                        <div class="bc-menu-title">Apply to Steam</div>
+                        <button class="bc-menu-btn green" onclick="bcApplyToSteam()">Set as Profile Background</button>
+                        <div class="bc-status-msg" id="bc-status"></div>
+                    </div>
+
+                    <div class="bc-menu-section">
+                        <div class="bc-menu-title">Upload Artwork</div>
+                        <select class="bc-menu-select" id="au-acct">
+                            <option value="">Select account...</option>
+                        </select>
+                        <input class="bc-menu-select" id="au-title" placeholder="Artwork title...">
+                        <label style="font-size:.6rem;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:5px;cursor:pointer;margin:4px 0 6px">
+                            <input type="checkbox" id="au-animated"> Animated / Long artwork
+                        </label>
+                        <button class="bc-menu-btn" onclick="document.getElementById('au-file-input').click()">Choose File...</button>
+                        <input type="file" id="au-file-input" accept="image/*" style="display:none" onchange="auHandleFile(this.files)">
+                        <button class="bc-menu-btn green" onclick="auUpload()" id="au-upload-btn" disabled>Upload to Steam</button>
+                        <div class="bc-status-msg" id="au-status"></div>
                     </div>
                 </div>
             </div>
@@ -735,7 +778,7 @@ function navTo(el){
     const contentEl=document.querySelector(".content");if(contentEl)contentEl.scrollTop=0;
     if(el.dataset.page==="deals")loadDeals();
     if(el.dataset.page==="massbot")mcRenderAccounts();
-    if(el.dataset.page==="artmaker")amPopulateAccounts();
+    if(el.dataset.page==="artmaker"){amPopulateAccounts();bcSetZoom(75)}
     const u=el.dataset.user;
     if(u)loadAcctPage(u);
 }
@@ -2303,207 +2346,280 @@ function pollGroupCommentProgress(username){
     },2000);
 }
 
-// --- Art Maker ---
-const AM={img:null,isVideo:false,natW:0,natH:0};
-let amSelectedBg=null;
-let amBgCache=[];
-let amBgTab="static";
+// --- Background Cropper ---
+const BC={img:null,isVideo:false,natW:0,natH:0,zoom:75};
+let bcSelectedBg=null,bcBgCache=[],bcBgTab="static";
 
-function amApplyBgFromCache(idx){
-    const filtered=amBgCache.filter(bg=>amBgTab==="animated"?bg.animated:!bg.animated);
+function bcSetZoom(val){
+    BC.zoom=parseInt(val);
+    $("bc-zoom-val").textContent=BC.zoom+"%";
+    const p=$("bc-profile");
+    p.style.transform="scale("+(BC.zoom/100)+")";
+    p.style.transformOrigin="top center";
+}
+
+function bcLoadImage(url,isVideo,movieUrl){
+    const bg=$("bc-profile-bg");
+    bg.innerHTML="";
+    if(isVideo&&movieUrl){
+        const vid=document.createElement("video");
+        vid.crossOrigin="anonymous";vid.loop=true;vid.muted=true;vid.playsInline=true;
+        vid.onerror=()=>{if(url)bcLoadImage(url,false)};
+        vid.onloadeddata=()=>{
+            BC.isVideo=true;BC.natW=vid.videoWidth;BC.natH=vid.videoHeight;BC.img=vid;
+            vid.play();bcBuildOverlay();bcEnableButtons(true);
+            $("bc-gif-btn").classList.remove("bc-hidden");
+            $("bc-gif-side-btn").classList.remove("bc-hidden");
+        };
+        vid.src=movieUrl;vid.load();bg.appendChild(vid);
+    }else{
+        const img=document.createElement("img");
+        img.crossOrigin="anonymous";
+        img.onload=()=>{
+            BC.isVideo=false;BC.natW=img.naturalWidth;BC.natH=img.naturalHeight;BC.img=img;
+            bcBuildOverlay();bcEnableButtons(true);
+            $("bc-gif-btn").classList.add("bc-hidden");
+            $("bc-gif-side-btn").classList.add("bc-hidden");
+        };
+        img.src=url;bg.appendChild(img);
+    }
+}
+
+function bcBuildOverlay(){
+    if(!BC.img)return;
+    const svgH=BC.natH+90;
+    const artH=svgH-366;
+    const p=$("bc-profile");
+    p.style.height=BC.natH+"px";
+    const ov=$("bc-profile-overlay");
+    const path='M0 0h976v'+(svgH-5)+'a5 5 0 01-5 5H5a5 5 0 01-5-5V'
+        +'0zm28 256a5 5 0 00-5 5v'+artH+'a5 5 0 005 5h496a5 5 0 005-5V261a5 5 0 00-5-5H'
+        +'29zm510 5a5 5 0 015-5h90a5 5 0 015 5v'+artH+'a5 5 0 01-5 5h-90a5 5 0 01-5-5V'
+        +'272zM29 30a5 5 0 00-5 5v154a5 5 0 005 5h154a5 5 0 005-5V35a5 5 0 00-5-5H29z';
+    ov.innerHTML='<svg width="976" height="'+svgH+'" viewBox="0 0 976 '+svgH+'" xmlns="http://www.w3.org/2000/svg">'
+        +'<path fill-rule="evenodd" d="'+path+'" fill="rgba(27,40,56,0.78)"/>'
+        +'<text x="970" y="16" fill="rgba(255,255,255,0.25)" font-size="10" font-family="monospace" text-anchor="end">'+BC.natW+'x'+BC.natH+'</text>'
+        +'</svg>';
+}
+
+function bcSetupDrag(){}
+
+function bcEnableButtons(en){
+    $("bc-dl-all-btn").disabled=!en;
+    $("bc-dl-main-btn").disabled=!en;
+    $("bc-dl-side-btn").disabled=!en;
+}
+
+function bcDownload(which){
+    if(!BC.img)return;
+    const hw=Math.floor(BC.natW/2);
+    const mainX=hw-467,sideX=hw+48,yOff=256;
+    const mainW=506,sideW=100,artH=BC.natH-yOff;
+    function crop(sx,sy,sw,sh,name){
+        const c=document.createElement("canvas");c.width=sw;c.height=sh;
+        c.getContext("2d").drawImage(BC.img,sx,sy,sw,sh,0,0,sw,sh);
+        const a=document.createElement("a");a.href=c.toDataURL("image/png");
+        a.download=name+".png";a.click();
+    }
+    if(which==="main"||which==="all")crop(mainX,yOff,mainW,artH,"Artwork_Middle_"+mainW+"x"+artH);
+    if(which==="side"||which==="all")setTimeout(()=>crop(sideX,yOff,sideW,artH,"Artwork_Right_"+sideW+"x"+artH),which==="all"?300:0);
+}
+
+function bcConvertToGif(which){
+    if(!BC.isVideo)return alert("Select an animated background first.");
+    const vid=BC.img;if(!vid||vid.paused)return;
+    const hw=Math.floor(BC.natW/2);
+    const sx=which==="side"?hw+48:hw-467;
+    const sy=256;
+    const sw=which==="side"?100:506;
+    const sh=BC.natH-sy;
+    if(sx+sw>BC.natW)return alert("Crop area exceeds image. Adjust position.");
+    $("bc-gif-progress").classList.remove("bc-hidden");
+    $("bc-gif-status").textContent="Capturing frames...";
+    $("bc-gif-pct").textContent="0%";$("bc-gif-bar").style.width="0%";
+    $("bc-gif-btn").disabled=true;$("bc-gif-side-btn").disabled=true;
+    const canvas=document.createElement("canvas");canvas.width=sw;canvas.height=sh;
+    const ctx=canvas.getContext("2d");
+    const fps=15,duration=vid.duration||3;
+    const totalFrames=Math.min(Math.floor(duration*fps),150);
+    const frameDelay=Math.round(1000/fps);
+    const frames=[];let fi=0;
+    vid.pause();vid.currentTime=0;
+    function cap(){vid.currentTime=fi/fps}
+    vid.onseeked=function(){
+        ctx.drawImage(vid,sx,sy,sw,sh,0,0,sw,sh);
+        frames.push(ctx.getImageData(0,0,sw,sh));fi++;
+        const pct=Math.round((fi/totalFrames)*50);
+        $("bc-gif-pct").textContent=pct+"%";$("bc-gif-bar").style.width=pct+"%";
+        $("bc-gif-status").textContent="Frame "+fi+"/"+totalFrames;
+        if(fi<totalFrames)cap();else encode();
+    };
+    function encode(){
+        $("bc-gif-status").textContent="Encoding GIF...";
+        try{
+            const gif=new GIF({workers:2,quality:10,width:sw,height:sh,workerScript:"https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js"});
+            frames.forEach(f=>gif.addFrame(f,{delay:frameDelay}));
+            gif.on("progress",p=>{const pct=50+Math.round(p*50);$("bc-gif-pct").textContent=pct+"%";$("bc-gif-bar").style.width=pct+"%"});
+            gif.on("finished",blob=>{
+                const url=URL.createObjectURL(blob);
+                const a=document.createElement("a");a.href=url;a.download="artwork_"+which+"_"+sw+"x"+sh+".gif";a.click();
+                URL.revokeObjectURL(url);
+                $("bc-gif-status").textContent="Saved! ("+Math.round(blob.size/1024)+" KB)";
+                $("bc-gif-pct").textContent="100%";$("bc-gif-bar").style.width="100%";
+                $("bc-gif-btn").disabled=false;$("bc-gif-side-btn").disabled=false;
+                vid.play();setTimeout(()=>$("bc-gif-progress").classList.add("bc-hidden"),4000);
+            });
+            gif.render();
+        }catch(e){
+            $("bc-gif-status").textContent="Error: "+e.message;
+            $("bc-gif-btn").disabled=false;$("bc-gif-side-btn").disabled=false;vid.play();
+        }
+    }
+    cap();
+}
+
+function bcReset(){
+    BC.img=null;BC.isVideo=false;BC.natW=0;BC.natH=0;
+    bcSelectedBg=null;
+    $("bc-profile-bg").innerHTML="";
+    $("bc-profile-overlay").innerHTML="";
+    const p=$("bc-profile");p.style.height="";p.style.overflow="";
+    bcEnableButtons(false);
+    $("bc-gif-btn").classList.add("bc-hidden");
+    $("bc-gif-side-btn").classList.add("bc-hidden");
+    $("bc-gif-progress").classList.add("bc-hidden");
+}
+
+// --- Accounts ---
+function amPopulateAccounts(){
+    [$("bc-bg-acct"),$("au-acct")].forEach(sel=>{
+        if(!sel)return;
+        const prev=sel.value;
+        sel.innerHTML='<option value="">Select account...</option>';
+        bots.filter(b=>b.state==="online"||b.state==="playing").forEach(b=>{
+            sel.innerHTML+='<option value="'+esc(b.username)+'">'+esc(b.username)+'</option>';
+        });
+        if(prev)sel.value=prev;
+    });
+}
+
+// --- Upload Artwork ---
+let auFile=null;
+function auHandleFile(files){
+    if(!files||!files.length)return;
+    auFile=files[0];
+    if(!auFile.type.startsWith("image/"))return;
+    $("au-upload-btn").disabled=false;
+    $("au-status").textContent="Selected: "+auFile.name;$("au-status").style.color="rgba(255,255,255,.5)";
+}
+
+async function auUpload(){
+    const acct=$("au-acct").value;
+    if(!acct)return alert("Select an account first.");
+    if(!auFile)return alert("Select an image first.");
+    const title=$("au-title").value.trim()||"Artwork";
+    const animated=$("au-animated").checked;
+    const btn=$("au-upload-btn"),status=$("au-status");
+    btn.disabled=true;btn.textContent="Uploading...";
+    status.textContent="Uploading...";status.style.color="rgba(255,255,255,.5)";
+    try{
+        const resp=await fetch("/api/accounts/"+encodeURIComponent(acct)+"/artwork/upload?title="+encodeURIComponent(title)+"&animated="+animated,{
+            method:"POST",headers:{"Content-Type":auFile.type},body:auFile
+        });
+        const d=await resp.json();
+        if(d.ok){status.textContent="Uploaded!";status.style.color="var(--green)"}
+        else{status.textContent="Failed: "+(d.error||"Unknown");status.style.color="var(--red)"}
+    }catch(e){status.textContent="Error: "+e.message;status.style.color="var(--red)"}
+    btn.disabled=false;btn.textContent="Upload to Steam";
+    setTimeout(()=>{status.textContent="";status.style.color=""},6000);
+}
+
+// --- Steam Backgrounds ---
+function bcApplyBgFromCache(idx){
+    const filtered=bcBgCache.filter(bg=>bcBgTab==="animated"?bg.animated:!bg.animated);
     const bg=filtered[idx];if(!bg)return;
-    amSelectedBg=bg;
+    bcSelectedBg=bg;
     const imgUrl=bg.full?"/api/artwork/proxy?url="+encodeURIComponent(bg.full):(bg.icon?"/api/artwork/proxy?url="+encodeURIComponent(bg.icon):"");
     const movieUrl=bg.movie?"/api/artwork/proxy?url="+encodeURIComponent(bg.movie):"";
-    const wrap=$("am-canvas-wrap");
-    const vid=$("am-video");
-    const still=$("am-still");
-
-    if(bg.animated&&movieUrl){
-        amApplyBgVideo(movieUrl,imgUrl);
-        vid.crossOrigin="anonymous";
-        vid.onerror=function(){
-            vid.style.display="none";
-            if(imgUrl){still.src=imgUrl;still.style.display="";AM.isVideo=false;}
-        };
-        vid.onloadeddata=()=>{
-            AM.isVideo=true;AM.natW=vid.videoWidth;AM.natH=vid.videoHeight;AM.img=vid;
-            vid.style.display="";still.style.display="none";
-            vid.play();
-            amUpdateCropOverlays();
-        };
-        vid.src=movieUrl;vid.load();
-        wrap.style.display="";$("am-dropzone").style.display="none";
-    }else if(imgUrl){
-        amApplyBg(imgUrl);
-        vid.style.display="none";
-        still.crossOrigin="anonymous";
-        still.onload=()=>{
-            AM.isVideo=false;AM.natW=still.naturalWidth;AM.natH=still.naturalHeight;AM.img=still;
-            still.style.display="";
-            amUpdateCropOverlays();
-        };
-        still.src=imgUrl;
-        wrap.style.display="";$("am-dropzone").style.display="none";
-    }
-    document.querySelectorAll(".am-bg-item").forEach(el=>el.classList.remove("selected"));
-    const items=document.querySelectorAll(".am-bg-item");
+    if(bg.animated&&movieUrl)bcLoadImage(imgUrl,true,movieUrl);
+    else if(imgUrl)bcLoadImage(imgUrl,false);
+    document.querySelectorAll(".bc-bg-item").forEach(el=>el.classList.remove("selected"));
+    const items=document.querySelectorAll(".bc-bg-item");
     if(items[idx])items[idx].classList.add("selected");
 }
 
-function amUpdateCropOverlays(){
-    if(!AM.img)return;
-    const wrap=$("am-canvas-wrap");
-    const displayed=AM.isVideo?$("am-video"):$("am-still");
-    if(!displayed||!displayed.clientWidth)return;
-    wrap.querySelectorAll(".am-crop-overlay").forEach(el=>el.remove());
-
-    const scale=displayed.clientWidth/AM.natW;
-    const mainW=506,sideW=100,gap=8;
-    const totalW=mainW+gap+sideW;
-    const startX=Math.floor((AM.natW-totalW)/2);
-    const h=Math.min(506,AM.natH);
-
-    const panels=[
-        {label:"Main",w:mainW,h,x:Math.max(0,startX),cls:"main"},
-        {label:"Side",w:sideW,h,x:Math.max(0,startX+mainW+gap),cls:"side"}
-    ];
-    panels.forEach(p=>{
-        const el=document.createElement("div");
-        el.className="am-crop-overlay "+p.cls;
-        el.style.cssText=`left:${p.x*scale}px;top:0;width:${p.w*scale}px;height:${p.h*scale}px`;
-        el.innerHTML='<span class="am-crop-label '+p.cls+'">'+p.label+" "+p.w+"px</span>";
-        wrap.appendChild(el);
-    });
-}
-
-window.addEventListener("resize",()=>{if(AM.img)amUpdateCropOverlays()});
-
-function amApplyBg(url){
-    if(!url)return;
-    const page=$("page-artmaker").querySelector(".am-page");
-    const oldVid=page.querySelector(".am-bg-video");if(oldVid)oldVid.remove();
-    page.style.background=`linear-gradient(rgba(10,10,10,.65),rgba(10,10,10,.65)),url('${url}') center/cover no-repeat`;
-    $("am-bg-clear-btn").style.display="";
-}
-function amApplyBgVideo(videoUrl,fallbackImg){
-    const page=$("page-artmaker").querySelector(".am-page");
-    const oldVid=page.querySelector(".am-bg-video");if(oldVid)oldVid.remove();
-    if(fallbackImg) page.style.background=`linear-gradient(rgba(10,10,10,.65),rgba(10,10,10,.65)),url('${fallbackImg}') center/cover no-repeat`;
-    const vid=document.createElement("video");
-    vid.className="am-bg-video";
-    vid.autoplay=true;vid.loop=true;vid.muted=true;vid.playsInline=true;
-    vid.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.5;pointer-events:none";
-    vid.src=videoUrl;
-    vid.onerror=function(){vid.remove();if(fallbackImg)amApplyBg(fallbackImg)};
-    page.prepend(vid);
-    $("am-bg-clear-btn").style.display="";
-}
-function amClearProfileBg(){
-    const page=$("page-artmaker").querySelector(".am-page");
-    page.style.background="";
-    const vid=page.querySelector(".am-bg-video");if(vid)vid.remove();
-    $("am-bg-clear-btn").style.display="none";
-    amSelectedBg=null;AM.img=null;AM.isVideo=false;
-    $("am-canvas-wrap").style.display="none";
-    $("am-dropzone").style.display="";
-    document.querySelectorAll(".am-bg-item").forEach(el=>el.classList.remove("selected"));
-}
-
-function amPopulateAccounts(){
-    const bgSel=$("am-bg-acct");
-    const prev=bgSel.value;
-    bgSel.innerHTML='<option value="">Select account for backgrounds...</option>';
-    bots.filter(b=>b.state==="online"||b.state==="playing").forEach(b=>{
-        bgSel.innerHTML+=`<option value="${esc(b.username)}">${esc(b.username)}</option>`;
-    });
-    if(prev) bgSel.value=prev;
-}
-
-async function amLoadBackgrounds(){
+async function bcLoadBackgrounds(){
     amPopulateAccounts();
-    let acct=$("am-bg-acct").value;
+    let acct=$("bc-bg-acct").value;
     if(!acct){
-        const onlineBots=bots.filter(b=>b.state==="online"||b.state==="playing");
-        if(!onlineBots.length) return alert("No accounts are online yet. Wait for a bot to log in first.");
-        $("am-bg-acct").value=onlineBots[0].username;
-        acct=onlineBots[0].username;
+        const onl=bots.filter(b=>b.state==="online"||b.state==="playing");
+        if(!onl.length)return alert("No accounts are online yet.");
+        $("bc-bg-acct").value=onl[0].username;acct=onl[0].username;
     }
-    $("am-bg-panel").style.display="";
-    amBgCache=[];
-    $("am-bg-list").innerHTML='<div style="padding:12px;text-align:center;color:var(--text3);font-size:.68rem">Loading backgrounds...</div>';
+    $("bc-bg-panel").style.display="";
+    bcBgCache=[];
+    $("bc-bg-list").innerHTML='<div style="padding:12px;text-align:center;color:rgba(255,255,255,.3);font-size:.65rem">Loading...</div>';
     try{
         const d=await A("GET","/api/accounts/"+encodeURIComponent(acct)+"/backgrounds");
         if(!d||!d.backgrounds||d.backgrounds.length===0){
-            const msg=d&&d.error?d.error:"No backgrounds found. Make sure the account is logged in.";
-            $("am-bg-list").innerHTML='<div style="padding:12px;text-align:center;color:var(--text3);font-size:.68rem">'+msg+'<br><button class="btn-accent btn-sm" style="margin-top:8px" onclick="amLoadBackgrounds()">Retry</button></div>';
+            $("bc-bg-list").innerHTML='<div style="padding:12px;text-align:center;color:rgba(255,255,255,.3);font-size:.65rem">'+(d&&d.error?d.error:"No backgrounds found.")+'</div>';
             return;
         }
-        amBgCache=d.backgrounds;
-        const hasAnimated=d.backgrounds.some(b=>b.animated);
-        amBgTab=hasAnimated?"animated":"static";
-        $("am-bg-tab-static").classList.toggle("active",!hasAnimated);
-        $("am-bg-tab-animated").classList.toggle("active",hasAnimated);
-        $("am-bg-tab-static").textContent="Static ("+amBgCache.filter(b=>!b.animated).length+")";
-        $("am-bg-tab-animated").textContent="Animated ("+amBgCache.filter(b=>b.animated).length+")";
-        amRenderBgList();
+        bcBgCache=d.backgrounds;
+        const hasAnim=d.backgrounds.some(b=>b.animated);
+        bcBgTab=hasAnim?"animated":"static";
+        $("bc-bg-tab-static").classList.toggle("active",!hasAnim);
+        $("bc-bg-tab-animated").classList.toggle("active",hasAnim);
+        $("bc-bg-tab-static").textContent="Static ("+bcBgCache.filter(b=>!b.animated).length+")";
+        $("bc-bg-tab-animated").textContent="Animated ("+bcBgCache.filter(b=>b.animated).length+")";
+        bcRenderBgList();
     }catch(e){
-        $("am-bg-list").innerHTML='<div style="padding:12px;text-align:center;color:var(--text3);font-size:.68rem">Failed to load. Try again.</div>';
+        $("bc-bg-list").innerHTML='<div style="padding:12px;text-align:center;color:rgba(255,255,255,.3);font-size:.65rem">Failed to load.</div>';
     }
 }
-function amSwitchBgTab(tab){
-    amBgTab=tab;
-    $("am-bg-tab-static").classList.toggle("active",tab==="static");
-    $("am-bg-tab-animated").classList.toggle("active",tab==="animated");
-    amRenderBgList();
+
+function bcSwitchBgTab(tab){
+    bcBgTab=tab;
+    $("bc-bg-tab-static").classList.toggle("active",tab==="static");
+    $("bc-bg-tab-animated").classList.toggle("active",tab==="animated");
+    bcRenderBgList();
 }
-function amRenderBgList(){
-    const filtered=amBgCache.filter(bg=>amBgTab==="animated"?bg.animated:!bg.animated);
-    const list=$("am-bg-list");
+
+function bcRenderBgList(){
+    const filtered=bcBgCache.filter(bg=>bcBgTab==="animated"?bg.animated:!bg.animated);
+    const list=$("bc-bg-list");
     if(!filtered.length){
-        list.innerHTML='<div style="padding:12px;text-align:center;color:var(--text3);font-size:.68rem">No '+(amBgTab==="animated"?"animated":"static")+' backgrounds found.</div>';
+        list.innerHTML='<div style="padding:12px;text-align:center;color:rgba(255,255,255,.3);font-size:.65rem">No '+(bcBgTab==="animated"?"animated":"static")+' backgrounds.</div>';
         return;
     }
     list.innerHTML=filtered.map((bg,i)=>{
-        const imgSrc=bg.icon?"/api/artwork/proxy?url="+encodeURIComponent(bg.icon):"";
-        return '<div class="am-bg-item" data-bgidx="'+i+'" onclick="amApplyBgFromCache('+i+')">'
-            +(imgSrc?'<img src="'+esc(imgSrc)+'" onerror="this.style.display=\'none\'">':'')
-            +'<div class="bg-info"><div class="bg-name">'+esc(bg.name)+'</div>'
-            +(bg.appName?'<div class="bg-game">'+esc(bg.appName)+'</div>':'')
-            +(bg.animated?'<div style="font-size:.5rem;color:var(--accent);margin-top:2px">ANIMATED</div>':'')
+        const src=bg.icon?"/api/artwork/proxy?url="+encodeURIComponent(bg.icon):"";
+        return '<div class="bc-bg-item" onclick="bcApplyBgFromCache('+i+')">'
+            +(src?'<img src="'+esc(src)+'" onerror="this.style.display=\'none\'">':'')
+            +'<div class="bc-bg-info"><div class="bc-bg-name">'+esc(bg.name)+'</div>'
+            +(bg.appName?'<div class="bc-bg-game">'+esc(bg.appName)+'</div>':'')
+            +(bg.animated?'<div class="bc-bg-badge">ANIMATED</div>':'')
             +'</div></div>';
     }).join("");
 }
 
-async function amApplyToSteam(){
-    const acct=$("am-bg-acct").value;
+async function bcApplyToSteam(){
+    const acct=$("bc-bg-acct").value;
     if(!acct)return alert("Select an account first.");
-    if(!amSelectedBg)return alert("Select a background first.");
-    const status=$("am-status");
-
-    if(!amSelectedBg.communityitemid){
-        return alert("This background doesn't have a communityitemid and can't be applied via API.");
-    }
+    if(!bcSelectedBg)return alert("Select a background first.");
+    const status=$("bc-status");
+    if(!bcSelectedBg.communityitemid)return alert("This background can't be applied via API.");
     try{
-        status.textContent="Applying background...";
+        status.textContent="Applying...";status.style.color="rgba(255,255,255,.5)";
         const resp=await fetch("/api/accounts/"+encodeURIComponent(acct)+"/profile/background",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({communityitemid:amSelectedBg.communityitemid})
+            method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({communityitemid:bcSelectedBg.communityitemid})
         });
         const d=await resp.json();
-        if(d.ok){
-            status.textContent="Background applied to Steam!";
-            status.style.color="var(--accent)";
-        }else{
-            status.textContent="Failed: "+(d.error||"Unknown error");
-            status.style.color="#f44";
-        }
-    }catch(e){
-        status.textContent="Error: "+e.message;
-        status.style.color="#f44";
-    }
-    setTimeout(()=>{status.textContent="";status.style.color=""},6000);
+        if(d.ok){status.textContent="Applied!";status.style.color="var(--green)"}
+        else{status.textContent="Failed: "+(d.error||"Unknown");status.style.color="var(--red)"}
+    }catch(e){status.textContent="Error: "+e.message;status.style.color="var(--red)"}
+    setTimeout(()=>{status.textContent="";status.style.color=""},5000);
 }
 
 init();
