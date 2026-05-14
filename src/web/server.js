@@ -157,7 +157,7 @@ app.get("/", (req, res) => {
 app.get("/bg.png", (req, res) => {
     res.sendFile(path.join(__dirname, "bg.png"));
 });
-
+``
 // SSE endpoint for live logs + status
 app.get("/api/logs", (req, res) => {
     res.writeHead(200, {
@@ -471,6 +471,10 @@ app.post("/api/accounts/:username/startidle", (req, res) => {
     if (games.length === 0) return res.status(400).json({ error: "No games configured to idle" });
     bot.setGamesPlayed(games);
     bot.startGoalCheck();
+    if (!config.accountSettings) config.accountSettings = {};
+    if (!config.accountSettings[req.params.username]) config.accountSettings[req.params.username] = {};
+    config.accountSettings[req.params.username].wasIdling = true;
+    saveConfig(config);
     res.json({ ok: true, idling: games });
 });
 
@@ -481,6 +485,11 @@ app.post("/api/accounts/:username/stopidle", (req, res) => {
     if (!bot || !bot.client.steamID) return res.status(400).json({ error: "Bot not online" });
     bot.client.gamesPlayed([]);
     bot.playedAppIDs = [];
+    const config = loadConfig();
+    if (config.accountSettings && config.accountSettings[req.params.username]) {
+        config.accountSettings[req.params.username].wasIdling = false;
+        saveConfig(config);
+    }
     res.json({ ok: true });
 });
 

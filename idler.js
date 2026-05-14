@@ -111,7 +111,7 @@ app.whenReady().then(async () => {
 
     // Auto-updater: check for updates once the window is ready
     autoUpdater.autoDownload = true;
-    autoUpdater.autoInstallOnAppQuit = false;
+    autoUpdater.autoInstallOnAppQuit = true;
     autoUpdater.logger = null;
 
     autoUpdater.on("update-available", (info) => {
@@ -140,7 +140,16 @@ ipcMain.handle("window-close", () => { if (mainWindow) mainWindow.close(); });
 
 // Auto-updater controls
 ipcMain.handle("check-for-update", () => { autoUpdater.checkForUpdates().catch(() => {}); });
-ipcMain.handle("install-update", () => { autoUpdater.quitAndInstall(false, true); });
+ipcMain.handle("install-update", () => {
+    setImmediate(() => {
+        app.removeAllListeners("window-all-closed");
+        if (mainWindow) {
+            mainWindow.removeAllListeners("close");
+            mainWindow.close();
+        }
+        autoUpdater.quitAndInstall(false, true);
+    });
+});
 
 // Open an authenticated Steam profile browser window (reuse a single partition)
 let profileSession = null;

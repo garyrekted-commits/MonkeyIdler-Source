@@ -136,11 +136,18 @@ Bot.prototype.attachEventListeners = function() {
 
         // Restore last-idled games from config so "Start All" resumes where we left off
         let configGames = this.acctConfig.playingGames || [];
+        const shouldAutoResume = this.acctConfig.wasIdling === true;
 
         const startPlaying = () => {
             this.playedAppIDs = [];
             this.startedPlayingTimestamp = 0;
             this.lastConfigGames = configGames;
+
+            if (shouldAutoResume && configGames.length > 0) {
+                logger("info", `[${this.logOnOptions.accountName}] Resuming idle for ${configGames.length} game(s) (was idling before restart)...`);
+                this.setGamesPlayed(configGames);
+                this.startGoalCheck();
+            }
         };
 
         // Get all licenses this account owns
