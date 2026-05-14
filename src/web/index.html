@@ -459,8 +459,21 @@ async function poll(){
         bots=d.bots||[];
         const bf=botsFingerprint(),af=acctFingerprint();
         const botsChanged=bf!==lastBotsFingerprint,acctChanged=af!==lastAcctFingerprint;
+        if(botsChanged){
+            lastBotsFingerprint=bf;
+            bots.forEach(b=>{
+                const hasProfile=homeProfiles[b.username]&&homeProfiles[b.username].online;
+                if((b.state==="online"||b.state==="playing")&&!hasProfile&&!profileFetching.has(b.username)){
+                    profileFetching.add(b.username);
+                    A("GET","/api/accounts/"+encodeURIComponent(b.username)+"/profile").then(d=>{
+                        profileFetching.delete(b.username);
+                        if(d){homeProfiles[b.username]=d;renderHomeCards()}
+                    }).catch(()=>profileFetching.delete(b.username));
+                }
+            });
+            renderHomeCards();renderAllAcctPages();
+        }
         if(acctChanged){lastAcctFingerprint=af;renderHome()}
-        if(botsChanged||acctChanged){lastBotsFingerprint=bf;renderHomeCards();renderAllAcctPages()}
         updateGlobal();
         if(d.guard&&d.guard.length>0&&!$("guardModal").classList.contains("show"))showGuardModal(d.guard[0]);
         if(d.qrDone){cancelQrLogin();hideModal("addModal");await loadAccounts();}
@@ -511,13 +524,17 @@ function acctFingerprint(){return accounts.map(a=>a.username).join(",")}
 async function refreshAll(){
     const btn=$("btnRefresh");
     if(btn){btn.disabled=true;btn.textContent="Refreshing...";}
+    await A("POST","/api/refresh");
     Object.keys(homeProfiles).forEach(k=>delete homeProfiles[k]);
+    profileFetching.clear();
     lastBotsFingerprint="";lastAcctFingerprint="";
+    await loadConfig();
+    await loadAccounts();
+    await poll();
     await Promise.all(accounts.map(a=>A("POST","/api/accounts/"+encodeURIComponent(a.username)+"/refresh").catch(()=>{})));
     await Promise.all(accounts.map(a=>A("GET","/api/accounts/"+encodeURIComponent(a.username)+"/profile").then(d=>{
         if(d)homeProfiles[a.username]=d;
     }).catch(()=>{})));
-    await poll();
     renderHome();
     renderHomeCards();
     renderAllAcctPages();
@@ -528,11 +545,14 @@ function renderHome(){
     const el=$("homeList");
     if(!accounts.length){el.innerHTML='<div class="empty">No accounts yet.</div>';return}
     accounts.forEach(a=>{
-        if(!homeProfiles[a.username]&&!profileFetching.has(a.username)){
+        const bot=bots.find(x=>x.username===a.username);
+        const isOnline=bot&&(bot.state==="online"||bot.state==="playing"||bot.state==="logging_in");
+        const hasProfile=homeProfiles[a.username]&&homeProfiles[a.username].online;
+        if((isOnline&&!hasProfile||!homeProfiles[a.username])&&!profileFetching.has(a.username)){
             profileFetching.add(a.username);
             A("GET","/api/accounts/"+encodeURIComponent(a.username)+"/profile").then(d=>{
                 profileFetching.delete(a.username);
-                if(d&&d.online){homeProfiles[a.username]=d;renderHomeCards()}
+                if(d){homeProfiles[a.username]=d;renderHomeCards()}
             }).catch(()=>profileFetching.delete(a.username));
         }
     });

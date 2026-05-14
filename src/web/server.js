@@ -140,6 +140,15 @@ function saveAccounts(accounts) {
 
 // --- Routes ---
 
+// Invalidate server caches
+app.post("/api/refresh", (req, res) => {
+    _configCache = null;
+    _accountsCache = null;
+    _playtimeCache = null;
+    _playtimeMtime = 0;
+    res.json({ ok: true });
+});
+
 // Serve dashboard
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
