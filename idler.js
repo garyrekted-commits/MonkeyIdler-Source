@@ -30,14 +30,24 @@ const dataDir = path.join(app.getPath("appData"), "MonkeyIdler");
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 global.dataDir = dataDir;
 
-// Migrate user data from old install directory to AppData (one-time, for existing users)
+// Migrate user data from old install directory to AppData
+// Copy if AppData version doesn't exist, or if install-dir version is newer (user edited it before update)
 const migrateFiles = ["config.json", "accounts.txt", "proxies.txt", "playtime.txt", "output.txt"];
 for (const file of migrateFiles) {
     const oldPath = path.join(appRoot, file);
     const newPath = path.join(dataDir, file);
-    if (fs.existsSync(oldPath) && !fs.existsSync(newPath)) {
-        try { fs.copyFileSync(oldPath, newPath); } catch (e) { /* ignore */ }
-    }
+    if (!fs.existsSync(oldPath)) continue;
+    try {
+        if (!fs.existsSync(newPath)) {
+            fs.copyFileSync(oldPath, newPath);
+        } else {
+            const oldStat = fs.statSync(oldPath);
+            const newStat = fs.statSync(newPath);
+            if (oldStat.mtimeMs > newStat.mtimeMs && oldStat.size > 0) {
+                fs.copyFileSync(oldPath, newPath);
+            }
+        }
+    } catch (e) { /* ignore */ }
 }
 // Migrate tokens.db from old locations
 const oldTokenPaths = [path.join(appRoot, "src", "tokens.db"), path.join(appRoot, "tokens.db")];

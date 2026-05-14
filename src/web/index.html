@@ -387,7 +387,7 @@ input:focus,select:focus{border-color:var(--accent)}
 <div class="modal-bg" id="guardModal"><div class="modal">
     <h3>&#128274; Steam Guard Code</h3>
     <p style="color:var(--text2);font-size:.78rem;margin-bottom:12px">Enter the code for <strong id="guardAcct">-</strong></p>
-    <div class="f"><label>Code</label><input id="guardCode" placeholder="Enter code..." maxlength="10" autocomplete="off" style="font-size:1rem;text-align:center;letter-spacing:3px;font-weight:700"></div>
+    <div class="f"><label>Code</label><input id="guardCode" placeholder="Enter code..." maxlength="10" autocomplete="off" style="font-size:1rem;text-align:center;letter-spacing:3px;font-weight:700;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
     <div class="f-actions"><button class="btn-accent" onclick="submitGuard()">Submit</button><button class="btn-ghost" onclick="skipGuard()">Skip</button></div>
 </div></div>
 
@@ -429,6 +429,7 @@ function navTo(el){
     el.classList.add("active");
     const p=$("page-"+el.dataset.page);if(p)p.classList.add("active");
     $("pageTitle").textContent=el.textContent.replace(/[^\w\s]/g,"").trim();
+    const contentEl=document.querySelector(".content");if(contentEl)contentEl.scrollTop=0;
     if(el.dataset.page==="deals")loadDeals();
     const u=el.dataset.user;
     if(u)loadAcctPage(u);
