@@ -1,6 +1,6 @@
 {
     "name": "steam-idler",
-    "version": "1.12.1",
+    "version": "1.13.0",
     "description": "Steam game idler with desktop GUI and multi account support",
     "main": "idler.js",
     "dependencies": {
@@ -84,7 +84,7 @@
         },
         "nsis": {
             "oneClick": false,
-            "perMachine": true,
+            "perMachine": false,
             "allowToChangeInstallationDirectory": true,
             "installerIcon": "icon.ico",
             "uninstallerIcon": "icon.ico",

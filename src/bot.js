@@ -16,12 +16,14 @@
 
 
 const fs        = require("fs");
+const path      = require("path");
 const util      = require("util");
 const SteamID   = require("steamid");
 const SteamTotp = require("steam-totp");
 const SteamUser = require("steam-user");
 const EResult   = SteamUser.EResult;
 
+const dataDir = global.dataDir || ".";
 const sessionHandler = require("./sessions/sessionHandler.js");
 const controller     = require("./controller.js");
 
@@ -345,7 +347,7 @@ Bot.prototype.startGoalCheck = function() {
     this.goalCheckInterval = setInterval(() => {
         let goals = this.acctConfig.playtimeGoals;
         try {
-            const cfg = JSON.parse(fs.readFileSync("./config.json", "utf8"));
+            const cfg = JSON.parse(fs.readFileSync(path.join(dataDir, "config.json"), "utf8"));
             const acctCfg = (cfg.accountSettings && cfg.accountSettings[this.logOnOptions.accountName]) || {};
             goals = acctCfg.playtimeGoals || {};
             this.acctConfig.playtimeGoals = goals;
@@ -380,15 +382,14 @@ Bot.prototype.startGoalCheck = function() {
         this.playedAppIDs = remaining;
         this.client.gamesPlayed(remaining);
 
-        // Update config on disk to remove these games from playingGames
         try {
-            const cfg = JSON.parse(fs.readFileSync("./config.json", "utf8"));
+            const cfg = JSON.parse(fs.readFileSync(path.join(dataDir, "config.json"), "utf8"));
             if (cfg.accountSettings && cfg.accountSettings[this.logOnOptions.accountName]) {
                 const acctCfg = cfg.accountSettings[this.logOnOptions.accountName];
                 if (acctCfg.playingGames) {
                     acctCfg.playingGames = acctCfg.playingGames.filter(id => !removed.find(r => r.appid === id));
                 }
-                fs.writeFileSync("./config.json", JSON.stringify(cfg, null, 4) + "\n");
+                fs.writeFileSync(path.join(dataDir, "config.json"), JSON.stringify(cfg, null, 4) + "\n");
             }
         } catch (e) { /* ignore config write errors */ }
 
@@ -466,7 +467,7 @@ Bot.prototype.logPlaytimeToFile = function() {
         // Append session summary to playtime.txt
         const str = `[${this.logOnOptions.accountName}] Session Summary (${formatDate(this.startedPlayingTimestamp)} - ${formatDate(Date.now())}) ~ Played for ${Math.trunc((Date.now() - this.startedPlayingTimestamp) / 1000)} seconds: ${util.inspect(this.playedAppIDs, false, 2, false)}`; // Inspect() formats array properly
 
-        fs.appendFile("./playtime.txt", str + "\n", (err) => {
+        fs.appendFile(path.join(dataDir, "playtime.txt"), str + "\n", (err) => {
             if (err) logger("warn", `[${this.logOnOptions.accountName}] Failed to write playtime: ${err.message}`);
         });
     }

@@ -17,10 +17,12 @@
 
 // Handles creating bot objects, providing them with data and relogging
 const fs     = require("fs");
+const path   = require("path");
 const logger = require("output-logger");
 const EventEmitter = require("events");
 
-let config = JSON.parse(fs.readFileSync("./config.json", "utf8"));
+const dataDir = global.dataDir || ".";
+let config = JSON.parse(fs.readFileSync(path.join(dataDir, "config.json"), "utf8"));
 
 // Export both values to make them accessable from bot.js
 module.exports.nextacc    = 0;
@@ -33,7 +35,7 @@ module.exports.loginEvents = loginEvents;
 logger.options({
     msgstructure: `[${logger.Const.ANIMATION}] [${logger.Const.DATE} | ${logger.Const.TYPE}] ${logger.Const.MESSAGE}`,
     paramstructure: [logger.Const.TYPE, logger.Const.MESSAGE, "nodate", "remove", logger.Const.ANIMATION],
-    outputfile: "./output.txt",
+    outputfile: path.join(dataDir, "output.txt"),
     exitmessage: "Goodbye!",
     printdebug: false
 });
@@ -75,8 +77,8 @@ function importLogininfo() {
         let logininfo = {};
 
         // Import data from accounts.txt
-        if (fs.existsSync("./accounts.txt")) {
-            let data = fs.readFileSync("./accounts.txt", "utf8").split("\n");
+        if (fs.existsSync(path.join(dataDir, "accounts.txt"))) {
+            let data = fs.readFileSync(path.join(dataDir, "accounts.txt"), "utf8").split("\n");
 
             if (data.length > 0 && data[0].startsWith("//Comment")) data = data.slice(1); // Remove comment from array
 
@@ -119,10 +121,10 @@ function importProxies() {
     return new Promise((resolve) => {
         let proxies = []; // When the file is just created there can't be proxies in it (this bot doesn't support magic)
 
-        if (!fs.existsSync("./proxies.txt")) {
+        if (!fs.existsSync(path.join(dataDir, "proxies.txt"))) {
             resolve([ null ]);
-        } else { // File does seem to exist so now we can try and read it
-            proxies = fs.readFileSync("./proxies.txt", "utf8").split("\n");
+        } else {
+            proxies = fs.readFileSync(path.join(dataDir, "proxies.txt"), "utf8").split("\n");
             proxies = proxies.filter(str => str != ""); // Remove empty lines
 
             if (proxies.length > 0 && proxies[0].startsWith("//Comment")) proxies = proxies.slice(1); // Remove comment from array
@@ -196,7 +198,7 @@ module.exports.startOne = async function(username) {
     // Check if already running
     if (allBots.find(b => b.logOnOptions.accountName === username)) return false;
 
-    config = JSON.parse(fs.readFileSync("./config.json", "utf8"));
+    config = JSON.parse(fs.readFileSync(path.join(dataDir, "config.json"), "utf8"));
     if (!global.logger) global.logger = logger;
 
     const logininfo = await importLogininfo();
@@ -227,7 +229,7 @@ module.exports.startOne = async function(username) {
 
 module.exports.start = async () => {
     // Re-read config from disk in case the interactive menu changed it
-    config = JSON.parse(fs.readFileSync("./config.json", "utf8"));
+    config = JSON.parse(fs.readFileSync(path.join(dataDir, "config.json"), "utf8"));
 
     module.exports.isRunning = true;
 

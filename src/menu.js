@@ -7,10 +7,12 @@
  */
 
 const fs       = require("fs");
+const path     = require("path");
 const readline = require("readline");
 
-const configPath   = "./config.json";
-const accountsPath = "./accounts.txt";
+const dataDir      = global.dataDir || ".";
+const configPath   = path.join(dataDir, "config.json");
+const accountsPath = path.join(dataDir, "accounts.txt");
 
 
 function loadConfig() {

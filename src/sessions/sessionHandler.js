@@ -40,7 +40,8 @@ const sessionHandler = function(bot) {
     this.session         = null;
 
     // Load tokens database
-    this.tokensdb     = new nedb({ filename: "./src/tokens.db", autoload: true });
+    const dataDir = global.dataDir || ".";
+    this.tokensdb     = new nedb({ filename: require("path").join(dataDir, "tokens.db"), autoload: true });
     this.logOnOptions = bot.logOnOptions;
 
     // Load helper files

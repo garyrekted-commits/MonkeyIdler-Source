@@ -9,9 +9,10 @@ const fs      = require("fs");
 const path    = require("path");
 const express = require("express");
 
-const configPath   = "./config.json";
-const accountsPath = "./accounts.txt";
-const playtimePath = "./playtime.txt";
+const dataDir      = global.dataDir || ".";
+const configPath   = path.join(dataDir, "config.json");
+const accountsPath = path.join(dataDir, "accounts.txt");
+const playtimePath = path.join(dataDir, "playtime.txt");
 
 const app  = express();
 const PORT = 3000;
@@ -279,7 +280,7 @@ app.post("/api/qrlogin", async (req, res) => {
             if (token) {
                 try {
                     const nedb = require("@seald-io/nedb");
-                    const db = new nedb({ filename: "./src/tokens.db", autoload: true });
+                    const db = new nedb({ filename: path.join(dataDir, "tokens.db"), autoload: true });
                     db.updateAsync({ accountName }, { $set: { token } }, { upsert: true });
                 } catch (e) { broadcastLog({ type: "warn", message: "Could not save token: " + e.message, timestamp: Date.now() }); }
             }

@@ -461,7 +461,7 @@ async function poll(){
         if(acctChanged){lastAcctFingerprint=af;renderHome()}
         if(botsChanged||acctChanged){lastBotsFingerprint=bf;renderHomeCards();renderAllAcctPages()}
         updateGlobal();
-        if(d.guard&&d.guard.length>0)showGuardModal(d.guard[0]);
+        if(d.guard&&d.guard.length>0&&!$("guardModal").classList.contains("show"))showGuardModal(d.guard[0]);
         if(d.qrDone){cancelQrLogin();hideModal("addModal");await loadAccounts();}
         if(d.chatSeq)chatSeq=d.chatSeq;
         processChatPoll(d.chats);

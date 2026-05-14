@@ -25,6 +25,31 @@ const fs                     = require("fs");
 const appRoot = path.dirname(__dirname.includes("app.asar") ? process.execPath : __filename);
 process.chdir(app.isPackaged ? appRoot : __dirname);
 
+// User data lives in %APPDATA%/MonkeyIdler so it survives updates
+const dataDir = path.join(app.getPath("appData"), "MonkeyIdler");
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+global.dataDir = dataDir;
+
+// Migrate user data from old install directory to AppData (one-time, for existing users)
+const migrateFiles = ["config.json", "accounts.txt", "proxies.txt", "playtime.txt", "output.txt"];
+for (const file of migrateFiles) {
+    const oldPath = path.join(appRoot, file);
+    const newPath = path.join(dataDir, file);
+    if (fs.existsSync(oldPath) && !fs.existsSync(newPath)) {
+        try { fs.copyFileSync(oldPath, newPath); } catch (e) { /* ignore */ }
+    }
+}
+// Migrate tokens.db from old locations
+const oldTokenPaths = [path.join(appRoot, "src", "tokens.db"), path.join(appRoot, "tokens.db")];
+const newTokenPath = path.join(dataDir, "tokens.db");
+if (!fs.existsSync(newTokenPath)) {
+    for (const old of oldTokenPaths) {
+        if (fs.existsSync(old)) {
+            try { fs.copyFileSync(old, newTokenPath); break; } catch (e) { /* ignore */ }
+        }
+    }
+}
+
 // Ensure essential files exist (first run after install)
 const defaults = {
     "config.json": JSON.stringify({ playingGames: [], onlinestatus: 1, afkMessage: "", relogTimeout: 15, useLocalIP: true, accountSettings: {} }, null, 4),
@@ -32,7 +57,8 @@ const defaults = {
     "proxies.txt": ""
 };
 for (const [file, content] of Object.entries(defaults)) {
-    if (!fs.existsSync(file)) fs.writeFileSync(file, content, "utf8");
+    const filePath = path.join(dataDir, file);
+    if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, content, "utf8");
 }
 
 const { startServer }        = require("./src/web/server.js");
@@ -69,7 +95,7 @@ app.whenReady().then(async () => {
 
     // Auto-updater: check for updates once the window is ready
     autoUpdater.autoDownload = true;
-    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.autoInstallOnAppQuit = false;
     autoUpdater.logger = null;
 
     autoUpdater.on("update-available", (info) => {
