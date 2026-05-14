@@ -31,8 +31,8 @@
         "publish": [
             {
                 "provider": "github",
-                "owner": "YOUR_GITHUB_USERNAME",
-                "repo": "YOUR_REPO_NAME"
+                "owner": "garyrekted-commits",
+                "repo": "MonkeyIdler-Source"
             }
         ],
         "files": [

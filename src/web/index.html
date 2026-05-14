@@ -268,6 +268,13 @@ input:focus,select:focus{border-color:var(--accent)}
                     <div class="f-actions"><button class="btn-accent" onclick="saveGlobal()">Save</button></div>
                 </div>
             </div>
+            <div class="section" style="max-width:600px;margin-top:16px">
+                <div class="section-head"><h3>Updates</h3></div>
+                <div class="section-body" style="display:flex;align-items:center;gap:12px">
+                    <button class="btn-accent btn-sm" onclick="manualUpdateCheck()">Check for Updates</button>
+                    <span style="font-size:.75rem;color:var(--text2)" id="updateCheckResult"></span>
+                </div>
+            </div>
         </div>
 
         <!-- Per-account pages are injected dynamically -->
@@ -1049,20 +1056,29 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){hideModal("addModal
 $("guardCode").addEventListener("keydown",e=>{if(e.key==="Enter")submitGuard()});
 
 // --- Auto-updater ---
+function manualUpdateCheck(){
+    const el=$("updateCheckResult");
+    if(el)el.textContent="Checking...";
+    if(window.electronAPI&&window.electronAPI.checkForUpdate){
+        window.electronAPI.checkForUpdate();
+    }else{
+        if(el)el.textContent="Updater not available (running in browser?)";
+    }
+}
 if(window.electronAPI&&window.electronAPI.onUpdateStatus){
     window.electronAPI.onUpdateStatus(function(data){
-        const banner=$("updateBanner"),msg=$("updateMsg");
-        if(!banner||!msg)return;
+        const banner=$("updateBanner"),msg=$("updateMsg"),result=$("updateCheckResult");
         if(data.status==="downloading"){
-            banner.style.display="";msg.textContent="Downloading v"+data.version+"...";
-            banner.querySelector("button").style.display="none";
+            if(banner){banner.style.display="";msg.textContent="Downloading v"+data.version+"...";banner.querySelector("button").style.display="none"}
+            if(result)result.textContent="Downloading v"+data.version+"...";
         }else if(data.status==="ready"){
-            banner.style.display="";msg.textContent="v"+data.version+" ready to install!";
-            banner.querySelector("button").style.display="";
+            if(banner){banner.style.display="";msg.textContent="v"+data.version+" ready to install!";banner.querySelector("button").style.display=""}
+            if(result)result.textContent="v"+data.version+" ready! Click Install & Restart in the sidebar.";
+        }else if(data.status==="up-to-date"){
+            if(result)result.textContent="You're up to date!";
         }else if(data.status==="error"){
-            banner.style.display="none";
-        }else{
-            banner.style.display="none";
+            if(banner)banner.style.display="none";
+            if(result)result.textContent="Update check failed: "+(data.error||"unknown error");
         }
     });
 }
