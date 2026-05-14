@@ -61,10 +61,78 @@ input:focus,select:focus{border-color:var(--accent)}
 .topnav-tab[data-page="logs"].active{background:rgba(164,208,7,.12);border-color:rgba(164,208,7,.25);box-shadow:0 1px 8px rgba(164,208,7,.12)}
 .topnav-tab[data-page="deals"]{color:#c77dff}
 .topnav-tab[data-page="deals"].active{background:rgba(199,125,255,.12);border-color:rgba(199,125,255,.25);box-shadow:0 1px 8px rgba(199,125,255,.12)}
-.topnav-tab[data-page="massbot"]{color:#e8a43a}
-.topnav-tab[data-page="massbot"].active{background:rgba(232,164,58,.12);border-color:rgba(232,164,58,.25);box-shadow:0 1px 8px rgba(232,164,58,.12)}
 .topnav-tab[data-page="settings"]{color:#2dd4a8}
 .topnav-tab[data-page="settings"].active{background:rgba(45,212,168,.12);border-color:rgba(45,212,168,.25);box-shadow:0 1px 8px rgba(45,212,168,.12)}
+
+/* Art Maker */
+.am-page{background:#1b2838;min-height:100%;border-radius:8px;padding:20px 24px}
+.am-header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.am-header-thumb{width:80px;height:80px;border:2px solid #67c1f5;border-radius:4px;overflow:hidden;background:#0e1821;display:flex;align-items:center;justify-content:center}
+.am-header-thumb img,.am-header-thumb canvas{width:100%;height:100%;object-fit:cover}
+.am-header-thumb .empty-thumb{color:#4a6780;font-size:2rem}
+.am-header-info h2{font-size:1rem;color:#c7d5e0;margin:0 0 2px}.am-header-info .ver{font-size:.68rem;color:#4a6780}
+.am-header-info p{font-size:.72rem;color:#8f98a0;margin:4px 0 0}
+.am-url-bar{display:flex;gap:6px;margin-bottom:14px}
+.am-url-bar input{flex:1;background:#0e1821;border:1px solid #2a475e;color:#c7d5e0;border-radius:3px;padding:6px 10px;font-size:.72rem}
+.am-url-bar input::placeholder{color:#4a6780}
+.am-url-bar button{background:#2a475e;color:#67c1f5;border:none;border-radius:3px;padding:6px 12px;cursor:pointer;font-size:.72rem;display:flex;align-items:center;gap:4px}
+.am-url-bar button:hover{background:#3a5a7c}
+.am-type-bar{display:flex;gap:6px;margin-bottom:14px}
+.am-type-btn{background:#2a475e;color:#8f98a0;border:1px solid #2a475e;border-radius:3px;padding:6px 14px;cursor:pointer;font-size:.68rem;transition:all .15s}
+.am-type-btn.active{background:#1a9fff22;color:#67c1f5;border-color:#67c1f5}
+.am-type-btn:hover{color:#c7d5e0}
+.am-body{display:flex;gap:20px}
+.am-canvas-col{flex:2;min-width:0}
+.am-sidebar-col{flex:0 0 240px;display:flex;flex-direction:column;gap:10px}
+.am-canvas-wrap{
+  position:relative;background:#0e1821;border:1px solid #2a475e;
+  border-radius:4px;overflow:hidden;cursor:crosshair;display:none;
+}
+.am-canvas-wrap canvas{display:block;max-width:100%;height:auto}
+.am-canvas-wrap video{display:block;max-width:100%;height:auto}
+.am-crop-overlay{
+  position:absolute;border:2px solid rgba(103,193,245,.7);
+  background:rgba(103,193,245,.08);pointer-events:none;transition:none;
+}
+.am-crop-overlay.main{border-color:rgba(103,193,245,.7);background:rgba(103,193,245,.08)}
+.am-crop-overlay.side{border-color:rgba(164,208,7,.7);background:rgba(164,208,7,.08)}
+.am-crop-label{
+  position:absolute;top:2px;left:4px;font-size:.58rem;font-weight:700;
+  padding:1px 4px;border-radius:3px;color:#fff;
+}
+.am-crop-label.main{background:rgba(103,193,245,.8)}
+.am-crop-label.side{background:rgba(164,208,7,.8)}
+.am-toolbar{position:absolute;top:6px;right:6px;display:flex;gap:4px;z-index:2}
+.am-toolbar button{background:rgba(0,0,0,.65);border:1px solid #2a475e;color:#c7d5e0;border-radius:3px;width:26px;height:26px;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center}
+.am-toolbar button:hover{background:rgba(103,193,245,.3);border-color:#67c1f5}
+.am-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px;padding:10px;background:#0e1821;border:1px solid #2a475e;border-radius:4px}
+.am-controls label{font-size:.66rem;color:#8f98a0;font-weight:500}
+.am-controls input[type="range"]{width:140px;accent-color:#67c1f5}
+.am-controls span{font-size:.66rem;color:#4a6780}
+.am-dropzone{
+  border:2px dashed #2a475e;border-radius:4px;padding:40px 20px;
+  text-align:center;color:#4a6780;font-size:.76rem;cursor:pointer;
+  transition:all .18s;background:#0e1821;
+}
+.am-dropzone:hover,.am-dropzone.dragover{border-color:#67c1f5;background:#1a9fff11;color:#67c1f5}
+.am-dropzone input{display:none}
+.am-preview-section{margin-top:14px}
+.am-preview-section h4{font-size:.72rem;color:#8f98a0;margin:0 0 8px}
+.am-preview-strip{
+  display:flex;gap:8px;align-items:flex-start;
+  padding:12px;background:#0e1821;border:1px solid #2a475e;border-radius:4px;min-height:60px;
+}
+.am-preview-strip img,.am-preview-strip canvas{border-radius:3px;border:1px solid #2a475e}
+.am-side-btn{
+  display:block;width:100%;padding:10px;background:#2a475e;border:1px solid #2a475e;
+  color:#c7d5e0;border-radius:3px;cursor:pointer;font-size:.72rem;text-align:center;transition:all .15s;
+}
+.am-side-btn:hover{background:#3a5a7c;border-color:#67c1f5}
+.am-side-btn.primary{color:#67c1f5;border-color:#67c1f5}
+.am-side-btn.export{color:#f55;border-color:#f55}
+.am-side-btn.export:hover{background:#f5522222}
+.am-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.am-status{font-size:.68rem;color:#8f98a0;text-align:center;margin-top:6px}
 
 /* Sidebar */
 .sidebar{width:180px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
@@ -99,6 +167,23 @@ input:focus,select:focus{border-color:var(--accent)}
   font-weight:600;
 }
 .sb-item .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sb-acct-card{padding:8px 12px;align-items:flex-start;white-space:normal;overflow:visible}
+.sb-section-toggle{
+  padding:6px 14px;margin:6px 8px 2px;
+  font-size:.62rem;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.6px;font-weight:600;
+  background:rgba(255,255,255,.025);
+  border-radius:20px;border:1px solid rgba(255,255,255,.04);
+  cursor:pointer;display:flex;align-items:center;gap:6px;
+  transition:all .15s;user-select:none;
+}
+.sb-section-toggle:hover{background:rgba(255,255,255,.05);color:var(--text2)}
+.sb-section-toggle::before{content:"▼";font-size:.5rem;transition:transform .2s}
+.sb-section-toggle.collapsed::before{transform:rotate(-90deg)}
+.sb-acct-list{transition:max-height .25s ease;overflow:hidden}
+.sb-acct-list.collapsed{max-height:0!important}
+.sb-acct-stat{display:flex;align-items:center;gap:4px;font-size:.58rem;color:var(--text3)}
+.sb-acct-stat .val{color:var(--text2)}
 .sb-add{margin:4px 8px;padding:7px 12px;font-size:.72rem;text-align:center;border-radius:20px;cursor:pointer;color:var(--accent);border:1px dashed var(--border);transition:all .12s}
 .sb-add:hover{background:var(--accent-bg);border-color:var(--accent)}
 .sb-spacer{flex:1}
@@ -210,21 +295,26 @@ input:focus,select:focus{border-color:var(--accent)}
 .comment-progress{background:var(--bg);border-radius:6px;padding:10px;margin-top:10px}
 .comment-progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:6px 0}
 .comment-progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .3s}
-.comment-log{max-height:160px;overflow-y:auto;font-size:.68rem;font-family:monospace;margin-top:8px}
+.comment-log{max-height:180px;overflow-y:auto;font-size:.68rem;margin-top:8px;display:flex;flex-direction:column;gap:3px}
 .comment-log::-webkit-scrollbar{width:3px}.comment-log::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.comment-log-entry{padding:2px 0;border-bottom:1px solid var(--border)}
-.comment-log-entry.ok{color:var(--green)}.comment-log-entry.error{color:var(--red)}.comment-log-entry.cancelled{color:var(--orange)}
+.comment-log-entry{padding:4px 8px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;gap:6px}
+.comment-log-entry .cle-name{font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.comment-log-entry .cle-badge{font-size:.58rem;font-weight:700;padding:1px 6px;border-radius:8px;text-transform:uppercase;flex-shrink:0}
+.comment-log-entry.ok{color:var(--green)}.comment-log-entry.ok .cle-badge{background:var(--green-bg);color:var(--green)}
+.comment-log-entry.error{color:var(--red)}.comment-log-entry.error .cle-badge{background:var(--red-bg);color:var(--red)}
+.comment-log-entry.skipped{color:var(--orange)}.comment-log-entry.skipped .cle-badge{background:var(--orange-bg);color:var(--orange)}
+.comment-log-entry.cancelled{color:var(--text3)}.comment-log-entry.cancelled .cle-badge{background:var(--bg4);color:var(--text3)}
 .cmt-friend-picker{max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;margin-top:10px;display:none}
 .cmt-friend-picker.open{display:block}
 .cmt-friend-picker::-webkit-scrollbar{width:3px}.cmt-friend-picker::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .cmt-fp-toolbar{display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg4);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1}
 .cmt-fp-toolbar input[type=text]{flex:1;padding:4px 8px;font-size:.7rem}
 .cmt-fp-toolbar label{font-size:.68rem;color:var(--text3);display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
-.cmt-fp-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
-.cmt-fp-row:hover{background:var(--bg4)}
-.cmt-fp-row img{width:24px;height:24px;border-radius:3px}
-.cmt-fp-row .fp-name{font-size:.72rem;color:var(--text);flex:1}
-.cmt-fp-row .fp-state{font-size:.62rem;color:var(--text3)}
+.cmt-fp-row{display:flex;align-items:center;gap:8px;padding:6px 10px;transition:background .12s;cursor:pointer;border-radius:8px;margin:1px 4px}
+.cmt-fp-row:hover{background:rgba(255,255,255,.04)}
+.cmt-fp-row img{width:26px;height:26px;border-radius:50%}
+.cmt-fp-row .fp-name{font-size:.72rem;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmt-fp-row .fp-state{font-size:.6rem;color:var(--text3);flex-shrink:0}
 .cmt-fp-count{font-size:.68rem;color:var(--accent);margin-left:8px}
 
 /* Friends list */
@@ -378,8 +468,12 @@ input:focus,select:focus{border-color:var(--accent)}
 .mc-progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .3s}
 .mc-log{max-height:240px;overflow-y:auto;font-size:.68rem;font-family:monospace;margin-top:8px}
 .mc-log::-webkit-scrollbar{width:3px}.mc-log::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.mc-log-entry{padding:2px 0;border-bottom:1px solid var(--border)}
-.mc-log-entry.ok{color:var(--green)}.mc-log-entry.error{color:var(--red)}.mc-log-entry.skip{color:var(--orange)}.mc-log-entry.skipped{color:var(--orange)}
+.mc-log-entry{padding:4px 8px;border-radius:6px;background:var(--bg3);display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.mc-log-entry .mle-name{font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-log-entry .mle-badge{font-size:.58rem;font-weight:700;padding:1px 6px;border-radius:8px;text-transform:uppercase;flex-shrink:0}
+.mc-log-entry.ok{color:var(--green)}.mc-log-entry.ok .mle-badge{background:var(--green-bg);color:var(--green)}
+.mc-log-entry.error{color:var(--red)}.mc-log-entry.error .mle-badge{background:var(--red-bg);color:var(--red)}
+.mc-log-entry.skip,.mc-log-entry.skipped{color:var(--orange)}.mc-log-entry.skip .mle-badge,.mc-log-entry.skipped .mle-badge{background:var(--orange-bg);color:var(--orange)}
 
 /* Modal */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center}
@@ -388,6 +482,7 @@ input:focus,select:focus{border-color:var(--accent)}
 .modal h3{font-size:.95rem;margin-bottom:14px}
 .modal .f{margin-bottom:10px}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 <div style="display:flex;flex-direction:column;width:100%;height:100vh;border-radius:10px;overflow:hidden">
@@ -401,13 +496,15 @@ input:focus,select:focus{border-color:var(--accent)}
     <div class="topnav-tab active" data-page="home" onclick="navTo(this)">&#127968; Overview</div>
     <div class="topnav-tab" data-page="logs" onclick="navTo(this)">&#128220; All Logs</div>
     <div class="topnav-tab" data-page="deals" onclick="navTo(this)">&#128176; Deals</div>
-    <div class="topnav-tab" data-page="massbot" onclick="navTo(this)">&#129302; Mass Bot Use</div>
     <div class="topnav-tab" data-page="settings" onclick="navTo(this)">&#9881; Settings</div>
 </div>
 <div style="display:flex;flex:1;overflow:hidden">
 <nav class="sidebar" id="sidebar">
-    <div class="sb-header">&#9654; Accounts</div>
-    <div id="sbAccounts" style="display:none"></div>
+    <div class="sb-header">&#128295; Tools</div>
+    <div class="sb-item" data-page="massbot" onclick="navTo(this)">&#129302; Mass Bot Use</div>
+    <div class="sb-item" data-page="artmaker" onclick="navTo(this)">&#127912; Art Maker</div>
+    <div class="sb-section-toggle" id="sbAcctToggle" onclick="toggleAcctDropdown()">Accounts <span id="sbAcctCount" style="margin-left:auto;font-size:.58rem;color:var(--accent)">0</span></div>
+    <div class="sb-acct-list" id="sbAccounts"></div>
     <div class="sb-spacer"></div>
     <div id="updateBanner" style="display:none;margin:6px;padding:8px 10px;background:linear-gradient(135deg,rgba(45,212,168,.15),rgba(124,106,255,.15));border:1px solid var(--green);border-radius:6px;font-size:.7rem;text-align:center">
         <div style="font-weight:600;color:var(--green);margin-bottom:4px" id="updateMsg">Update available!</div>
@@ -489,6 +586,72 @@ input:focus,select:focus{border-color:var(--accent)}
                         <div style="font-size:.72rem;color:var(--text2)"><span id="mc-count">0/0</span> &middot; <span id="mc-errors">0 errors</span></div>
                         <div class="mc-progress-bar"><div class="mc-progress-fill" id="mc-bar" style="width:0%"></div></div>
                         <div class="mc-log" id="mc-log"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Art Maker -->
+        <div class="page" id="page-artmaker">
+            <div class="am-page">
+                <div class="am-header">
+                    <div class="am-header-thumb" id="am-thumb"><span class="empty-thumb">&#127912;</span></div>
+                    <div class="am-header-info">
+                        <h2>Background Cropper</h2>
+                        <p>Paste your background link or upload your background below.</p>
+                    </div>
+                </div>
+                <div class="am-url-bar">
+                    <input id="am-url" placeholder="https://cdn.fastly.steamstatic.com/steamcommunity/public/image/...">
+                    <button onclick="amLoadUrl()">&#8593; Load</button>
+                </div>
+                <div class="am-type-bar">
+                    <button class="am-type-btn active" data-amtype="artwork" onclick="amSwitchType('artwork',this)">&#9634; Artwork</button>
+                    <button class="am-type-btn" data-amtype="featured" onclick="amSwitchType('featured',this)">&#9634; Featured</button>
+                    <button class="am-type-btn" data-amtype="long" onclick="amSwitchType('long',this)">&#9636; Long Art</button>
+                </div>
+                <div class="am-body">
+                    <div class="am-canvas-col">
+                        <div class="am-canvas-wrap" id="am-canvas-wrap">
+                            <canvas id="am-canvas"></canvas>
+                            <video id="am-video" loop muted style="display:none"></video>
+                            <div class="am-crop-overlay main" id="am-overlay-main"><span class="am-crop-label main">Main 506px</span></div>
+                            <div class="am-crop-overlay side" id="am-overlay-side"><span class="am-crop-label side">Side 100px</span></div>
+                            <div class="am-toolbar">
+                                <button title="Download ZIP" onclick="amDownloadZip()">&#8595;</button>
+                                <button title="Move Down" onclick="amNudge(1)">&#8744;</button>
+                                <button title="Move Up" onclick="amNudge(-1)">&#8743;</button>
+                                <button title="Settings" onclick="$('am-controls').style.display=$('am-controls').style.display==='none'?'':'none'">&#9881;</button>
+                                <button title="Clear" onclick="amClear()">&#10005;</button>
+                            </div>
+                        </div>
+                        <div class="am-controls" id="am-controls" style="display:none">
+                            <input type="hidden" id="am-type" value="artwork">
+                            <label>Height</label>
+                            <input type="range" id="am-height" min="200" max="1200" value="506" oninput="amUpdateOverlays();$('am-height-val').textContent=this.value+'px'">
+                            <span id="am-height-val">506px</span>
+                            <label>Y Offset</label>
+                            <input type="range" id="am-yoff" min="0" max="500" value="0" oninput="amUpdateOverlays()">
+                        </div>
+                        <div class="am-dropzone" id="am-dropzone" onclick="$('am-file').click()">
+                            <div style="font-size:1.6rem;margin-bottom:6px;opacity:.5">&#128194;</div>
+                            Drop image / GIF / WEBM here or click to browse
+                            <input type="file" id="am-file" accept="image/*,video/webm,.gif,.webm" onchange="amLoadFile(this)">
+                        </div>
+                        <div class="am-preview-section">
+                            <h4>Featured Artwork Showcase</h4>
+                            <div class="am-preview-strip" id="am-preview">
+                                <div style="width:100%;text-align:center;color:#4a6780;font-size:.72rem;padding:16px 0">Load an image to see preview</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="am-sidebar-col" id="am-sidebar-col">
+                        <button class="am-side-btn export" onclick="amDownloadZip()">&#128190; Download ZIP</button>
+                        <select id="am-upload-acct" style="font-size:.72rem;width:100%;padding:8px;background:#0e1821;border:1px solid #2a475e;color:#c7d5e0;border-radius:3px">
+                            <option value="">Select account...</option>
+                        </select>
+                        <button class="am-side-btn primary" onclick="amUploadToSteam()">&#9650; Upload to Steam</button>
+                        <div class="am-status" id="am-status"></div>
                     </div>
                 </div>
             </div>
@@ -595,6 +758,7 @@ function navTo(el){
     const contentEl=document.querySelector(".content");if(contentEl)contentEl.scrollTop=0;
     if(el.dataset.page==="deals")loadDeals();
     if(el.dataset.page==="massbot")mcRenderAccounts();
+    if(el.dataset.page==="artmaker")amPopulateAccounts();
     const u=el.dataset.user;
     if(u)loadAcctPage(u);
 }
@@ -672,14 +836,44 @@ function clearLogs(){$("logViewer").innerHTML=""}
 async function loadAccounts(){accounts=await A("GET","/api/accounts");renderSidebar();renderHome()}
 function renderSidebar(){
     const el=$("sbAccounts");
+    const onlineCount=accounts.filter(a=>bots.find(x=>x.username===a.username)).length;
+    const countEl=$("sbAcctCount");if(countEl)countEl.textContent=onlineCount+"/"+accounts.length;
     const items=accounts.map(a=>{
         const b=bots.find(x=>x.username===a.username);
-        const c=b?(b.state==="playing"?"var(--green)":b.state==="online"?"var(--orange)":"var(--text3)"):"var(--text3)";
-        return `<div class="sb-item" data-page="acct-${a.username}" data-user="${a.username}" onclick="navTo(this)"><span class="dot" style="background:${c}"></span>${esc(a.username)}</div>`;
+        const p=homeProfiles[a.username]||{};
+        const st=b?b.state:"offline";
+        const dotColor=st==="playing"?"var(--green)":st==="online"?"var(--orange)":"var(--text3)";
+        const statusText=st==="playing"?"Idling":st==="online"?"Online":"Offline";
+        const pt=b&&b.playtimeSeconds>0?fmtDur(b.playtimeSeconds):"";
+        const games=b&&b.gameNames&&b.gameNames.length?b.gameNames:[];
+        const displayName=p.name||a.username;
+        const level=p.level||0;
+        const gameStr=games.length>0?games.slice(0,2).map(g=>esc(g)).join(", ")+(games.length>2?" +"+(games.length-2):""):"";
+        let statsHtml='<div class="sb-acct-stat"><span class="dot" style="background:'+dotColor+';width:5px;height:5px"></span><span class="val">'+statusText+'</span></div>';
+        if(level)statsHtml+='<div class="sb-acct-stat">&#11088; <span class="val">Lv '+level+'</span></div>';
+        if(pt)statsHtml+='<div class="sb-acct-stat">&#9201; <span class="val">'+pt+'</span></div>';
+        if(games.length)statsHtml+='<div class="sb-acct-stat">&#127918; <span class="val">'+games.length+' game'+(games.length>1?'s':'')+'</span></div>';
+        if(gameStr)statsHtml+='<div style="font-size:.56rem;color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;margin-top:1px" title="'+esc(games.join(", "))+'">'+gameStr+'</div>';
+        const avatar=p.avatar||"";
+        return `<div class="sb-item sb-acct-card" data-page="acct-${a.username}" data-user="${a.username}" onclick="navTo(this)">
+            ${avatar?'<img src="'+esc(avatar)+'" style="width:32px;height:32px;border-radius:6px;border:2px solid '+dotColor+';flex-shrink:0;object-fit:cover" onerror="this.style.display=\'none\'">':'<div style="width:32px;height:32px;border-radius:6px;background:var(--bg4);border:2px solid '+dotColor+';flex-shrink:0"></div>'}
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                <div style="font-size:.72rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(displayName)}</div>
+                <div style="font-size:.58rem;color:var(--text3);font-family:monospace">${esc(a.username)}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:3px 8px;margin-top:2px">${statsHtml}</div>
+            </div>
+        </div>`;
     }).join("");
     el.innerHTML=items;
+    el.style.display=accounts.length?"":"none";
     // Ensure account pages exist
     accounts.forEach(a=>{if(!$("page-acct-"+a.username))createAcctPage(a.username)});
+}
+function toggleAcctDropdown(){
+    const toggle=$("sbAcctToggle"),list=$("sbAccounts");
+    if(!toggle||!list)return;
+    toggle.classList.toggle("collapsed");
+    list.classList.toggle("collapsed");
 }
 const homeProfiles={};
 let lastBotsFingerprint="",lastAcctFingerprint="";
@@ -927,12 +1121,15 @@ function createAcctPage(username){
                     <div class="fg">
                         <div class="f" style="flex:1"><label>Comment Text</label><input id="cmt-text-${username}" placeholder="Nice profile! +rep"></div>
                     </div>
-                    <div class="fg" style="margin-top:8px">
-                        <div class="f"><label>Target Steam ID (single)</label><input id="cmt-target-${username}" placeholder="76561198..."></div>
-                        <div class="f"><label>Delay Between Comments (sec)</label><input type="number" id="cmt-delay-${username}" value="15" min="5" style="width:80px"></div>
+                    <div style="margin-top:8px">
+                        <div id="cmt-targets-${username}" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px"></div>
+                        <div class="fg">
+                            <div class="f"><label>Delay Between Comments (sec)</label><input type="number" id="cmt-delay-${username}" value="15" min="5" style="width:80px"></div>
+                        </div>
                     </div>
                     <div class="f-actions" style="margin-top:10px">
-                        <button class="btn-accent btn-sm" onclick="postSingleComment('${username}')">Comment on Profile</button>
+                        <button class="btn-accent btn-sm" onclick="startTargetComments('${username}')">Comment on Targets</button>
+                        <button class="btn-ghost btn-sm" onclick="clearAllTargets('${username}')">Clear Targets</button>
                         <button class="btn-accent btn-sm" onclick="toggleFriendPicker('${username}')" id="cmt-pick-btn-${username}">Pick Friends</button>
                         <button class="btn-green btn-sm" onclick="startBulkComment('${username}')">Comment All Friends</button>
                         <button class="btn-green btn-sm" onclick="startSelectedComment('${username}')" id="cmt-sel-btn-${username}" style="display:none">Comment Selected<span class="cmt-fp-count" id="cmt-sel-count-${username}"></span></button>
@@ -941,7 +1138,6 @@ function createAcctPage(username){
                     <div class="cmt-friend-picker" id="cmt-fp-${username}">
                         <div class="cmt-fp-toolbar">
                             <input type="text" id="cmt-fp-search-${username}" placeholder="Search friends..." oninput="filterFriendPicker('${username}')">
-                            <label><input type="checkbox" id="cmt-fp-all-${username}" onchange="toggleAllFriendPicker('${username}')"> All</label>
                         </div>
                         <div id="cmt-fp-list-${username}"></div>
                     </div>
@@ -949,6 +1145,32 @@ function createAcctPage(username){
                         <div style="font-size:.72rem;color:var(--text2)"><span id="cmt-count-${username}">0/0</span> &middot; <span id="cmt-err-${username}">0 errors</span></div>
                         <div class="comment-progress-bar"><div class="comment-progress-fill" id="cmt-bar-${username}" style="width:0%"></div></div>
                         <div class="comment-log" id="cmt-log-${username}"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="section full">
+                <div class="section-head"><h3>Group Commenter</h3><span style="font-size:.68rem;color:var(--text3)" id="gc-stat-${username}"></span></div>
+                <div class="section-body">
+                    <p style="font-size:.72rem;color:var(--text3);margin-bottom:10px">Post comments on Steam groups you're a member of.</p>
+                    <div class="fg">
+                        <div class="f" style="flex:1"><label>Comment Text</label><input id="gc-text-${username}" placeholder="Nice group!"></div>
+                        <div class="f"><label>Delay (sec)</label><input type="number" id="gc-delay-${username}" value="15" min="5" style="width:80px"></div>
+                    </div>
+                    <div id="gc-targets-${username}" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px"></div>
+                    <div class="f-actions" style="margin-top:10px">
+                        <button class="btn-accent btn-sm" onclick="loadGroupPicker('${username}')">Pick Groups</button>
+                        <button class="btn-green btn-sm" onclick="startGroupComment('${username}')">Comment on Groups</button>
+                        <button class="btn-ghost btn-sm" onclick="clearGroupTargets('${username}')">Clear</button>
+                        <button class="btn-red btn-sm" onclick="stopGroupComment('${username}')">Stop</button>
+                        <button class="btn-ghost btn-sm" onclick="resetGroupComment('${username}')">Reset</button>
+                    </div>
+                    <div class="cmt-friend-picker" id="gc-picker-${username}">
+                        <div id="gc-list-${username}"></div>
+                    </div>
+                    <div class="comment-progress" id="gc-prog-${username}" style="display:none">
+                        <div style="font-size:.72rem;color:var(--text2)"><span id="gc-count-${username}">0/0</span> &middot; <span id="gc-err-${username}">0 errors</span></div>
+                        <div class="comment-progress-bar"><div class="comment-progress-fill" id="gc-bar-${username}" style="width:0%"></div></div>
+                        <div class="comment-log" id="gc-log-${username}"></div>
                     </div>
                 </div>
             </div>
@@ -1315,6 +1537,55 @@ function renderFriends(username){
     }).join("");
 }
 function filterFriends(username){renderFriends(username)}
+const cmtTargetQueues={};
+function addCommentTarget(username,steamId,name){
+    if(!cmtTargetQueues[username])cmtTargetQueues[username]=[];
+    if(cmtTargetQueues[username].find(t=>t.id===steamId))return;
+    cmtTargetQueues[username].push({id:steamId,name:name||steamId});
+    renderTargetQueue(username);
+    const friends=friendsCache[username];
+    if(friends)renderFriendPicker(username,friends);
+}
+function removeCommentTarget(username,steamId){
+    if(!cmtTargetQueues[username])return;
+    cmtTargetQueues[username]=cmtTargetQueues[username].filter(t=>t.id!==steamId);
+    renderTargetQueue(username);
+    const friends=friendsCache[username];
+    if(friends)renderFriendPicker(username,friends);
+}
+function clearAllTargets(username){
+    cmtTargetQueues[username]=[];
+    renderTargetQueue(username);
+    const friends=friendsCache[username];
+    if(friends)renderFriendPicker(username,friends);
+}
+function renderTargetQueue(username){
+    const el=$("cmt-targets-"+username);if(!el)return;
+    const q=cmtTargetQueues[username]||[];
+    if(!q.length){el.innerHTML='<span style="font-size:.68rem;color:var(--text3)">No targets — click Add on friends below</span>';return}
+    el.innerHTML=q.map((t,i)=>'<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--accent-bg);border:1px solid rgba(124,106,255,.25);border-radius:16px;font-size:.68rem;color:var(--accent)">'
+        +'<span style="font-size:.58rem;color:var(--text3);font-weight:700">#'+(i+1)+'</span>'
+        +'<span style="font-weight:600">'+esc(t.name)+'</span>'
+        +'<button onclick="removeCommentTarget(\''+username+'\',\''+t.id+'\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.68rem;padding:0 2px">&#10005;</button>'
+        +'</div>').join("");
+}
+async function startTargetComments(username){
+    const q=cmtTargetQueues[username]||[];
+    if(!q.length)return alert("Add targets first.");
+    const comment=($("cmt-text-"+username)?.value||"").trim();
+    if(!comment)return alert("Enter a comment.");
+    const delay=parseInt($("cmt-delay-"+username)?.value)||15;
+    const steamIds=q.map(t=>t.id);
+    const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/comment/bulk",{comment,delay,steamIds});
+    if(r&&r.ok){
+        $("cmt-prog-"+username).style.display="";
+        $("cmt-count-"+username).textContent="0/"+r.total;
+        $("cmt-bar-"+username).style.width="0%";
+        $("cmt-log-"+username).innerHTML="";
+        $("cb-stat-"+username).textContent="Running...";
+        pollCommentProgress(username);
+    }else alert(r&&r.error?r.error:"Failed");
+}
 function selectChatTarget(username,steamId,name){
     chatTargets[username]=steamId;
     const cr=$("cr-"+username);if(cr)cr.textContent=name+" ("+steamId+")";
@@ -1415,11 +1686,14 @@ function renderFriendPicker(username,friends){
     const sel=cmtSelectedFriends[username]||new Set();
     const list=$("cmt-fp-list-"+username);
     list.innerHTML=filtered.map(f=>{
-        const checked=sel.has(f.steamId)?"checked":"";
         const stateClass=f.state>0?"color:var(--green)":"";
-        return '<label class="cmt-fp-row" onclick="event.stopPropagation()"><input type="checkbox" data-sid="'+f.steamId+'" '+checked+' onchange="toggleFriendSelect(\''+username+'\',\''+f.steamId+'\',this.checked)">'
+        const queued=(cmtTargetQueues[username]||[]).find(t=>t.id===f.steamId);
+        const qIdx=queued?(cmtTargetQueues[username]||[]).indexOf(queued)+1:0;
+        return '<div class="cmt-fp-row">'
             +(f.avatar?'<img src="'+esc(f.avatar)+'" onerror="this.style.display=\'none\'">':'')
-            +'<span class="fp-name">'+esc(f.name)+'</span><span class="fp-state" style="'+stateClass+'">'+esc(f.stateName)+'</span></label>';
+            +'<span class="fp-name">'+esc(f.name)+'</span><span class="fp-state" style="'+stateClass+'">'+esc(f.stateName)+'</span>'
+            +(queued?'<span style="font-size:.55rem;color:var(--accent);font-weight:700;flex-shrink:0;padding:2px 6px;background:var(--accent-bg);border-radius:10px">#'+qIdx+'</span>':'<button class="btn-accent btn-sm" style="padding:2px 6px;font-size:.55rem;flex-shrink:0" onclick="event.stopPropagation();addCommentTarget(\''+username+'\',\''+f.steamId+'\',\''+esc(f.name).replace(/'/g,"\\'")+'\')">Add</button>')
+            +'</div>';
     }).join("");
     updateSelCount(username);
 }
@@ -1501,7 +1775,7 @@ function pollCommentProgress(username){
         $("cmt-bar-"+username).style.width=pct+"%";
         const log=$("cmt-log-"+username);
         if(log){
-            log.innerHTML=d.log.map(e=>'<div class="comment-log-entry '+e.status+'">'+(e.name||e.steamId)+" - "+e.status+(e.error?" ("+esc(e.error)+")":"")+"</div>").join("");
+            log.innerHTML=d.log.map(e=>'<div class="comment-log-entry '+e.status+'"><span class="cle-name">'+(e.name||e.steamId)+'</span><span class="cle-badge">'+e.status+'</span>'+(e.error?'<span style="font-size:.58rem;color:var(--text3);flex-shrink:0">'+esc(e.error)+'</span>':'')+'</div>').join("");
             log.scrollTop=log.scrollHeight;
         }
         if(!d.running){
@@ -1655,7 +1929,7 @@ function mcPoll(){
         $("mc-bar").style.width=pct+"%";
         const log=$("mc-log");
         if(log){
-            log.innerHTML=d.log.map(e=>'<div class="mc-log-entry '+e.status+'">'+esc(e.account)+" - "+e.status+(e.error?" ("+esc(e.error)+")":"")+"</div>").join("");
+            log.innerHTML=d.log.map(e=>'<div class="mc-log-entry '+e.status+'"><span class="mle-name">'+esc(e.account)+'</span><span class="mle-badge">'+e.status+'</span>'+(e.error?'<span style="font-size:.58rem;color:var(--text3);flex-shrink:0">'+esc(e.error)+'</span>':'')+'</div>').join("");
             log.scrollTop=log.scrollHeight;
         }
         if(!d.running){
@@ -1862,6 +2136,344 @@ if(window.electronAPI&&window.electronAPI.onUpdateStatus){
             if(result)result.textContent="Update check failed: "+(data.error||"unknown error");
         }
     });
+}
+
+// --- Group Commenter ---
+const gcTargetQueues={},gcGroupCache={};
+async function loadGroupPicker(username){
+    const picker=$("gc-picker-"+username);
+    if(!picker)return;
+    picker.classList.toggle("open");
+    if(!picker.classList.contains("open"))return;
+    $("gc-list-"+username).innerHTML='<div class="empty" style="padding:10px">Loading groups...</div>';
+    const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/groups/resolved");
+    if(!d||!d.groups){picker.classList.remove("open");return alert("Could not load groups.");}
+    gcGroupCache[username]=d.groups;
+    renderGroupPicker(username);
+}
+function renderGroupPicker(username){
+    const groups=gcGroupCache[username]||[];
+    const list=$("gc-list-"+username);if(!list)return;
+    const q=gcTargetQueues[username]||[];
+    list.innerHTML=groups.map(g=>{
+        const queued=q.find(t=>t.id===g.groupId);
+        const qIdx=queued?q.indexOf(queued)+1:0;
+        return '<div class="cmt-fp-row">'
+            +(g.avatar?'<img src="'+esc(g.avatar)+'" onerror="this.style.display=\'none\'">':'')
+            +'<span class="fp-name">'+esc(g.name)+'</span>'
+            +'<span class="fp-state">'+g.members+' members</span>'
+            +(g.groupId?(queued?'<span style="font-size:.55rem;color:var(--accent);font-weight:700;flex-shrink:0;padding:2px 6px;background:var(--accent-bg);border-radius:10px">#'+qIdx+'</span>'
+                :'<button class="btn-accent btn-sm" style="padding:2px 6px;font-size:.55rem;flex-shrink:0" onclick="event.stopPropagation();addGroupTarget(\''+username+'\',\''+g.groupId+'\',\''+esc(g.name).replace(/'/g,"\\'")+'\')">Add</button>')
+                :'<span style="font-size:.55rem;color:var(--text3)">No ID</span>')
+            +'</div>';
+    }).join("")||'<div class="empty" style="padding:10px">No groups found.</div>';
+}
+function addGroupTarget(username,groupId,name){
+    if(!gcTargetQueues[username])gcTargetQueues[username]=[];
+    if(gcTargetQueues[username].find(t=>t.id===groupId))return;
+    gcTargetQueues[username].push({id:groupId,name:name||groupId});
+    renderGroupTargets(username);
+    renderGroupPicker(username);
+}
+function removeGroupTarget(username,groupId){
+    if(!gcTargetQueues[username])return;
+    gcTargetQueues[username]=gcTargetQueues[username].filter(t=>t.id!==groupId);
+    renderGroupTargets(username);
+    renderGroupPicker(username);
+}
+function clearGroupTargets(username){
+    gcTargetQueues[username]=[];
+    renderGroupTargets(username);
+    renderGroupPicker(username);
+}
+function renderGroupTargets(username){
+    const el=$("gc-targets-"+username);if(!el)return;
+    const q=gcTargetQueues[username]||[];
+    if(!q.length){el.innerHTML='<span style="font-size:.68rem;color:var(--text3)">No groups selected — click Pick Groups</span>';return}
+    el.innerHTML=q.map((t,i)=>'<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--accent-bg);border:1px solid rgba(124,106,255,.25);border-radius:16px;font-size:.68rem;color:var(--accent)">'
+        +'<span style="font-size:.58rem;color:var(--text3);font-weight:700">#'+(i+1)+'</span>'
+        +'<span style="font-weight:600">'+esc(t.name)+'</span>'
+        +'<button onclick="removeGroupTarget(\''+username+'\',\''+t.id+'\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.68rem;padding:0 2px">&#10005;</button>'
+        +'</div>').join("");
+}
+async function startGroupComment(username){
+    const q=gcTargetQueues[username]||[];
+    if(!q.length)return alert("Add groups first.");
+    const comment=($("gc-text-"+username)?.value||"").trim();
+    if(!comment)return alert("Enter a comment.");
+    const delay=parseInt($("gc-delay-"+username)?.value)||15;
+    await A("POST","/api/accounts/"+encodeURIComponent(username)+"/group/comment/reset");
+    const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/group/comment",{groupIds:q,comment,delay});
+    if(r&&r.ok){
+        $("gc-prog-"+username).style.display="";
+        $("gc-count-"+username).textContent="0/"+r.total;
+        $("gc-bar-"+username).style.width="0%";
+        $("gc-log-"+username).innerHTML="";
+        $("gc-stat-"+username).textContent="Running...";
+        pollGroupCommentProgress(username);
+    }else alert(r&&r.error?r.error:"Failed");
+}
+async function stopGroupComment(username){
+    await A("POST","/api/accounts/"+encodeURIComponent(username)+"/group/comment/stop");
+    $("gc-stat-"+username).textContent="Stopped";
+}
+async function resetGroupComment(username){
+    await A("POST","/api/accounts/"+encodeURIComponent(username)+"/group/comment/reset");
+    if(gcPollers[username]){clearInterval(gcPollers[username]);gcPollers[username]=null;}
+    $("gc-prog-"+username).style.display="none";
+    $("gc-stat-"+username).textContent="";
+}
+let gcPollers={};
+function pollGroupCommentProgress(username){
+    if(gcPollers[username])clearInterval(gcPollers[username]);
+    gcPollers[username]=setInterval(async()=>{
+        const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/group/comment/progress");
+        if(!d)return;
+        const pct=d.total>0?Math.round(d.done/d.total*100):0;
+        $("gc-count-"+username).textContent=d.done+"/"+d.total;
+        $("gc-err-"+username).textContent=d.errors+" error"+(d.errors!==1?"s":"");
+        $("gc-bar-"+username).style.width=pct+"%";
+        const log=$("gc-log-"+username);
+        if(log){
+            log.innerHTML=d.log.map(e=>'<div class="comment-log-entry '+e.status+'"><span class="cle-name">'+(e.name||e.groupId)+'</span><span class="cle-badge">'+e.status+'</span>'+(e.error?'<span style="font-size:.58rem;color:var(--text3);flex-shrink:0">'+esc(e.error)+'</span>':'')+'</div>').join("");
+            log.scrollTop=log.scrollHeight;
+        }
+        if(!d.running){
+            clearInterval(gcPollers[username]);gcPollers[username]=null;
+            $("gc-stat-"+username).textContent="Done ("+d.done+"/"+d.total+")";
+        }
+    },2000);
+}
+
+// --- Art Maker ---
+const AM={img:null,isVideo:false,natW:0,natH:0,type:"artwork"};
+
+(function(){
+    const dz=$("am-dropzone");
+    if(!dz)return;
+    dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("dragover")});
+    dz.addEventListener("dragleave",()=>dz.classList.remove("dragover"));
+    dz.addEventListener("drop",e=>{
+        e.preventDefault();dz.classList.remove("dragover");
+        const f=e.dataTransfer.files[0];
+        if(f)amProcessFile(f);
+    });
+})();
+
+function amSwitchType(type,btn){
+    AM.type=type;
+    $("am-type").value=type;
+    document.querySelectorAll(".am-type-btn").forEach(b=>b.classList.remove("active"));
+    if(btn)btn.classList.add("active");
+    if(AM.img)amUpdateOverlays();
+}
+
+function amNudge(dir){
+    const el=$("am-yoff");if(!el)return;
+    el.value=Math.max(0,Math.min(parseInt(el.max)||500,parseInt(el.value)+dir*20));
+    amUpdateOverlays();
+}
+
+function amClear(){
+    AM.img=null;AM.isVideo=false;AM.natW=0;AM.natH=0;
+    $("am-canvas-wrap").style.display="none";
+    $("am-controls").style.display="none";
+    $("am-dropzone").style.display="";
+    $("am-preview").innerHTML='<div style="width:100%;text-align:center;color:#4a6780;font-size:.72rem;padding:16px 0">Load an image to see preview</div>';
+    $("am-thumb").innerHTML='<span class="empty-thumb">&#127912;</span>';
+    $("am-status").textContent="";
+}
+
+function amLoadUrl(){
+    const url=($("am-url")?.value||"").trim();
+    if(!url)return alert("Enter an image or video URL.");
+    const proxy="/api/artwork/proxy?url="+encodeURIComponent(url);
+    if(/\.(webm)$/i.test(url)||/video/i.test(url)){
+        amLoadVideo(proxy);
+    }else{
+        const img=new Image();
+        img.crossOrigin="anonymous";
+        img.onload=()=>amSetImage(img);
+        img.onerror=()=>alert("Failed to load image. Check the URL.");
+        img.src=proxy;
+    }
+}
+
+function amLoadFile(input){
+    const f=input.files[0];
+    if(f)amProcessFile(f);
+}
+
+function amProcessFile(f){
+    const url=URL.createObjectURL(f);
+    if(f.type.startsWith("video/")||f.name.endsWith(".webm")){
+        amLoadVideo(url);
+    }else if(f.type==="image/gif"){
+        amLoadVideo(url);
+    }else{
+        const img=new Image();
+        img.onload=()=>amSetImage(img);
+        img.src=url;
+    }
+}
+
+function amSetImage(img){
+    AM.img=img;AM.isVideo=false;AM.natW=img.naturalWidth;AM.natH=img.naturalHeight;
+    const c=$("am-canvas"),v=$("am-video");
+    c.width=AM.natW;c.height=AM.natH;
+    c.getContext("2d").drawImage(img,0,0);
+    c.style.display="";v.style.display="none";
+    $("am-canvas-wrap").style.display="";
+    $("am-dropzone").style.display="none";
+    $("am-height").max=AM.natH;
+    $("am-yoff").max=Math.max(0,AM.natH-200);
+    amUpdateThumb(c);
+    amPopulateAccounts();
+    amUpdateOverlays();
+}
+
+function amLoadVideo(src){
+    const v=$("am-video"),c=$("am-canvas");
+    v.src=src;v.style.display="";c.style.display="none";
+    v.onloadeddata=()=>{
+        AM.isVideo=true;AM.natW=v.videoWidth;AM.natH=v.videoHeight;AM.img=v;
+        $("am-canvas-wrap").style.display="";
+        $("am-dropzone").style.display="none";
+        $("am-height").max=AM.natH;
+        $("am-yoff").max=Math.max(0,AM.natH-200);
+        v.play();
+        amUpdateThumb(null);
+        amPopulateAccounts();
+        amUpdateOverlays();
+    };
+}
+
+function amUpdateThumb(sourceCanvas){
+    const thumb=$("am-thumb");
+    const tc=document.createElement("canvas");
+    tc.width=80;tc.height=80;
+    const ctx=tc.getContext("2d");
+    const src=sourceCanvas||(AM.isVideo?$("am-video"):AM.img);
+    if(src){
+        const s=Math.min(AM.natW,AM.natH);
+        const sx=(AM.natW-s)/2,sy=(AM.natH-s)/2;
+        ctx.drawImage(src,sx,sy,s,s,0,0,80,80);
+    }
+    thumb.innerHTML="";
+    thumb.appendChild(tc);
+}
+
+function amGetCropParams(){
+    const type=AM.type||"artwork";
+    const h=parseInt($("am-height").value)||506;
+    const y=parseInt($("am-yoff").value)||0;
+    if(type==="featured") return {panels:[{label:"Featured",w:630,h,x:Math.floor((AM.natW-630)/2),y}]};
+    if(type==="long") return {panels:[{label:"Long",w:506,h:Math.min(h*2,AM.natH),x:Math.floor((AM.natW-506)/2),y}]};
+    const mainW=506,sideW=100,gap=8;
+    const totalW=mainW+gap+sideW;
+    const startX=Math.floor((AM.natW-totalW)/2);
+    return {panels:[
+        {label:"Main",w:mainW,h,x:Math.max(0,startX),y},
+        {label:"Side",w:sideW,h,x:Math.max(0,startX+mainW+gap),y}
+    ]};
+}
+
+function amUpdateOverlays(){
+    if(!AM.img)return;
+    const displayed=AM.isVideo?$("am-video"):$("am-canvas");
+    if(!displayed.clientWidth)return;
+    const scale=displayed.clientWidth/AM.natW;
+    const params=amGetCropParams();
+    const oMain=$("am-overlay-main"),oSide=$("am-overlay-side");
+    if(params.panels.length===1){
+        const p=params.panels[0];
+        oMain.style.cssText=`display:block;left:${p.x*scale}px;top:${p.y*scale}px;width:${p.w*scale}px;height:${p.h*scale}px`;
+        oMain.querySelector("span").textContent=p.label+" "+p.w+"px";
+        oSide.style.display="none";
+    }else{
+        const m=params.panels[0],s=params.panels[1];
+        oMain.style.cssText=`display:block;left:${m.x*scale}px;top:${m.y*scale}px;width:${m.w*scale}px;height:${m.h*scale}px`;
+        oMain.querySelector("span").textContent="Main "+m.w+"px";
+        oSide.style.cssText=`display:block;left:${s.x*scale}px;top:${s.y*scale}px;width:${s.w*scale}px;height:${s.h*scale}px`;
+        oSide.querySelector("span").textContent="Side "+s.w+"px";
+    }
+    amRenderPreview();
+}
+
+function amCropPanel(panel){
+    const c=document.createElement("canvas");
+    c.width=panel.w;c.height=panel.h;
+    const ctx=c.getContext("2d");
+    const src=AM.isVideo?$("am-video"):AM.img;
+    ctx.drawImage(src,panel.x,panel.y,panel.w,panel.h,0,0,panel.w,panel.h);
+    return c;
+}
+
+function amRenderPreview(){
+    const params=amGetCropParams();
+    const preview=$("am-preview");
+    preview.innerHTML="";
+    const maxPrevH=200;
+    params.panels.forEach(p=>{
+        const c=amCropPanel(p);
+        const scale=Math.min(1,maxPrevH/p.h);
+        c.style.width=Math.round(p.w*scale)+"px";
+        c.style.height=Math.round(p.h*scale)+"px";
+        preview.appendChild(c);
+    });
+}
+
+function amPopulateAccounts(){
+    const sel=$("am-upload-acct");
+    sel.innerHTML='<option value="">Select account...</option>';
+    bots.filter(b=>b.state==="online"||b.state==="playing").forEach(b=>{
+        sel.innerHTML+=`<option value="${esc(b.username)}">${esc(b.username)}</option>`;
+    });
+}
+
+async function amDownloadZip(){
+    if(!AM.img)return alert("Load an image first.");
+    const params=amGetCropParams();
+    $("am-status").textContent="Generating ZIP...";
+    const zip=new JSZip();
+    for(const p of params.panels){
+        const c=amCropPanel(p);
+        const blob=await new Promise(r=>c.toBlob(r,"image/png"));
+        zip.file(p.label.toLowerCase()+"_"+p.w+"x"+p.h+".png",blob);
+    }
+    const content=await zip.generateAsync({type:"blob"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(content);
+    a.download="steam_artwork.zip";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    $("am-status").textContent="Downloaded!";
+    setTimeout(()=>$("am-status").textContent="",3000);
+}
+
+async function amUploadToSteam(){
+    const acct=$("am-upload-acct").value;
+    if(!acct)return alert("Select an account to upload with.");
+    if(!AM.img)return alert("Load an image first.");
+    const params=amGetCropParams();
+    $("am-status").textContent="Uploading...";
+    let ok=0,fail=0;
+    for(const p of params.panels){
+        const c=amCropPanel(p);
+        const blob=await new Promise(r=>c.toBlob(r,"image/png"));
+        const buf=await blob.arrayBuffer();
+        try{
+            const resp=await fetch("/api/accounts/"+encodeURIComponent(acct)+"/artwork/upload?title="+encodeURIComponent(p.label+" Artwork"),{
+                method:"POST",
+                headers:{"Content-Type":"image/png"},
+                body:buf
+            });
+            const d=await resp.json();
+            if(d.ok)ok++;else fail++;
+        }catch(e){fail++}
+    }
+    $("am-status").textContent=ok+" uploaded"+(fail?", "+fail+" failed":"")+"!";
+    setTimeout(()=>$("am-status").textContent="",5000);
 }
 
 init();

@@ -943,32 +943,32 @@ app.post("/api/accounts/:username/comment/bulk", async (req, res) => {
     const skipDelay = 2000;
     (async () => {
         for (const sid of friends) {
-            if (!prog.running) { prog.log.push({ steamId: sid, status: "cancelled" }); break; }
+            if (!prog.running) { prog.log.push({ steamId: sid, name: (bot.client.users[sid] || {}).player_name || sid, status: "cancelled" }); break; }
+            const name = (bot.client.users[sid] || {}).player_name || sid;
             let wasSkipped = false;
             try {
                 const result = await steamWebPost(bot, "https://steamcommunity.com/comment/Profile/post/" + sid + "/-1/", { comment });
                 const parsed = JSON.parse(result.data);
                 if (parsed.success) {
                     prog.done++;
-                    const name = (bot.client.users[sid] || {}).player_name || sid;
                     prog.log.push({ steamId: sid, name, status: "ok" });
                 } else {
                     const errMsg = parsed.error || "Failed";
                     if (skipPatterns.test(errMsg)) {
-                        prog.log.push({ steamId: sid, status: "skipped", error: errMsg });
+                        prog.log.push({ steamId: sid, name, status: "skipped", error: errMsg });
                         wasSkipped = true;
                     } else {
                         prog.errors++;
-                        prog.log.push({ steamId: sid, status: "error", error: errMsg });
+                        prog.log.push({ steamId: sid, name, status: "error", error: errMsg });
                     }
                 }
             } catch (e) {
                 if (skipPatterns.test(e.message)) {
-                    prog.log.push({ steamId: sid, status: "skipped", error: e.message });
+                    prog.log.push({ steamId: sid, name, status: "skipped", error: e.message });
                     wasSkipped = true;
                 } else {
                     prog.errors++;
-                    prog.log.push({ steamId: sid, status: "error", error: e.message });
+                    prog.log.push({ steamId: sid, name, status: "error", error: e.message });
                 }
             }
             if (prog.running) await new Promise(r => setTimeout(r, wasSkipped ? skipDelay : delayMs));
@@ -1117,6 +1117,220 @@ app.get("/api/playtime", (req, res) => {
     _playtimeCache = entries.reverse();
     _playtimeMtime = mtime;
     res.json(_playtimeCache);
+});
+
+// --- Group Commenter ---
+const groupCommentProgress = {};
+
+app.get("/api/accounts/:username/groups/resolved", async (req, res) => {
+    const controller = require("../controller.js");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    if (!bot || !bot.client.steamID) return res.json({ groups: [] });
+    const https = require("https");
+    const sid64 = bot.client.steamID.getSteamID64();
+    const cookieStr = bot.webCookies ? bot.webCookies.join("; ") : "";
+
+    function httpGet(hostname, path) {
+        return new Promise((resolve, reject) => {
+            const opts = { hostname, path, headers: { "User-Agent": "Mozilla/5.0" } };
+            if (cookieStr) opts.headers["Cookie"] = cookieStr;
+            https.get(opts, (r) => {
+                let d = ""; r.on("data", c => d += c); r.on("end", () => resolve(d));
+            }).on("error", reject);
+        });
+    }
+
+    try {
+        const html = await httpGet("steamcommunity.com", `/profiles/${sid64}`);
+        const groups = [];
+        const blocks = html.split(/class="profile_group(?:\s+profile_primary_group)?"/g);
+        for (let i = 1; i < blocks.length; i++) {
+            const b = blocks[i];
+            const nameMatch = b.match(/whiteLink"[^>]*>([\s\S]*?)<\/a>/);
+            const urlMatch = b.match(/href="(https:\/\/steamcommunity\.com\/groups\/([^"]*?))"/);
+            const avMatch = b.match(/<img src="(https:\/\/avatars[^"]*?)"/);
+            const memberMatch = b.match(/profile_group_membercount">\s*([\d,]+)\s*Members/);
+            if (nameMatch && urlMatch) {
+                groups.push({
+                    name: nameMatch[1].trim(),
+                    url: urlMatch[1],
+                    slug: urlMatch[2],
+                    avatar: avMatch ? avMatch[1] : "",
+                    members: memberMatch ? parseInt(memberMatch[1].replace(/,/g, "")) : 0,
+                    groupId: ""
+                });
+            }
+        }
+        for (const g of groups) {
+            try {
+                const gPage = await httpGet("steamcommunity.com", `/groups/${g.slug}`);
+                const commentMatch = gPage.match(/comment\/Clan\/post\/(\d+)/);
+                const chatMatch = gPage.match(/joinchat\/(\d+)/) || gPage.match(/"steamid":"(\d+)"/) || gPage.match(/OpenGroupChat\(\s*'(\d+)'/);
+                g.groupId = commentMatch ? commentMatch[1] : (chatMatch ? chatMatch[1] : "");
+            } catch (e) {}
+        }
+        res.json({ groups });
+    } catch (e) {
+        res.json({ groups: [], error: e.message });
+    }
+});
+
+app.post("/api/accounts/:username/group/comment", async (req, res) => {
+    const { groupIds, comment, delay } = req.body;
+    if (!comment) return res.status(400).json({ error: "comment required" });
+    if (!Array.isArray(groupIds) || groupIds.length === 0) return res.status(400).json({ error: "No groups selected" });
+    const controller = require("../controller.js");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    if (!bot || !bot.client.steamID) return res.status(400).json({ error: "Bot not online" });
+    if (!bot.webCookies) { bot.client.webLogOn(); return res.status(202).json({ error: "Requesting web session, try again" }); }
+    const username = req.params.username;
+    if (groupCommentProgress[username] && groupCommentProgress[username].running) return res.status(400).json({ error: "Already running" });
+
+    const prog = { total: groupIds.length, done: 0, errors: 0, running: true, log: [] };
+    groupCommentProgress[username] = prog;
+    res.json({ ok: true, total: groupIds.length });
+
+    const delayMs = Math.max((delay || 15) * 1000, 5000);
+    const skipPatterns = /private|comment.*disabled|owner only|limit|restricted|unavailable|cannot post|you do not have permission|not a member/i;
+    (async () => {
+        try {
+            for (const g of groupIds) {
+                if (!prog.running) { prog.log.push({ groupId: g.id, name: g.name, status: "cancelled" }); break; }
+                try {
+                    const result = await steamWebPost(bot, "https://steamcommunity.com/comment/Clan/post/" + g.id + "/-1/", { comment });
+                    let parsed;
+                    try { parsed = JSON.parse(result.data); } catch (_) { parsed = { success: false, error: "Bad response from Steam" }; }
+                    if (parsed.success) {
+                        prog.done++;
+                        prog.log.push({ groupId: g.id, name: g.name, status: "ok" });
+                    } else {
+                        const errMsg = parsed.error || "Failed";
+                        if (skipPatterns.test(errMsg)) {
+                            prog.log.push({ groupId: g.id, name: g.name, status: "skipped", error: errMsg });
+                        } else {
+                            prog.errors++;
+                            prog.log.push({ groupId: g.id, name: g.name, status: "error", error: errMsg });
+                        }
+                    }
+                } catch (e) {
+                    const errMsg = e.message || String(e);
+                    if (skipPatterns.test(errMsg)) {
+                        prog.log.push({ groupId: g.id, name: g.name, status: "skipped", error: errMsg });
+                    } else {
+                        prog.errors++;
+                        prog.log.push({ groupId: g.id, name: g.name, status: "error", error: errMsg });
+                    }
+                }
+                if (prog.running) await new Promise(r => setTimeout(r, delayMs));
+            }
+        } catch (outerErr) {
+            prog.log.push({ groupId: "?", name: "System", status: "error", error: outerErr.message || String(outerErr) });
+        }
+        prog.running = false;
+    })();
+});
+
+app.post("/api/accounts/:username/group/comment/stop", (req, res) => {
+    const prog = groupCommentProgress[req.params.username];
+    if (prog) prog.running = false;
+    res.json({ ok: true });
+});
+
+app.post("/api/accounts/:username/group/comment/reset", (req, res) => {
+    delete groupCommentProgress[req.params.username];
+    res.json({ ok: true });
+});
+
+app.get("/api/accounts/:username/group/comment/progress", (req, res) => {
+    const prog = groupCommentProgress[req.params.username] || { total: 0, done: 0, errors: 0, running: false, log: [] };
+    res.json(prog);
+});
+
+// --- Art Maker proxy ---
+app.get("/api/artwork/proxy", async (req, res) => {
+    const url = req.query.url;
+    if (!url) return res.status(400).json({ error: "url required" });
+    try {
+        const https = require("https");
+        const http = require("http");
+        const mod = url.startsWith("https") ? https : http;
+        const fetchUrl = (u, redirects = 0) => new Promise((resolve, reject) => {
+            if (redirects > 5) return reject(new Error("Too many redirects"));
+            mod.get(u, { headers: { "User-Agent": "Mozilla/5.0" } }, (resp) => {
+                if (resp.statusCode >= 300 && resp.statusCode < 400 && resp.headers.location) {
+                    return fetchUrl(resp.headers.location, redirects + 1).then(resolve).catch(reject);
+                }
+                const chunks = [];
+                resp.on("data", c => chunks.push(c));
+                resp.on("end", () => resolve({ buffer: Buffer.concat(chunks), type: resp.headers["content-type"] || "image/png" }));
+                resp.on("error", reject);
+            }).on("error", reject);
+        });
+        const { buffer, type } = await fetchUrl(url);
+        res.set("Content-Type", type);
+        res.set("Cache-Control", "public, max-age=86400");
+        res.send(buffer);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// --- Art Maker upload ---
+app.post("/api/accounts/:username/artwork/upload", express.raw({ type: "image/*", limit: "20mb" }), async (req, res) => {
+    const controller = require("../controller.js");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    if (!bot || !bot.client.steamID) return res.status(400).json({ error: "Bot not online" });
+    if (!bot.webCookies) { bot.client.webLogOn(); return res.status(202).json({ error: "Requesting web session, try again" }); }
+    try {
+        const steamId = bot.client.steamID.getSteamID64();
+        const boundary = "----WebKitFormBoundary" + Math.random().toString(36).substr(2);
+        const title = req.query.title || "Artwork";
+        const imgBuf = req.body;
+        const ext = (req.headers["content-type"] || "").includes("png") ? "png" : "jpg";
+
+        let body = "";
+        body += `--${boundary}\r\nContent-Disposition: form-data; name="sessionid"\r\n\r\n${bot.webSessionId}\r\n`;
+        body += `--${boundary}\r\nContent-Disposition: form-data; name="l"\r\n\r\nenglish\r\n`;
+        body += `--${boundary}\r\nContent-Disposition: form-data; name="title"\r\n\r\n${title}\r\n`;
+        body += `--${boundary}\r\nContent-Disposition: form-data; name="file_type"\r\n\r\n0\r\n`;
+        body += `--${boundary}\r\nContent-Disposition: form-data; name="visibility"\r\n\r\n0\r\n`;
+        const bodyStart = Buffer.from(body);
+        const fileHeader = Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="artwork.${ext}"\r\nContent-Type: image/${ext}\r\n\r\n`);
+        const bodyEnd = Buffer.from(`\r\n--${boundary}--\r\n`);
+        const fullBody = Buffer.concat([bodyStart, fileHeader, imgBuf, bodyEnd]);
+
+        const https = require("https");
+        const result = await new Promise((resolve, reject) => {
+            const opts = {
+                hostname: "steamcommunity.com",
+                path: `/sharedfiles/edititem/767/3/`,
+                method: "POST",
+                headers: {
+                    "Content-Type": `multipart/form-data; boundary=${boundary}`,
+                    "Content-Length": fullBody.length,
+                    "Cookie": bot.webCookies.join("; "),
+                    "Referer": `https://steamcommunity.com/profiles/${steamId}/images/`,
+                    "User-Agent": "Mozilla/5.0"
+                }
+            };
+            const r = https.request(opts, (resp) => {
+                const chunks = [];
+                resp.on("data", c => chunks.push(c));
+                resp.on("end", () => resolve({ status: resp.statusCode, data: Buffer.concat(chunks).toString() }));
+                resp.on("error", reject);
+            });
+            r.on("error", reject);
+            r.write(fullBody);
+            r.end();
+        });
+        if (result.status === 200 || result.status === 302) {
+            res.json({ ok: true });
+        } else {
+            res.status(400).json({ error: "Upload failed (HTTP " + result.status + ")" });
+        }
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // --- Start server ---
