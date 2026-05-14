@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monkey Idler</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d0d0f;--bg2:#141416;--bg3:#1a1a1e;--bg4:#222228;--bg5:#2a2a32;
+  --border:#2a2a32;--text:#e8e8ec;--text2:#a0a0ad;--text3:#5c5c6a;
+  --accent:#7c6aff;--accent2:#9585ff;--accent-bg:rgba(124,106,255,.1);
+  --green:#2dd4a8;--green-bg:rgba(45,212,168,.12);
+  --red:#f4556c;--red-bg:rgba(244,85,108,.12);
+  --orange:#f5a623;--orange-bg:rgba(245,166,35,.12);
+  --radius:8px;
+}
+html{background:transparent}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:rgba(14,14,16,.92);color:var(--text);height:100vh;overflow:hidden;display:flex;border-radius:10px}
+.titlebar{-webkit-app-region:drag;height:32px;background:rgba(10,10,12,.95);display:flex;align-items:center;padding:0 12px;flex-shrink:0;border-bottom:1px solid var(--border);border-radius:10px 10px 0 0}
+.titlebar-title{font-size:.72rem;font-weight:600;color:var(--text3);flex:1;-webkit-app-region:drag}
+.titlebar-btn{-webkit-app-region:no-drag;background:none;border:none;color:var(--text3);font-size:.85rem;cursor:pointer;padding:4px 10px;border-radius:4px;transition:background .12s}
+.titlebar-btn:hover{background:rgba(255,255,255,.1)}
+.titlebar-btn.close:hover{background:#e81123;color:#fff}
+button{cursor:pointer;border:none;font-family:inherit;font-size:.78rem;border-radius:6px;padding:6px 14px;transition:all .12s;font-weight:500}
+input,select{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:.78rem;outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:var(--accent2)}
+.btn-green{background:var(--green);color:#000;font-weight:600}.btn-green:hover{opacity:.85}
+.btn-red{background:var(--red);color:#fff;font-weight:600}.btn-red:hover{opacity:.85}
+.btn-ghost{background:var(--bg4);color:var(--text2)}.btn-ghost:hover{background:var(--bg5);color:var(--text)}
+.btn-sm{padding:4px 10px;font-size:.72rem}
+.badge{font-size:.62rem;padding:2px 7px;border-radius:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.badge-orange{background:var(--orange-bg);color:var(--orange)}
+
+/* Sidebar */
+.sidebar{width:180px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sb-header{padding:16px 14px 10px;font-size:.82rem;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border)}
+.sb-section{padding:8px;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.sb-item{display:flex;align-items:center;gap:8px;padding:8px 12px;margin:2px 6px;border-radius:6px;cursor:pointer;font-size:.78rem;color:var(--text2);transition:all .1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-item:hover{background:var(--bg4);color:var(--text)}
+.sb-item.active{background:var(--accent-bg);color:var(--accent)}
+.sb-item .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sb-add{margin:4px 6px;padding:7px 12px;font-size:.72rem;text-align:center;border-radius:6px;cursor:pointer;color:var(--accent);border:1px dashed var(--border);transition:all .12s}
+.sb-add:hover{background:var(--accent-bg);border-color:var(--accent)}
+.sb-spacer{flex:1}
+.sb-footer{padding:10px 14px;border-top:1px solid var(--border);font-size:.68rem;color:var(--text3)}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;padding:10px 20px;gap:12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.topbar h1{font-size:.9rem;font-weight:600;flex:1}
+.content{flex:1;overflow-y:auto;padding:20px}
+.content::-webkit-scrollbar{width:4px}.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.page{display:none}.page.active{display:block}
+
+/* Account page layout */
+.acct-top{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.acct-top .acct-name{font-size:1.1rem;font-weight:700;flex:1}
+.acct-sections{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.acct-sections{grid-template-columns:1fr}}
+.section{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.section-head{display:flex;align-items:center;padding:10px 14px;gap:8px;border-bottom:1px solid var(--border);background:var(--bg4);cursor:pointer;user-select:none;transition:background .15s}
+.section-head:hover{background:var(--bg3)}
+.section-head h3{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;flex:1}
+.section-head::before{content:"▼";font-size:.55rem;color:var(--text3);transition:transform .2s}
+.section.collapsed .section-head::before{transform:rotate(-90deg)}
+.section.collapsed .section-body{display:none}
+.section.collapsed .section-head{border-bottom:none}
+.section-body{padding:14px}
+.full{grid-column:1/-1}
+
+/* Forms */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:3px}
+.f label{font-size:.68rem;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.3px}
+.f input,.f select{width:100%}
+.f-full{grid-column:1/-1}
+.f-actions{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+
+/* Log viewer */
+.log-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;height:200px;overflow-y:auto;padding:8px;font-family:'Cascadia Code',Consolas,monospace;font-size:.68rem;line-height:1.7}
+.log-box::-webkit-scrollbar{width:3px}.log-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.log-line{white-space:pre-wrap;word-break:break-all}
+.log-line.info{color:var(--text2)}.log-line.warn{color:var(--orange)}.log-line.error{color:var(--red)}
+
+/* Chat relay */
+.chat-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;height:260px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:4px}
+.chat-box::-webkit-scrollbar{width:3px}.chat-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.chat-msg{max-width:75%;padding:6px 10px;border-radius:10px;font-size:.75rem;line-height:1.4;word-break:break-word}
+.chat-msg.incoming{align-self:flex-start;background:var(--card);border:1px solid var(--border);color:var(--text)}
+.chat-msg.outgoing{align-self:flex-end;background:var(--accent);color:#fff}
+.chat-msg .chat-meta{font-size:.6rem;opacity:.7;margin-bottom:2px}
+.chat-input-row{display:flex;gap:6px;margin-top:8px}
+.chat-input-row input{flex:1}
+
+/* Home overview cards */
+.home-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.home-card{background:linear-gradient(135deg,#1b2838 0%,#2a475e 100%);border:1px solid rgba(102,192,244,.15);border-radius:10px;padding:16px;display:flex;gap:14px;align-items:center;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.home-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.home-card-avatar{width:64px;height:64px;border-radius:4px;border:2px solid var(--accent);background:var(--border);flex-shrink:0}
+.home-card-info{flex:1;min-width:0}
+.home-card-name{font-size:.95rem;font-weight:700;color:#c7d5e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-card-user{font-size:.62rem;color:#4f94bc;font-family:monospace;margin-top:1px}
+.home-card-status{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:.72rem}
+.home-card-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.home-card-dot.playing{background:var(--green)}.home-card-dot.online{background:#57cbde}.home-card-dot.offline{background:#898989}
+.home-card-game{font-size:.65rem;color:var(--green);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-card-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.home-card-level{background:var(--accent);color:#fff;font-size:.58rem;font-weight:700;padding:2px 6px;border-radius:4px;text-align:center}
+
+/* Profile card */
+.profile-card{background:linear-gradient(135deg,#1b2838 0%,#2a475e 100%);border-radius:10px;padding:20px;display:flex;gap:18px;align-items:flex-start;border:1px solid rgba(102,192,244,.15)}
+.profile-avatar-wrap{position:relative;flex-shrink:0}
+.profile-avatar{width:80px;height:80px;border-radius:4px;border:2px solid var(--accent);background:var(--border)}
+.profile-badge{position:absolute;bottom:-4px;right:-4px;background:var(--accent);color:#fff;font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:4px;min-width:20px;text-align:center}
+.profile-details{flex:1;min-width:0}
+.profile-name{font-size:1.15rem;font-weight:700;color:#c7d5e0;margin-bottom:2px;display:flex;align-items:center;gap:8px}
+.profile-name .edit-icon{cursor:pointer;font-size:.75rem;opacity:.5;transition:opacity .15s}.profile-name .edit-icon:hover{opacity:1}
+.profile-sid{font-size:.62rem;color:#4f94bc;margin-bottom:8px;font-family:monospace}
+.profile-status-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:.78rem}
+.profile-status-dot{width:10px;height:10px;border-radius:50%}
+.profile-status-dot.online{background:#57cbde}.profile-status-dot.ingame{background:var(--green)}.profile-status-dot.offline{background:#898989}
+.profile-status-text{color:#8f98a0}
+.profile-status-text.online{color:#57cbde}.profile-status-text.ingame{color:var(--green)}
+.profile-game{font-size:.72rem;color:var(--green);margin-bottom:8px}
+.profile-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.profile-actions .btn-steam{background:linear-gradient(to right,#47bfff 0%,#1a44c2 60%);color:#fff;border:none;padding:5px 14px;border-radius:3px;font-size:.72rem;cursor:pointer;font-weight:500;transition:filter .15s}
+.profile-actions .btn-steam:hover{filter:brightness(1.2)}
+.profile-actions .btn-steam.secondary{background:rgba(103,193,245,.15);color:#67c1f5}
+.profile-edit-row{display:flex;gap:6px;align-items:center;margin-top:6px}
+.profile-edit-row input{background:rgba(0,0,0,.3);border:1px solid rgba(102,192,244,.2);color:#c7d5e0;padding:4px 8px;border-radius:3px;font-size:.78rem;flex:1}
+.profile-edit-row input::placeholder{color:#4f6b80}
+.profile-editor{background:linear-gradient(135deg,#1b2838 0%,#2a475e 100%);border:1px solid rgba(102,192,244,.15);border-radius:10px;padding:18px;margin-top:12px;display:none}
+.profile-editor.open{display:block}
+.profile-editor h4{color:#67c1f5;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px;border-bottom:1px solid rgba(102,192,244,.15);padding-bottom:6px}
+.pe-field{margin-bottom:10px}
+.pe-field label{display:block;font-size:.68rem;color:#8f98a0;margin-bottom:3px;text-transform:uppercase;letter-spacing:.3px}
+.pe-field input,.pe-field textarea,.pe-field select{width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(102,192,244,.2);color:#c7d5e0;padding:6px 10px;border-radius:3px;font-size:.78rem;font-family:inherit}
+.pe-field textarea{resize:vertical;min-height:80px}
+.pe-field select{cursor:pointer}
+.pe-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pe-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.pe-section{margin-top:16px}
+.avatar-upload{position:relative;cursor:pointer}
+.avatar-upload input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.avatar-upload-label{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(103,193,245,.15);color:#67c1f5;border-radius:3px;font-size:.72rem;cursor:pointer;transition:background .15s}
+.avatar-upload-label:hover{background:rgba(103,193,245,.25)}
+
+/* Comment bot */
+.comment-progress{background:var(--bg);border-radius:6px;padding:10px;margin-top:10px}
+.comment-progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:6px 0}
+.comment-progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .3s}
+.comment-log{max-height:160px;overflow-y:auto;font-size:.68rem;font-family:monospace;margin-top:8px}
+.comment-log::-webkit-scrollbar{width:3px}.comment-log::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.comment-log-entry{padding:2px 0;border-bottom:1px solid var(--border)}
+.comment-log-entry.ok{color:var(--green)}.comment-log-entry.error{color:var(--red)}.comment-log-entry.cancelled{color:var(--orange)}
+
+/* Friends list */
+.friends-list{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.friends-list::-webkit-scrollbar{width:3px}.friends-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.friend-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .15s}
+.friend-row:hover{background:var(--bg)}
+.friend-avatar{width:28px;height:28px;border-radius:50%;background:var(--border);flex-shrink:0}
+.friend-info{flex:1;min-width:0}
+.friend-name{font-size:.78rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.friend-status{font-size:.62rem}
+.friend-status.online{color:var(--green)}.friend-status.offline{color:var(--text3)}.friend-status.ingame{color:var(--green)}
+.friend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.friend-dot.online{background:var(--green)}.friend-dot.offline{background:var(--text3)}.friend-dot.ingame{background:var(--green)}
+
+/* Game grid */
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;max-height:400px;overflow-y:auto}
+.game-grid::-webkit-scrollbar{width:3px}.game-grid::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.game-tile{position:relative;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .12s;background:var(--bg4)}
+.game-tile:hover{border-color:var(--accent);transform:translateY(-1px)}
+.game-tile.active{border-color:var(--green);box-shadow:0 0 8px rgba(45,212,168,.2)}
+.game-tile img{width:100%;aspect-ratio:460/215;display:block;object-fit:cover}
+.game-tile .gn{padding:5px 7px;font-size:.66rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.game-tile .gb{position:absolute;top:4px;right:4px;display:none}
+.game-tile.active .gb{display:block}
+.game-tile[ondblclick]:hover{border-color:var(--red);opacity:.85}
+.empty{text-align:center;color:var(--text3);padding:30px 16px;font-size:.78rem}
+
+/* Playtime table */
+.pt{width:100%;border-collapse:collapse;font-size:.72rem}
+.pt th{text-align:left;color:var(--text3);font-weight:500;padding:6px;border-bottom:1px solid var(--border);font-size:.65rem;text-transform:uppercase}
+.pt td{padding:6px;border-bottom:1px solid var(--border);color:var(--text2)}
+.pt tr:hover td{background:var(--bg4)}
+
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:20px;width:380px;max-width:90vw}
+.modal h3{font-size:.95rem;margin-bottom:14px}
+.modal .f{margin-bottom:10px}
+</style>
+</head>
+<body>
+<div style="display:flex;flex-direction:column;width:100%;height:100vh;border-radius:10px;overflow:hidden">
+<div class="titlebar">
+    <span class="titlebar-title">Monkey Idler</span>
+    <button class="titlebar-btn" onclick="electronAPI?.minimizeWindow?.()">&#8212;</button>
+    <button class="titlebar-btn" onclick="electronAPI?.maximizeWindow?.()">&#9744;</button>
+    <button class="titlebar-btn close" onclick="electronAPI?.closeWindow?.()">&#10005;</button>
+</div>
+<div style="display:flex;flex:1;overflow:hidden">
+<nav class="sidebar" id="sidebar">
+    <div class="sb-header">&#9654; Monkey Idler</div>
+    <div class="sb-section">General</div>
+    <div class="sb-item active" data-page="home" onclick="navTo(this)">&#127968; Overview</div>
+    <div class="sb-item" data-page="logs" onclick="navTo(this)">&#128220; All Logs</div>
+    <div class="sb-item" data-page="playtime" onclick="navTo(this)">&#9201; Playtime</div>
+    <div class="sb-item" data-page="settings" onclick="navTo(this)">&#9881; Global Settings</div>
+    <div id="sbAccounts" style="display:none"></div>
+    <div class="sb-spacer"></div>
+    <div id="updateBanner" style="display:none;margin:6px;padding:8px 10px;background:linear-gradient(135deg,rgba(45,212,168,.15),rgba(124,106,255,.15));border:1px solid var(--green);border-radius:6px;font-size:.7rem;text-align:center">
+        <div style="font-weight:600;color:var(--green);margin-bottom:4px" id="updateMsg">Update available!</div>
+        <button onclick="electronAPI?.installUpdate?.()" style="background:var(--green);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:.68rem;font-weight:600;cursor:pointer">Install &amp; Restart</button>
+    </div>
+    <div class="sb-footer" id="sbFooter"><span style="color:var(--red)">&#9679;</span> Disconnected</div>
+</nav>
+
+<div class="main">
+    <div class="topbar">
+        <h1 id="pageTitle">Overview</h1>
+        <span style="font-size:.75rem;color:var(--text3)" id="globalStatus">Stopped</span>
+        <button class="btn-green btn-sm" id="btnStartAll" onclick="startAll()">Start All</button>
+        <button class="btn-red btn-sm" id="btnStopAll" onclick="stopAll()" style="display:none">Stop All</button>
+    </div>
+    <div class="content">
+        <!-- Home/Overview -->
+        <div class="page active" id="page-home">
+            <div class="home-grid" id="homeList"><div class="empty">No accounts yet.</div></div>
+            <div style="text-align:center;margin-top:20px">
+                <button onclick="showModal('addModal')" style="background:linear-gradient(135deg,#7b2ff7,#a855f7);color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;transition:filter .15s;box-shadow:0 4px 14px rgba(123,47,247,.3)" onmouseover="this.style.filter='brightness(1.2)'" onmouseout="this.style.filter=''">+ Add Account</button>
+            </div>
+        </div>
+
+        <!-- All Logs -->
+        <div class="page" id="page-logs">
+            <div style="display:flex;align-items:center;margin-bottom:10px"><h2 style="flex:1;font-size:.88rem">All Logs</h2><button class="btn-ghost btn-sm" onclick="clearLogs()">Clear</button></div>
+            <div class="log-box" id="logViewer" style="height:calc(100vh - 140px)"></div>
+        </div>
+
+        <!-- Playtime -->
+        <div class="page" id="page-playtime">
+            <h2 style="font-size:.88rem;margin-bottom:10px">Playtime History</h2>
+            <div id="ptAll"><div class="empty">No data yet.</div></div>
+        </div>
+
+        <!-- Global Settings -->
+        <div class="page" id="page-settings">
+            <h2 style="font-size:.88rem;margin-bottom:14px">Global Default Settings</h2>
+            <div class="section" style="max-width:600px">
+                <div class="section-body">
+                    <div class="fg">
+                        <div class="f"><label>Online Status</label><select id="cfgStatus"><option value="0">Offline</option><option value="1">Online</option><option value="2">Busy</option><option value="3">Away</option><option value="4">Snooze</option><option value="5">Looking to Trade</option><option value="6">Looking to Play</option><option value="7">Invisible</option></select></div>
+                        <div class="f"><label>AFK Message</label><input id="cfgAfk" placeholder="Leave empty to disable"></div>
+                        <div class="f"><label>Login Delay (ms)</label><input type="number" id="cfgLD" min="0"></div>
+                        <div class="f"><label>Relog Delay (ms)</label><input type="number" id="cfgRD" min="0"></div>
+                        <div class="f"><label>Use Local IP</label><select id="cfgLIP"><option value="true">Yes</option><option value="false">No</option></select></div>
+                        <div class="f"><label>Log Playtime</label><select id="cfgLP"><option value="true">Yes</option><option value="false">No</option></select></div>
+                    </div>
+                    <div class="f-actions"><button class="btn-accent" onclick="saveGlobal()">Save</button></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Per-account pages are injected dynamically -->
+    </div>
+</div>
+
+<!-- Add Account Modal -->
+<div class="modal-bg" id="addModal"><div class="modal">
+    <h3>Add Steam Account</h3>
+    <div id="addTabs" style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn-accent btn-sm" id="tabCreds" onclick="showAddTab('creds')">Username & Password</button>
+        <button class="btn-ghost btn-sm" id="tabQr" onclick="showAddTab('qr')">Scan QR Code</button>
+    </div>
+    <div id="addCreds">
+        <div class="f"><label>Username</label><input id="addUser" placeholder="Steam username"></div>
+        <div class="f"><label>Password</label><input type="password" id="addPass" placeholder="Password"></div>
+        <div class="f"><label>Shared Secret (optional)</label><input id="addSecret" placeholder="Auto Steam Guard"></div>
+        <div class="f-actions"><button class="btn-accent" onclick="addAcct()">Add</button><button class="btn-ghost" onclick="hideModal('addModal')">Cancel</button></div>
+    </div>
+    <div id="addQr" style="display:none">
+        <p style="font-size:.78rem;color:var(--text2);margin-bottom:12px">Open Steam on your phone, tap the guard icon, then tap "Scan QR code".</p>
+        <div id="qrContainer" style="text-align:center;padding:16px;background:var(--bg);border-radius:8px;min-height:200px;display:flex;align-items:center;justify-content:center">
+            <button class="btn-accent" onclick="startQrLogin()">Generate QR Code</button>
+        </div>
+        <p id="qrStatus" style="font-size:.72rem;color:var(--text3);text-align:center;margin-top:8px"></p>
+        <div class="f-actions"><button class="btn-ghost" onclick="cancelQrLogin();hideModal('addModal')">Cancel</button></div>
+    </div>
+</div></div>
+
+<!-- Steam Guard Modal -->
+<div class="modal-bg" id="guardModal"><div class="modal">
+    <h3>&#128274; Steam Guard Code</h3>
+    <p style="color:var(--text2);font-size:.78rem;margin-bottom:12px">Enter the code for <strong id="guardAcct">-</strong></p>
+    <div class="f"><label>Code</label><input id="guardCode" placeholder="Enter code..." maxlength="10" autocomplete="off" style="font-size:1rem;text-align:center;letter-spacing:3px;font-weight:700"></div>
+    <div class="f-actions"><button class="btn-accent" onclick="submitGuard()">Submit</button><button class="btn-ghost" onclick="skipGuard()">Skip</button></div>
+</div></div>
+
+<script>
+let isRunning=false,accounts=[],config={},bots=[],evtSource=null,allLogs=[],guardUser="";
+const A=async(m,u,b)=>{try{const o={method:m,headers:{"Content-Type":"application/json"}};if(b)o.body=JSON.stringify(b);const r=await fetch(u,o);return await r.json()}catch(e){console.error("API error:",e);return{}}};
+const $=id=>document.getElementById(id);
+const fmtDur=s=>{const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?h+"h "+m+"m":m+"m "+(s%60)+"s"};
+const parseG=s=>{if(!s.trim())return[];return s.split(",").map(x=>x.trim()).filter(Boolean).map(x=>{const n=parseInt(x);return isNaN(n)?x:n})};
+const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+async function init(){
+    await Promise.all([loadAccounts(),loadConfig(),loadStatus()]);
+    startPolling();
+    loadPlaytime();
+}
+
+// --- Nav ---
+function navTo(el){
+    document.querySelectorAll(".sb-item").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+    el.classList.add("active");
+    const p=$("page-"+el.dataset.page);if(p)p.classList.add("active");
+    $("pageTitle").textContent=el.textContent.replace(/[^\w\s]/g,"").trim();
+    // Refresh data on every nav
+    loadConfig();loadAccounts();
+    const u=el.dataset.user;
+    if(u)loadAcctPage(u);
+}
+
+// --- SSE ---
+let pollSince=0,pollTimer=null;
+function startPolling(){
+    if(pollTimer)return;
+    pollTimer=setInterval(poll,2000);
+    poll();
+}
+async function poll(){
+    try{
+        const d=await A("GET","/api/poll?since="+pollSince+"&chatSince="+chatSeq);
+        if(!d||!d.logs)return;
+        $("sbFooter").innerHTML='<span style="color:var(--green)">&#9679;</span> Connected';
+        d.logs.forEach(pushLog);
+        pollSince=d.total;
+        isRunning=d.isRunning;
+        bots=d.bots||[];
+        renderHome();updateGlobal();renderAllAcctPages();
+        if(d.guard&&d.guard.length>0)showGuardModal(d.guard[0]);
+        if(d.qrDone){cancelQrLogin();hideModal("addModal");await loadAccounts();}
+        if(d.chatSeq)chatSeq=d.chatSeq;
+        processChatPoll(d.chats);
+    }catch(e){
+        $("sbFooter").innerHTML='<span style="color:var(--red)">&#9679;</span> Disconnected';
+    }
+}
+
+// --- Logs ---
+function pushLog(entry){
+    allLogs.push(entry);if(allLogs.length>600)allLogs.shift();
+    appendLogTo("logViewer",entry);
+    // Also append to per-account log boxes
+    const msg=(entry.message||"");
+    accounts.forEach(a=>{
+        const box=$("log-"+a.username);
+        if(box && msg.includes("["+a.username+"]"))appendLogTo("log-"+a.username,entry);
+    });
+}
+function appendLogTo(id,entry){
+    const v=$(id);if(!v)return;
+    const d=document.createElement("div");d.className="log-line "+(entry.type||"info");
+    const t=entry.timestamp?new Date(entry.timestamp).toLocaleTimeString():"";
+    d.textContent=(t?"["+t+"] ":"")+(entry.message||"").replace(/\x1b\[[0-9;]*m/g,"");
+    v.appendChild(d);if(v.children.length>300)v.removeChild(v.firstChild);v.scrollTop=v.scrollHeight;
+}
+function clearLogs(){$("logViewer").innerHTML=""}
+
+// --- Accounts ---
+async function loadAccounts(){accounts=await A("GET","/api/accounts");renderSidebar();renderHome()}
+function renderSidebar(){
+    const el=$("sbAccounts");
+    el.innerHTML=accounts.map(a=>{
+        const b=bots.find(x=>x.username===a.username);
+        const c=b?(b.state==="playing"?"var(--green)":b.state==="online"?"var(--orange)":"var(--text3)"):"var(--text3)";
+        return `<div class="sb-item" data-page="acct-${a.username}" data-user="${a.username}" onclick="navTo(this)"><span class="dot" style="background:${c}"></span>${esc(a.username)}</div>`;
+    }).join("");
+    // Ensure account pages exist
+    accounts.forEach(a=>{if(!$("page-acct-"+a.username))createAcctPage(a.username)});
+}
+const homeProfiles={};
+function renderHome(){
+    const el=$("homeList");
+    if(!accounts.length){el.innerHTML='<div class="empty">No accounts yet.</div>';return}
+    // Fetch profile data for each account
+    accounts.forEach(a=>{
+        if(!homeProfiles[a.username]){
+            A("GET","/api/accounts/"+encodeURIComponent(a.username)+"/profile").then(d=>{
+                if(d&&d.online){homeProfiles[a.username]=d;renderHomeCards()}
+            });
+        }
+    });
+    renderHomeCards();
+}
+function renderHomeCards(){
+    const el=$("homeList");if(!el)return;
+    if(!accounts.length){el.innerHTML='<div class="empty">No accounts yet.</div>';return}
+    el.innerHTML=accounts.map(a=>{
+        const b=bots.find(x=>x.username===a.username),st=b?b.state:"offline";
+        const p=homeProfiles[a.username]||{};
+        const dotCls=st==="playing"?"playing":st==="online"||st==="logging_in"?"online":"offline";
+        const statusLabel=st==="playing"?"Idling":st==="online"?"Online":st==="logging_in"?"Logging in...":"Offline";
+        const statusColor=st==="playing"?"var(--green)":st==="online"?"#57cbde":"#898989";
+        const displayName=p.name||a.username;
+        const avatar=p.avatar||"";
+        const level=p.level||0;
+        const running=!!b;
+        const pt=b&&b.playtimeSeconds>0?fmtDur(b.playtimeSeconds):"";
+        const gameNames=b&&b.gameNames&&b.gameNames.length?b.gameNames:[];
+        const gameCount=gameNames.length;
+        const gamesHtml=gameCount>0?gameNames.slice(0,3).map(g=>'<div style="display:flex;align-items:center;gap:4px;font-size:.65rem;color:var(--green)"><span style="color:var(--green)">&#9654;</span> '+esc(g)+'</div>').join("")+(gameCount>3?'<div style="font-size:.6rem;color:var(--text3)">+' +(gameCount-3)+' more</div>':''):'';
+        return `<div class="home-card" onclick="document.querySelector('.sb-item[data-user=\\'${a.username}\\']')?.click()">
+            ${avatar?'<img class="home-card-avatar" src="'+avatar+'" onerror="this.style.display=\'none\'">':'<div class="home-card-avatar"></div>'}
+            <div class="home-card-info">
+                <div class="home-card-name">${esc(displayName)}</div>
+                <div class="home-card-user">${esc(a.username)}</div>
+                <div class="home-card-status"><div class="home-card-dot ${dotCls}"></div><span style="color:${statusColor}">${statusLabel}</span>${pt?' <span style="color:var(--text3);margin-left:4px">· '+pt+'</span>':''}${gameCount>0?' <span style="color:var(--text3);margin-left:4px">· '+gameCount+' game'+(gameCount!==1?'s':'')+'</span>':''}</div>
+                ${gamesHtml?'<div style="margin-top:4px;display:flex;flex-direction:column;gap:1px">'+gamesHtml+'</div>':'<div style="font-size:.65rem;color:var(--text3);margin-top:4px">'+(running?"No games selected":"Not running")+'</div>'}
+            </div>
+            <div class="home-card-actions">
+                ${level?'<div class="home-card-level">Lvl '+level+'</div>':''}
+                ${running?'<button class="btn-red btn-sm" onclick="event.stopPropagation();stopOne(\''+a.username+'\')">Stop</button>':'<button class="btn-green btn-sm" onclick="event.stopPropagation();startOne(\''+a.username+'\')">Start</button>'}
+            </div>
+        </div>`;
+    }).join("");
+}
+
+// --- Create per-account page ---
+function createAcctPage(username){
+    const div=document.createElement("div");div.className="page";div.id="page-acct-"+username;
+    div.innerHTML=`
+    <div class="acct-top">
+        <span class="acct-name">${esc(username)}</span>
+        <span class="badge" id="st-${username}">Offline</span>
+        <span style="font-size:.75rem;color:var(--text3)" id="pt-${username}">--</span>
+        <button class="btn-green btn-sm" id="startBtn-${username}" onclick="startOne('${username}')">Start</button>
+        <button class="btn-red btn-sm" id="stopBtn-${username}" onclick="stopOne('${username}')" style="display:none">Stop</button>
+        <button class="btn-ghost btn-sm" onclick="removeAcct('${username}')">Remove</button>
+    </div>
+    <div class="profile-card" id="pc-${username}">
+        <div class="profile-avatar-wrap">
+            <img class="profile-avatar" id="pa-${username}" src="" onerror="this.style.display='none'">
+            <div class="profile-badge" id="pl-${username}">--</div>
+        </div>
+        <div class="profile-details">
+            <div class="profile-name"><span id="pn-${username}">${esc(username)}</span><span class="edit-icon" onclick="toggleNameEdit('${username}')" title="Edit display name">&#9998;</span></div>
+            <div class="profile-edit-row" id="pe-${username}" style="display:none">
+                <input id="pni-${username}" placeholder="New display name">
+                <button class="btn-steam" onclick="saveName('${username}')">Save</button>
+                <button class="btn-steam secondary" onclick="toggleNameEdit('${username}')">Cancel</button>
+            </div>
+            <div class="profile-sid" id="ps-${username}">--</div>
+            <div class="profile-status-row">
+                <div class="profile-status-dot" id="pd-${username}"></div>
+                <span class="profile-status-text" id="px-${username}">Offline</span>
+            </div>
+            <div class="profile-game" id="pg-${username}"></div>
+            <div class="profile-edit-row" id="pcg-${username}">
+                <input id="pcgi-${username}" placeholder="Custom &quot;playing&quot; text (leave empty for normal)">
+                <button class="btn-steam" onclick="saveCustomGame('${username}')">Set</button>
+                <button class="btn-steam secondary" onclick="clearCustomGame('${username}')">Clear</button>
+            </div>
+            <div class="profile-actions">
+                <button class="btn-steam" onclick="openProfile('${username}')">View Steam Profile</button>
+                <button class="btn-steam secondary" onclick="toggleProfileEditor('${username}')">Edit Profile</button>
+            </div>
+        </div>
+    </div>
+    <div class="profile-editor" id="ped-${username}">
+        <h4>Edit Profile</h4>
+        <div class="pe-row">
+            <div class="pe-field"><label>Display Name</label><input id="ped-name-${username}" placeholder="Display name"></div>
+            <div class="pe-field"><label>Real Name</label><input id="ped-real-${username}" placeholder="Real name (optional)"></div>
+        </div>
+        <div class="pe-row">
+            <div class="pe-field"><label>Custom URL</label>
+                <div style="display:flex;align-items:center;gap:0"><span style="font-size:.68rem;color:#4f6b80">steamcommunity.com/id/</span><input id="ped-url-${username}" placeholder="custom-url" style="border-radius:0 3px 3px 0"></div>
+            </div>
+            <div class="pe-field"><label>Custom &quot;Playing&quot; Text</label><input id="ped-cg-${username}" placeholder="Shows as currently playing"></div>
+        </div>
+        <div class="pe-field"><label>Bio / Summary</label><textarea id="ped-bio-${username}" placeholder="Tell the world about yourself..."></textarea></div>
+
+        <div class="pe-section"><h4>Avatar</h4>
+            <div style="display:flex;align-items:center;gap:12px">
+                <img class="profile-avatar" id="ped-av-${username}" src="" style="width:64px;height:64px" onerror="this.style.display='none'">
+                <div class="avatar-upload"><label class="avatar-upload-label">&#128247; Upload New Avatar<input type="file" accept="image/*" onchange="uploadAvatar('${username}',this)"></label></div>
+            </div>
+        </div>
+
+        <div class="pe-section"><h4>Privacy Settings</h4>
+            <div class="pe-row">
+                <div class="pe-field"><label>Profile</label><select id="ped-priv-profile-${username}"><option value="3">Public</option><option value="2">Friends Only</option><option value="1">Private</option></select></div>
+                <div class="pe-field"><label>Game Details</label><select id="ped-priv-games-${username}"><option value="3">Public</option><option value="2">Friends Only</option><option value="1">Private</option></select></div>
+            </div>
+            <div class="pe-row">
+                <div class="pe-field"><label>Playtime</label><select id="ped-priv-playtime-${username}"><option value="3">Public</option><option value="2">Friends Only</option><option value="1">Private</option></select></div>
+                <div class="pe-field"><label>Friends List</label><select id="ped-priv-friends-${username}"><option value="3">Public</option><option value="2">Friends Only</option><option value="1">Private</option></select></div>
+            </div>
+            <div class="pe-row">
+                <div class="pe-field"><label>Inventory</label><select id="ped-priv-inv-${username}"><option value="3">Public</option><option value="2">Friends Only</option><option value="1">Private</option></select></div>
+                <div class="pe-field"><label>Comments</label><select id="ped-priv-comments-${username}"><option value="2">Public</option><option value="1">Friends Only</option><option value="0">Private</option></select></div>
+            </div>
+        </div>
+
+        <div class="pe-actions">
+            <button class="btn-steam" onclick="saveProfileEdit('${username}')">Save Profile</button>
+            <button class="btn-steam" onclick="savePrivacy('${username}')">Save Privacy</button>
+            <button class="btn-steam secondary" onclick="toggleProfileEditor('${username}')">Close</button>
+        </div>
+    </div>
+    <div class="acct-sections">
+        <div class="section full">
+            <div class="section-head"><h3>Currently Idling</h3><span style="font-size:.68rem;color:var(--text3)" id="ic-${username}">0 games</span></div>
+            <div class="section-body"><div class="game-grid" id="ig-${username}" style="max-height:220px"><div class="empty">Not idling any games.</div></div><p style="font-size:.65rem;color:var(--text3);margin-top:8px">Double-click a game to stop idling it.</p></div>
+        </div>
+        <div class="section">
+            <div class="section-head"><h3>Settings</h3></div>
+            <div class="section-body">
+                <div class="fg">
+                    <div class="f"><label>Online Status</label><select id="as-${username}"><option value="">Default</option><option value="0">Offline</option><option value="1">Online</option><option value="2">Busy</option><option value="3">Away</option><option value="4">Snooze</option><option value="5">Looking to Trade</option><option value="6">Looking to Play</option><option value="7">Invisible</option></select></div>
+                    <div class="f"><label>AFK Message</label><input id="aa-${username}" placeholder="Default"></div>
+                </div>
+                <div class="f-actions"><button class="btn-accent btn-sm" onclick="saveAcctCfg('${username}')">Save</button><button class="btn-ghost btn-sm" onclick="clearAcctCfg('${username}')">Reset to Default</button></div>
+            </div>
+        </div>
+        <div class="section">
+            <div class="section-head"><h3>Comment Bot</h3><span style="font-size:.68rem;color:var(--text3)" id="cb-stat-${username}"></span></div>
+            <div class="section-body">
+                <p style="font-size:.72rem;color:var(--text3);margin-bottom:10px">Post comments on Steam profiles. Use bulk mode to comment on all friends.</p>
+                <div class="fg">
+                    <div class="f" style="flex:1"><label>Comment Text</label><input id="cmt-text-${username}" placeholder="Nice profile! +rep"></div>
+                </div>
+                <div class="fg" style="margin-top:8px">
+                    <div class="f"><label>Target Steam ID (single)</label><input id="cmt-target-${username}" placeholder="76561198..."></div>
+                    <div class="f"><label>Delay Between Comments (sec)</label><input type="number" id="cmt-delay-${username}" value="15" min="5" style="width:80px"></div>
+                </div>
+                <div class="f-actions" style="margin-top:10px">
+                    <button class="btn-accent btn-sm" onclick="postSingleComment('${username}')">Comment on Profile</button>
+                    <button class="btn-green btn-sm" onclick="startBulkComment('${username}')">Comment All Friends</button>
+                    <button class="btn-red btn-sm" onclick="stopBulkComment('${username}')">Stop</button>
+                </div>
+                <div class="comment-progress" id="cmt-prog-${username}" style="display:none">
+                    <div style="font-size:.72rem;color:var(--text2)"><span id="cmt-count-${username}">0/0</span> &middot; <span id="cmt-err-${username}">0 errors</span></div>
+                    <div class="comment-progress-bar"><div class="comment-progress-fill" id="cmt-bar-${username}" style="width:0%"></div></div>
+                    <div class="comment-log" id="cmt-log-${username}"></div>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <div class="section-head"><h3>Idle Timer</h3><span style="font-size:.68rem;color:var(--text3)" id="tmr-${username}"></span></div>
+            <div class="section-body">
+                <p style="font-size:.72rem;color:var(--text3);margin-bottom:10px">Auto-stop idling after a set duration. Leave at 0 to idle indefinitely.</p>
+                <div class="fg">
+                    <div class="f"><label>Days</label><input type="number" id="td-${username}" min="0" value="0" style="width:70px"></div>
+                    <div class="f"><label>Hours</label><input type="number" id="th-${username}" min="0" max="23" value="0" style="width:70px"></div>
+                    <div class="f"><label>Minutes</label><input type="number" id="tm-${username}" min="0" max="59" value="0" style="width:70px"></div>
+                    <div class="f"><label>Seconds</label><input type="number" id="ts-${username}" min="0" max="59" value="0" style="width:70px"></div>
+                </div>
+                <div class="f-actions">
+                    <button class="btn-green btn-sm" onclick="startTimer('${username}')">Start Timer</button>
+                    <button class="btn-ghost btn-sm" onclick="cancelTimer('${username}')">Cancel Timer</button>
+                </div>
+            </div>
+        </div>
+        <div class="section">
+            <div class="section-head"><h3>Friends</h3><span style="font-size:.68rem;color:var(--text3)" id="fc-${username}">--</span><input id="fs-${username}" placeholder="Search..." oninput="filterFriends('${username}')" style="width:130px;margin-left:auto"></div>
+            <div class="section-body"><div class="friends-list" id="fl-${username}"><div class="empty">Start the bot to load friends.</div></div></div>
+        </div>
+        <div class="section full">
+            <div class="section-head"><h3>Chat Relay</h3><span style="font-size:.68rem;color:var(--text3)" id="cc-${username}">No messages</span></div>
+            <div class="section-body">
+                <div class="chat-box" id="cb-${username}"><div class="empty">No messages yet. Incoming Steam messages will appear here.</div></div>
+                <div class="chat-input-row">
+                    <input id="ci-${username}" placeholder="Type a reply..." onkeydown="if(event.key==='Enter')sendChat('${username}')">
+                    <button class="btn-accent btn-sm" onclick="sendChat('${username}')">Send</button>
+                </div>
+                <div style="font-size:.65rem;color:var(--text3);margin-top:4px">Replying to: <span id="cr-${username}">--</span></div>
+            </div>
+        </div>
+        <div class="section">
+            <div class="section-head"><h3>Logs</h3><button class="btn-ghost btn-sm" onclick="$('log-${username}').innerHTML=''">Clear</button></div>
+            <div class="section-body"><div class="log-box" id="log-${username}"></div></div>
+        </div>
+        <div class="section full">
+            <div class="section-head"><h3>Game Library</h3><span style="font-size:.7rem;color:var(--text3)" id="gc-${username}"></span><input id="gs-${username}" placeholder="Search..." oninput="renderAcctGames('${username}')" style="width:160px;margin-left:auto"></div>
+            <div class="section-body"><div class="game-grid" id="gg-${username}"><div class="empty">Start idling to load games.</div></div></div>
+        </div>
+    </div>`;
+    document.querySelector(".content").appendChild(div);
+}
+
+// --- Load account page data ---
+async function loadAcctPage(username){
+    // Load settings
+    const o=(config.accountSettings&&config.accountSettings[username])||{};
+    const ag=$("ag-"+username);if(ag)ag.value=o.playingGames?o.playingGames.join(", "):"";
+    const as=$("as-"+username);if(as)as.value=o.onlinestatus!==undefined?String(o.onlinestatus):"";
+    const aa=$("aa-"+username);if(aa)aa.value=o.afkMessage!==undefined?o.afkMessage:"";
+    // Load games
+    const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/games");
+    const el=$("gg-"+username);if(!el)return;
+    el._games=d.games||[];el._idling=d.idling||[];
+    renderAcctGames(username);
+    renderIdlingGames(username);
+    updateAcctStatus(username);
+    // Load profile
+    loadProfile(username);
+    // Load friends
+    loadFriends(username);
+    // Backfill logs
+    const box=$("log-"+username);if(box&&box.children.length===0){
+        allLogs.filter(l=>(l.message||"").includes("["+username+"]")).forEach(l=>appendLogTo("log-"+username,l));
+    }
+}
+
+function renderAcctGames(username){
+    const el=$("gg-"+username);if(!el||!el._games)return;
+    const q=($("gs-"+username)?.value||"").toLowerCase();
+    const games=el._games,idling=el._idling||[];
+    const f=q?games.filter(x=>x.name.toLowerCase().includes(q)):games;
+    const gc=$("gc-"+username);if(gc)gc.textContent=idling.length+" idling / "+games.length+" owned";
+    if(!f.length){el.innerHTML='<div class="empty">'+(games.length===0?"Start idling to load games.":"No matches.")+'</div>';return}
+    const s=[...f].sort((a,b)=>{const ai=idling.includes(a.appid)?0:1,bi=idling.includes(b.appid)?0:1;return ai!==bi?ai-bi:a.name.localeCompare(b.name)});
+    el.innerHTML=s.map(x=>`<div class="game-tile ${idling.includes(x.appid)?"active":""}" onclick="toggleGame('${username}',${x.appid})" title="${esc(x.name)}">
+        <span class="gb badge badge-green">Idling</span>
+        <img src="${x.img}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <div class="gn">${esc(x.name)}</div></div>`).join("");
+}
+
+function renderIdlingGames(username){
+    const gg=$("gg-"+username);
+    const ig=$("ig-"+username);if(!ig)return;
+    const idling=gg?gg._idling||[]:[];
+    const games=gg?gg._games||[]:[];
+    const ic=$("ic-"+username);if(ic)ic.textContent=idling.length+" game"+(idling.length!==1?"s":"");
+    if(!idling.length){ig.innerHTML='<div class="empty">Not idling any games.</div>';return}
+    ig.innerHTML=idling.map(id=>{
+        const g=games.find(x=>x.appid===id);
+        const name=g?esc(g.name):"App "+id;
+        const img=g?g.img:"https://cdn.akamai.steamstatic.com/steam/apps/"+id+"/header.jpg";
+        return `<div class="game-tile active" ondblclick="toggleGame('${username}',${id})" title="Double-click to stop: ${name}">
+        <span class="gb badge badge-red">&#10005;</span>
+        <img src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <div class="gn">${name}</div></div>`;
+    }).join("");
+}
+
+async function toggleGame(username,appid){
+    const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/toggle",{appid});
+    if(r.idling){const el=$("gg-"+username);if(el){el._idling=r.idling.filter(g=>typeof g==="number");renderAcctGames(username);renderIdlingGames(username)}await loadConfig()}
+}
+
+function updateAcctStatus(username){
+    const b=bots.find(x=>x.username===username),st=b?b.state:"offline";
+    const badge=$("st-"+username);
+    if(badge){badge.className="badge "+(st==="playing"?"badge-green":st==="online"?"badge-orange":"badge-red");badge.textContent=st==="playing"?"Idling":st==="online"?"Online":st==="logging_in"?"Logging in":"Offline"}
+    const pt=$("pt-"+username);if(pt)pt.textContent=b&&b.playtimeSeconds>0?"Session: "+fmtDur(b.playtimeSeconds):"--";
+    const startB=$("startBtn-"+username),stopB=$("stopBtn-"+username);
+    if(startB&&stopB){if(b){startB.style.display="none";stopB.style.display=""}else{startB.style.display="";stopB.style.display="none"}}
+}
+
+// --- Profile card ---
+const profileUrls={};
+async function loadProfile(username){
+    const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/profile");
+    if(!d||!d.online)return;
+    profileUrls[username]={url:d.profileUrl||"",steamId:d.steamId||""};
+    const pa=$("pa-"+username);if(pa&&d.avatar){pa.src=d.avatar;pa.style.display=""}
+    const pn=$("pn-"+username);if(pn)pn.textContent=d.name;
+    const ps=$("ps-"+username);if(ps)ps.textContent="STEAM_ID: "+d.steamId;
+    const pl=$("pl-"+username);if(pl)pl.textContent="Lvl "+d.level;
+    const pd=$("pd-"+username);
+    const px=$("px-"+username);
+    const cls=d.gameName?"ingame":d.state>0?"online":"offline";
+    if(pd)pd.className="profile-status-dot "+cls;
+    if(px){px.className="profile-status-text "+cls;px.textContent=d.gameName?"In-Game":d.stateName}
+    const pg=$("pg-"+username);if(pg)pg.textContent=d.gameName?"Playing "+d.gameName:"";
+}
+function toggleNameEdit(username){
+    const el=$("pe-"+username);if(!el)return;
+    el.style.display=el.style.display==="none"?"flex":"none";
+    if(el.style.display==="flex"){const inp=$("pni-"+username);if(inp){inp.value=$("pn-"+username)?.textContent||"";inp.focus()}}
+}
+async function saveName(username){
+    const inp=$("pni-"+username);if(!inp)return;
+    const name=inp.value.trim();if(!name)return;
+    await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/name",{name});
+    const pn=$("pn-"+username);if(pn)pn.textContent=name;
+    toggleNameEdit(username);
+}
+async function saveCustomGame(username){
+    const inp=$("pcgi-"+username);if(!inp)return;
+    const text=inp.value.trim();
+    await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/customgame",{text});
+    const pg=$("pg-"+username);if(pg)pg.textContent=text?"Playing "+text:"";
+}
+async function clearCustomGame(username){
+    const inp=$("pcgi-"+username);if(inp)inp.value="";
+    await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/customgame",{text:""});
+    loadProfile(username);
+}
+async function openProfile(username){
+    const p=profileUrls[username];
+    if(!p||!p.url){alert("Profile not loaded yet. Make sure the bot is running.");return}
+    const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/websession");
+    if(!d||!d.cookies){alert(d&&d.error?d.error:"Could not get web session. Try again in a moment.");return}
+    const url="https://steamcommunity.com/profiles/"+d.steamId;
+    if(window.electronAPI&&window.electronAPI.openSteamProfile){
+        window.electronAPI.openSteamProfile({cookies:d.cookies,url});
+    } else {
+        window.open(url,"_blank");
+    }
+}
+
+// --- Profile editor ---
+function toggleProfileEditor(username){
+    const el=$("ped-"+username);if(!el)return;
+    el.classList.toggle("open");
+    if(el.classList.contains("open"))loadProfileSettings(username);
+}
+async function loadProfileSettings(username){
+    const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/profile/settings");
+    if(!d||!d.online)return;
+    const n=$("ped-name-"+username);if(n)n.value=$("pn-"+username)?.textContent||"";
+    const r=$("ped-real-"+username);if(r)r.value=d.realName||"";
+    const u=$("ped-url-"+username);if(u)u.value=d.customURL||"";
+    const b=$("ped-bio-"+username);if(b)b.value=d.summary||"";
+    const av=$("ped-av-"+username);const pa=$("pa-"+username);
+    if(av&&pa&&pa.src)av.src=pa.src;
+}
+async function saveProfileEdit(username){
+    const name=($("ped-name-"+username)?.value||"").trim();
+    const realName=($("ped-real-"+username)?.value||"").trim();
+    const customURL=($("ped-url-"+username)?.value||"").trim();
+    const summary=($("ped-bio-"+username)?.value||"");
+    const customGame=($("ped-cg-"+username)?.value||"").trim();
+    // Save display name via persona
+    if(name)await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/name",{name});
+    // Save custom game text
+    if(customGame)await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/customgame",{text:customGame});
+    // Save web profile (bio, real name, custom URL)
+    const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/edit",{summary,realName,customURL});
+    if(r&&r.ok){alert("Profile saved!");loadProfile(username)}
+    else alert(r&&r.error?r.error:"Failed to save. Try again.");
+}
+async function savePrivacy(username){
+    const v=id=>parseInt($("ped-priv-"+id+"-"+username)?.value)||3;
+    const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/privacy",{
+        profile:v("profile"),gameDetails:v("games"),playtime:v("playtime"),
+        friendsList:v("friends"),inventory:v("inv"),comments:parseInt($("ped-priv-comments-"+username)?.value)||2
+    });
+    if(r&&r.ok)alert("Privacy settings saved!");
+    else alert(r&&r.error?r.error:"Failed to save. Try again.");
+}
+async function uploadAvatar(username,input){
+    if(!input.files||!input.files[0])return;
+    const file=input.files[0];
+    const reader=new FileReader();
+    reader.onload=async function(){
+        const base64=reader.result.split(",")[1];
+        const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/avatar",{imageBase64:base64});
+        if(r&&r.ok){alert("Avatar updated!");loadProfile(username)}
+        else alert(r&&r.error?r.error:"Failed to upload avatar.");
+    };
+    reader.readAsDataURL(file);
+}
+
+// --- Friends list ---
+const friendsCache={};
+async function loadFriends(username){
+    const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/friends");
+    if(!d||!d.friends)return;
+    friendsCache[username]=d.friends;
+    renderFriends(username);
+}
+function renderFriends(username){
+    const list=friendsCache[username]||[];
+    const el=$("fl-"+username);if(!el)return;
+    const q=($("fs-"+username)?.value||"").toLowerCase();
+    const filtered=q?list.filter(f=>f.name.toLowerCase().includes(q)):list;
+    const onCount=list.filter(f=>f.state>0).length;
+    const fc=$("fc-"+username);if(fc)fc.textContent=onCount+" online / "+list.length+" total";
+    if(!filtered.length){el.innerHTML='<div class="empty">'+(list.length===0?"Start the bot to load friends.":"No matches.")+"</div>";return}
+    el.innerHTML=filtered.map(f=>{
+        const cls=f.gameName?"ingame":f.state>0?"online":"offline";
+        const statusText=f.gameName?"Playing "+esc(f.gameName):f.stateName;
+        return `<div class="friend-row" onclick="selectChatTarget('${username}','${f.steamId}','${esc(f.name)}')" title="Click to chat with ${esc(f.name)}">
+            <div class="friend-dot ${cls}"></div>
+            ${f.avatar?'<img class="friend-avatar" src="'+f.avatar+'" onerror="this.style.display=\'none\'">':'<div class="friend-avatar"></div>'}
+            <div class="friend-info"><div class="friend-name">${esc(f.name)}</div><div class="friend-status ${cls}">${statusText}</div></div>
+        </div>`;
+    }).join("");
+}
+function filterFriends(username){renderFriends(username)}
+function selectChatTarget(username,steamId,name){
+    chatTargets[username]=steamId;
+    const cr=$("cr-"+username);if(cr)cr.textContent=name+" ("+steamId+")";
+    const ci=$("ci-"+username);if(ci)ci.focus();
+    const ct=$("cmt-target-"+username);if(ct)ct.value=steamId;
+}
+
+// --- Chat relay ---
+let chatSeq=0;
+const chatTargets={}; // { username: steamId64 of last person who messaged }
+
+function renderChatMsg(username, msg){
+    const box=$("cb-"+username);if(!box)return;
+    if(box.querySelector(".empty"))box.innerHTML="";
+    const d=document.createElement("div");
+    d.className="chat-msg "+(msg.outgoing?"outgoing":"incoming");
+    const t=new Date(msg.timestamp);
+    const ts=t.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+    d.innerHTML='<div class="chat-meta">'+(msg.outgoing?"You":esc(msg.from))+" &middot; "+ts+"</div>"+esc(msg.message);
+    box.appendChild(d);
+    box.scrollTop=box.scrollHeight;
+    // Auto-set reply target from incoming
+    if(!msg.outgoing&&msg.fromId){
+        chatTargets[username]=msg.fromId;
+        const cr=$("cr-"+username);if(cr)cr.textContent=esc(msg.from)+" ("+msg.fromId+")";
+    }
+    // Update count
+    const cc=$("cc-"+username);if(cc){const n=box.querySelectorAll(".chat-msg").length;cc.textContent=n+" message"+(n!==1?"s":"")}
+}
+
+function processChatPoll(chats){
+    if(!chats)return;
+    for(const [username,msgs] of Object.entries(chats)){
+        msgs.forEach(m=>renderChatMsg(username,m));
+    }
+}
+
+async function sendChat(username){
+    const input=$("ci-"+username);if(!input)return;
+    const message=input.value.trim();if(!message)return;
+    const steamId=chatTargets[username];
+    if(!steamId){alert("No recipient yet -- wait for an incoming message first, or an account must message you.");return}
+    const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/chat",{steamId,message});
+    if(r&&r.ok)input.value="";
+}
+
+function renderAllAcctPages(){accounts.forEach(a=>{updateAcctStatus(a.username);updateTimerDisplay(a.username)});renderSidebar()}
+
+// --- Collapsible sections ---
+document.addEventListener("click", (e) => {
+    const head = e.target.closest(".section-head");
+    if (!head) return;
+    if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON" || e.target.tagName === "SELECT") return;
+    head.closest(".section").classList.toggle("collapsed");
+});
+
+// --- Comment Bot ---
+async function postSingleComment(username){
+    const comment=($("cmt-text-"+username)?.value||"").trim();
+    const targetSteamId=($("cmt-target-"+username)?.value||"").trim();
+    if(!comment)return alert("Enter a comment.");
+    if(!targetSteamId)return alert("Enter a target Steam ID.");
+    const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/comment",{targetSteamId,comment});
+    if(r&&r.ok)alert("Comment posted!");
+    else alert(r&&r.error?r.error:"Failed to post comment.");
+}
+async function startBulkComment(username){
+    const comment=($("cmt-text-"+username)?.value||"").trim();
+    const delay=parseInt($("cmt-delay-"+username)?.value)||15;
+    if(!comment)return alert("Enter a comment.");
+    const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/comment/bulk",{comment,delay});
+    if(r&&r.ok){
+        $("cmt-prog-"+username).style.display="";
+        $("cmt-count-"+username).textContent="0/"+r.total;
+        $("cmt-bar-"+username).style.width="0%";
+        $("cmt-log-"+username).innerHTML="";
+        $("cb-stat-"+username).textContent="Running...";
+        pollCommentProgress(username);
+    } else alert(r&&r.error?r.error:"Failed to start.");
+}
+async function stopBulkComment(username){
+    await A("POST","/api/accounts/"+encodeURIComponent(username)+"/comment/stop");
+    $("cb-stat-"+username).textContent="Stopped";
+}
+let commentPollers={};
+function pollCommentProgress(username){
+    if(commentPollers[username])clearInterval(commentPollers[username]);
+    commentPollers[username]=setInterval(async()=>{
+        const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/comment/progress");
+        if(!d)return;
+        const pct=d.total>0?Math.round(d.done/d.total*100):0;
+        $("cmt-count-"+username).textContent=d.done+"/"+d.total;
+        $("cmt-err-"+username).textContent=d.errors+" error"+(d.errors!==1?"s":"");
+        $("cmt-bar-"+username).style.width=pct+"%";
+        const log=$("cmt-log-"+username);
+        if(log){
+            log.innerHTML=d.log.map(e=>'<div class="comment-log-entry '+e.status+'">'+(e.name||e.steamId)+" - "+e.status+(e.error?" ("+esc(e.error)+")":"")+"</div>").join("");
+            log.scrollTop=log.scrollHeight;
+        }
+        if(!d.running){
+            clearInterval(commentPollers[username]);delete commentPollers[username];
+            $("cb-stat-"+username).textContent="Done ("+d.done+"/"+d.total+")";
+        }
+    },2000);
+}
+
+// --- Idle Timers ---
+const timers={};
+function startTimer(username){
+    const d=parseInt($("td-"+username)?.value)||0;
+    const h=parseInt($("th-"+username)?.value)||0;
+    const m=parseInt($("tm-"+username)?.value)||0;
+    const s=parseInt($("ts-"+username)?.value)||0;
+    const totalSec=d*86400+h*3600+m*60+s;
+    if(totalSec<=0)return alert("Set a duration greater than 0.");
+    if(timers[username])clearInterval(timers[username].interval);
+    const endTime=Date.now()+totalSec*1000;
+    timers[username]={endTime,interval:setInterval(()=>tickTimer(username),1000)};
+    updateTimerDisplay(username);
+}
+function cancelTimer(username){
+    if(timers[username]){clearInterval(timers[username].interval);delete timers[username]}
+    const el=$("tmr-"+username);if(el)el.textContent="";
+}
+function tickTimer(username){
+    const t=timers[username];if(!t)return;
+    const remaining=Math.max(0,Math.round((t.endTime-Date.now())/1000));
+    if(remaining<=0){
+        clearInterval(t.interval);delete timers[username];
+        A("POST","/api/accounts/"+encodeURIComponent(username)+"/stopidle").then(()=>{loadAcctPage(username)});
+        const el=$("tmr-"+username);if(el)el.textContent="Timer finished - games removed, staying online";
+        return;
+    }
+    updateTimerDisplay(username);
+}
+function updateTimerDisplay(username){
+    const el=$("tmr-"+username);if(!el)return;
+    const t=timers[username];
+    if(!t){el.textContent="";return}
+    const remaining=Math.max(0,Math.round((t.endTime-Date.now())/1000));
+    const dd=Math.floor(remaining/86400),hh=Math.floor((remaining%86400)/3600),mm=Math.floor((remaining%3600)/60),ss=remaining%60;
+    let str="";
+    if(dd>0)str+=dd+"d ";
+    if(hh>0||dd>0)str+=hh+"h ";
+    str+=mm+"m "+ss+"s remaining";
+    el.textContent=str;
+}
+
+// --- Add Account Tabs ---
+function showAddTab(tab){
+    $("addCreds").style.display=tab==="creds"?"block":"none";
+    $("addQr").style.display=tab==="qr"?"block":"none";
+    $("tabCreds").className=tab==="creds"?"btn-accent btn-sm":"btn-ghost btn-sm";
+    $("tabQr").className=tab==="qr"?"btn-accent btn-sm":"btn-ghost btn-sm";
+    if(tab==="creds")cancelQrLogin();
+}
+
+// --- QR Login ---
+let qrPollTimer=null;
+async function startQrLogin(){
+    $("qrContainer").innerHTML='<span style="color:var(--text3)">Generating...</span>';
+    $("qrStatus").textContent="";
+    const r=await A("POST","/api/qrlogin");
+    if(r.error){$("qrContainer").innerHTML='<span style="color:var(--red)">'+esc(r.error)+'</span>';return}
+    if(!r.qrUrl){$("qrContainer").innerHTML='<span style="color:var(--red)">Failed to get QR URL</span>';return}
+    const imgUrl="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="+encodeURIComponent(r.qrUrl);
+    $("qrContainer").innerHTML='<img src="'+imgUrl+'" alt="QR Code" style="border-radius:6px;background:#fff;padding:8px">';
+    $("qrStatus").textContent="Waiting for you to scan...";
+    // Poll for completion via the polling endpoint -- qrlogin_done event
+    if(qrPollTimer)clearInterval(qrPollTimer);
+    qrPollTimer=setInterval(async()=>{
+        const d=await A("GET","/api/poll?since="+pollSince);
+        if(d&&d.logs){d.logs.forEach(pushLog);pollSince=d.total}
+    },2000);
+}
+function cancelQrLogin(){
+    if(qrPollTimer){clearInterval(qrPollTimer);qrPollTimer=null}
+    A("POST","/api/qrlogin/cancel");
+    $("qrContainer").innerHTML='<button class="btn-accent" onclick="startQrLogin()">Generate QR Code</button>';
+    $("qrStatus").textContent="";
+}
+
+// --- Per-account settings ---
+async function saveAcctCfg(u){
+    const b={};
+    const g=$("ag-"+u)?.value.trim(),s=$("as-"+u)?.value,a=$("aa-"+u)?.value;
+    if(g)b.playingGames=parseG(g);if(s!=="")b.onlinestatus=parseInt(s)||null;if(a)b.afkMessage=a;
+    await A("PUT","/api/config/"+encodeURIComponent(u),b);await loadConfig();
+}
+async function clearAcctCfg(u){await A("DELETE","/api/config/"+encodeURIComponent(u));await loadConfig();loadAcctPage(u)}
+
+// --- Start/Stop ---
+async function startAll(){const r=await A("POST","/api/start");if(r.error)return alert(r.error);isRunning=true;updateGlobal()}
+async function stopAll(){const r=await A("POST","/api/stop");if(r.error)return alert(r.error);isRunning=false;bots=[];updateGlobal();renderHome();renderAllAcctPages()}
+async function startOne(u){await A("POST","/api/accounts/"+encodeURIComponent(u)+"/start");isRunning=true;updateGlobal()}
+async function stopOne(u){await A("POST","/api/accounts/"+encodeURIComponent(u)+"/stop");updateGlobal()}
+async function loadStatus(){const r=await A("GET","/api/status");isRunning=r.isRunning;bots=r.bots||[];updateGlobal()}
+function updateGlobal(){
+    const n=bots.filter(b=>b.state==="playing").length;
+    $("globalStatus").textContent=isRunning?(n>0?"Idling "+n+" account"+(n>1?"s":""):"Starting..."):"Stopped";
+    $("btnStartAll").style.display=isRunning?"none":"";$("btnStopAll").style.display=isRunning?"":"none";
+}
+
+// --- Config ---
+async function loadConfig(){
+    config=await A("GET","/api/config");
+    $("cfgStatus").value=config.onlinestatus===null?"0":String(config.onlinestatus);
+    $("cfgAfk").value=config.afkMessage||"";$("cfgLD").value=config.loginDelay;$("cfgRD").value=config.relogDelay;
+    $("cfgLIP").value=String(config.useLocalIP);$("cfgLP").value=String(config.logPlaytimeToFile);
+}
+async function saveGlobal(){
+    const b={onlinestatus:parseInt($("cfgStatus").value)||null,afkMessage:$("cfgAfk").value,loginDelay:parseInt($("cfgLD").value)||2000,relogDelay:parseInt($("cfgRD").value)||15000,useLocalIP:$("cfgLIP").value==="true",logPlaytimeToFile:$("cfgLP").value==="true"};
+    await A("PUT","/api/config",b);config={...config,...b};
+}
+
+// --- Add/Remove ---
+async function addAcct(){
+    const u=$("addUser").value.trim(),p=$("addPass").value.trim(),s=$("addSecret").value.trim();
+    if(!u||!p)return alert("Username and password required.");
+    const r=await A("POST","/api/accounts",{username:u,password:p,sharedSecret:s});if(r.error)return alert(r.error);
+    $("addUser").value="";$("addPass").value="";$("addSecret").value="";hideModal("addModal");await loadAccounts();
+}
+async function removeAcct(u){if(!confirm("Remove '"+u+"'?"))return;await A("DELETE","/api/accounts/"+encodeURIComponent(u));await loadAccounts();navTo(document.querySelector('[data-page="home"]'))}
+
+// --- Steam Guard ---
+function showGuardModal(a){guardUser=a;$("guardAcct").textContent=a;$("guardCode").value="";showModal("guardModal");setTimeout(()=>$("guardCode").focus(),100)}
+async function submitGuard(){const c=$("guardCode").value.trim();if(!c)return;await A("POST","/api/steamguard/"+encodeURIComponent(guardUser),{code:c});hideModal("guardModal")}
+async function skipGuard(){await A("POST","/api/steamguard/"+encodeURIComponent(guardUser),{code:""});hideModal("guardModal")}
+async function checkGuard(){const p=await A("GET","/api/steamguard");if(p&&p.length>0)showGuardModal(p[0])}
+
+// --- Playtime ---
+async function loadPlaytime(){
+    const d=await A("GET","/api/playtime"),c=$("ptAll");
+    if(!d||!d.length){c.innerHTML='<div class="empty">No data yet.</div>';return}
+    let h='<table class="pt"><thead><tr><th>Account</th><th>Start</th><th>End</th><th>Duration</th><th>Games</th></tr></thead><tbody>';
+    d.slice(0,100).forEach(e=>{if(e.raw){h+=`<tr><td colspan="5">${esc(e.raw)}</td></tr>`;return}h+=`<tr><td>${esc(e.account)}</td><td>${e.start}</td><td>${e.end}</td><td>${fmtDur(e.seconds)}</td><td>${esc(e.games)}</td></tr>`});
+    c.innerHTML=h+"</tbody></table>";
+}
+
+function showModal(id){$(id).classList.add("show")}
+function hideModal(id){$(id).classList.remove("show")}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){hideModal("addModal");hideModal("guardModal")}});
+$("guardCode").addEventListener("keydown",e=>{if(e.key==="Enter")submitGuard()});
+
+// --- Auto-updater ---
+if(window.electronAPI&&window.electronAPI.onUpdateStatus){
+    window.electronAPI.onUpdateStatus(function(data){
+        const banner=$("updateBanner"),msg=$("updateMsg");
+        if(!banner||!msg)return;
+        if(data.status==="downloading"){
+            banner.style.display="";msg.textContent="Downloading v"+data.version+"...";
+            banner.querySelector("button").style.display="none";
+        }else if(data.status==="ready"){
+            banner.style.display="";msg.textContent="v"+data.version+" ready to install!";
+            banner.querySelector("button").style.display="";
+        }else if(data.status==="error"){
+            banner.style.display="none";
+        }else{
+            banner.style.display="none";
+        }
+    });
+}
+
+init();
+</script>
+</div></div>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.exe
+*.blockmap
+*.nsis
+
+# Runtime data files (user-specific, not source code)
+tokens.db
+output.txt
+playtime.txt
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
