@@ -16,7 +16,9 @@
   --radius:8px;
 }
 html{background:transparent}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:rgba(14,14,16,.92);color:var(--text);height:100vh;overflow:hidden;display:flex;border-radius:10px}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:rgba(14,14,16,.92);color:var(--text);height:100vh;overflow:hidden;display:flex;border-radius:10px;position:relative}
+body::before{content:"";position:fixed;inset:0;background:url('/bg.png') center/cover no-repeat;opacity:.30;pointer-events:none;z-index:0;border-radius:10px}
+body>*{position:relative;z-index:1}
 .titlebar{-webkit-app-region:drag;height:32px;background:rgba(10,10,12,.95);display:flex;align-items:center;padding:0 12px;flex-shrink:0;border-bottom:1px solid var(--border);border-radius:10px 10px 0 0}
 .titlebar-title{font-size:.72rem;font-weight:600;color:var(--text3);flex:1;-webkit-app-region:drag}
 .titlebar-btn{-webkit-app-region:no-drag;background:none;border:none;color:var(--text3);font-size:.85rem;cursor:pointer;padding:4px 10px;border-radius:4px;transition:background .12s}
@@ -35,16 +37,69 @@ input:focus,select:focus{border-color:var(--accent)}
 .badge-red{background:var(--red-bg);color:var(--red)}
 .badge-orange{background:var(--orange-bg);color:var(--orange)}
 
+/* Top nav tabs */
+.topnav{
+  display:flex;align-items:center;gap:4px;
+  padding:6px 12px;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  flex-shrink:0;overflow-x:auto;
+}
+.topnav::-webkit-scrollbar{height:2px}.topnav::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.topnav-tab{
+  padding:6px 16px;border-radius:20px;
+  font-size:.75rem;font-weight:600;
+  cursor:pointer;white-space:nowrap;
+  border:1px solid transparent;
+  transition:all .18s ease;
+  user-select:none;
+}
+.topnav-tab:hover{filter:brightness(1.3)}
+.topnav-tab.active{font-weight:700}
+.topnav-tab[data-page="home"]{color:#67c1f5}
+.topnav-tab[data-page="home"].active{background:rgba(103,193,245,.12);border-color:rgba(103,193,245,.25);box-shadow:0 1px 8px rgba(103,193,245,.12)}
+.topnav-tab[data-page="logs"]{color:#a4d007}
+.topnav-tab[data-page="logs"].active{background:rgba(164,208,7,.12);border-color:rgba(164,208,7,.25);box-shadow:0 1px 8px rgba(164,208,7,.12)}
+.topnav-tab[data-page="deals"]{color:#c77dff}
+.topnav-tab[data-page="deals"].active{background:rgba(199,125,255,.12);border-color:rgba(199,125,255,.25);box-shadow:0 1px 8px rgba(199,125,255,.12)}
+.topnav-tab[data-page="massbot"]{color:#e8a43a}
+.topnav-tab[data-page="massbot"].active{background:rgba(232,164,58,.12);border-color:rgba(232,164,58,.25);box-shadow:0 1px 8px rgba(232,164,58,.12)}
+.topnav-tab[data-page="settings"]{color:#2dd4a8}
+.topnav-tab[data-page="settings"].active{background:rgba(45,212,168,.12);border-color:rgba(45,212,168,.25);box-shadow:0 1px 8px rgba(45,212,168,.12)}
+
 /* Sidebar */
 .sidebar{width:180px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
 .sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .sb-header{padding:16px 14px 10px;font-size:.82rem;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border)}
-.sb-section{padding:8px;font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-.sb-item{display:flex;align-items:center;gap:8px;padding:8px 12px;margin:2px 6px;border-radius:6px;cursor:pointer;font-size:.78rem;color:var(--text2);transition:all .1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb-item:hover{background:var(--bg4);color:var(--text)}
-.sb-item.active{background:var(--accent-bg);color:var(--accent)}
+.sb-section{
+  padding:6px 14px;margin:6px 8px 2px;
+  font-size:.62rem;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.6px;font-weight:600;
+  background:rgba(255,255,255,.025);
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,.04);
+}
+.sb-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px;margin:2px 8px;
+  border-radius:20px;
+  cursor:pointer;font-size:.78rem;color:var(--text2);
+  transition:all .18s ease;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  border:1px solid transparent;
+  position:relative;
+}
+.sb-item:hover{
+  background:rgba(255,255,255,.05);color:var(--text);
+  border-color:rgba(255,255,255,.06);
+}
+.sb-item.active{
+  background:var(--accent-bg);color:var(--accent);
+  border-color:rgba(124,106,255,.25);
+  box-shadow:0 1px 8px rgba(124,106,255,.12);
+  font-weight:600;
+}
 .sb-item .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.sb-add{margin:4px 6px;padding:7px 12px;font-size:.72rem;text-align:center;border-radius:6px;cursor:pointer;color:var(--accent);border:1px dashed var(--border);transition:all .12s}
+.sb-add{margin:4px 8px;padding:7px 12px;font-size:.72rem;text-align:center;border-radius:20px;cursor:pointer;color:var(--accent);border:1px dashed var(--border);transition:all .12s}
 .sb-add:hover{background:var(--accent-bg);border-color:var(--accent)}
 .sb-spacer{flex:1}
 .sb-footer{padding:10px 14px;border-top:1px solid var(--border);font-size:.68rem;color:var(--text3)}
@@ -159,6 +214,18 @@ input:focus,select:focus{border-color:var(--accent)}
 .comment-log::-webkit-scrollbar{width:3px}.comment-log::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .comment-log-entry{padding:2px 0;border-bottom:1px solid var(--border)}
 .comment-log-entry.ok{color:var(--green)}.comment-log-entry.error{color:var(--red)}.comment-log-entry.cancelled{color:var(--orange)}
+.cmt-friend-picker{max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;margin-top:10px;display:none}
+.cmt-friend-picker.open{display:block}
+.cmt-friend-picker::-webkit-scrollbar{width:3px}.cmt-friend-picker::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.cmt-fp-toolbar{display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg4);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1}
+.cmt-fp-toolbar input[type=text]{flex:1;padding:4px 8px;font-size:.7rem}
+.cmt-fp-toolbar label{font-size:.68rem;color:var(--text3);display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
+.cmt-fp-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+.cmt-fp-row:hover{background:var(--bg4)}
+.cmt-fp-row img{width:24px;height:24px;border-radius:3px}
+.cmt-fp-row .fp-name{font-size:.72rem;color:var(--text);flex:1}
+.cmt-fp-row .fp-state{font-size:.62rem;color:var(--text3)}
+.cmt-fp-count{font-size:.68rem;color:var(--accent);margin-left:8px}
 
 /* Friends list */
 .friends-list{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
@@ -241,11 +308,78 @@ input:focus,select:focus{border-color:var(--accent)}
 .btn-steam{background:linear-gradient(135deg,#1b2838,#2a475e);color:#66c0f4;border:1px solid rgba(102,192,244,.3);padding:10px 24px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;transition:filter .15s;text-decoration:none;display:inline-block;text-align:center}
 .btn-steam:hover{filter:brightness(1.3)}
 
-/* Playtime table */
-.pt{width:100%;border-collapse:collapse;font-size:.72rem}
-.pt th{text-align:left;color:var(--text3);font-weight:500;padding:6px;border-bottom:1px solid var(--border);font-size:.65rem;text-transform:uppercase}
-.pt td{padding:6px;border-bottom:1px solid var(--border);color:var(--text2)}
-.pt tr:hover td{background:var(--bg4)}
+
+/* Account page tabs — bubbly Windows-style */
+.acct-tabs{
+  display:flex;gap:4px;padding:4px 4px 0;margin-bottom:16px;
+  background:var(--bg);border-radius:12px 12px 0 0;
+  border:1px solid var(--border);border-bottom:none;
+  position:relative;
+}
+.acct-tabs::after{
+  content:"";position:absolute;bottom:0;left:0;right:0;height:1px;background:var(--border);
+}
+.acct-tab{
+  padding:7px 18px;font-size:.75rem;font-weight:600;color:var(--text3);
+  cursor:pointer;border:1px solid transparent;
+  border-radius:10px 10px 0 0;margin-bottom:-1px;
+  transition:all .18s ease;user-select:none;
+  position:relative;z-index:1;
+  background:transparent;
+}
+.acct-tab:hover{background:rgba(255,255,255,.04);color:var(--text2)}
+.acct-tab.active{
+  background:var(--bg3);border-color:var(--border) var(--border) var(--bg3);
+  z-index:2;
+}
+.acct-tab[data-tab="profile"]{color:#67c1f5}
+.acct-tab[data-tab="profile"].active{background:rgba(103,193,245,.08);border-color:rgba(103,193,245,.25) rgba(103,193,245,.25) rgba(103,193,245,.08);box-shadow:0 -2px 8px rgba(103,193,245,.1)}
+.acct-tab[data-tab="games"]{color:#a4d007}
+.acct-tab[data-tab="games"].active{background:rgba(164,208,7,.08);border-color:rgba(164,208,7,.25) rgba(164,208,7,.25) rgba(164,208,7,.08);box-shadow:0 -2px 8px rgba(164,208,7,.1)}
+.acct-tab[data-tab="social"]{color:#e8a43a}
+.acct-tab[data-tab="social"].active{background:rgba(232,164,58,.08);border-color:rgba(232,164,58,.25) rgba(232,164,58,.25) rgba(232,164,58,.08);box-shadow:0 -2px 8px rgba(232,164,58,.1)}
+.acct-tab[data-tab="tools"]{color:#c77dff}
+.acct-tab[data-tab="tools"].active{background:rgba(199,125,255,.08);border-color:rgba(199,125,255,.25) rgba(199,125,255,.25) rgba(199,125,255,.08);box-shadow:0 -2px 8px rgba(199,125,255,.1)}
+.acct-tab[data-tab="settings"]{color:#e05555}
+.acct-tab[data-tab="settings"].active{background:rgba(224,85,85,.08);border-color:rgba(224,85,85,.25) rgba(224,85,85,.25) rgba(224,85,85,.08);box-shadow:0 -2px 8px rgba(224,85,85,.1)}
+.acct-tab-content{display:none}
+.acct-tab-content.active{display:block}
+
+/* Profile comments */
+.profile-comments{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.profile-comments::-webkit-scrollbar{width:3px}.profile-comments::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.pcomment{display:flex;gap:8px;padding:8px;border-radius:6px;background:var(--bg);border:1px solid var(--border)}
+.pcomment img{width:32px;height:32px;border-radius:3px;flex-shrink:0}
+.pcomment-body{flex:1;min-width:0}
+.pcomment-author{font-size:.7rem;font-weight:600;color:var(--accent)}
+.pcomment-text{font-size:.72rem;color:var(--text2);margin-top:2px;white-space:pre-wrap;word-break:break-word}
+.pcomment-time{font-size:.6rem;color:var(--text3);margin-top:2px}
+
+/* Profile groups */
+.profile-groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;max-height:300px;overflow-y:auto}
+.profile-groups::-webkit-scrollbar{width:3px}.profile-groups::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.pgroup{display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;background:var(--bg);border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
+.pgroup:hover{border-color:var(--accent)}
+.pgroup img{width:32px;height:32px;border-radius:4px;flex-shrink:0}
+.pgroup-info{flex:1;min-width:0}
+.pgroup-name{font-size:.7rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pgroup-members{font-size:.6rem;color:var(--text3)}
+
+/* Mass commenter */
+.mc-accounts{display:flex;flex-direction:column;gap:2px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;margin-top:6px}
+.mc-accounts::-webkit-scrollbar{width:3px}.mc-accounts::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.mc-acct-row{display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;transition:background .1s}
+.mc-acct-row:hover{background:var(--bg4)}
+.mc-acct-row .mc-name{font-size:.72rem;color:var(--text);flex:1}
+.mc-acct-row .mc-state{font-size:.62rem;color:var(--text3)}
+.mc-acct-row .mc-state.online{color:var(--green)}
+.mc-progress{background:var(--bg);border-radius:6px;padding:12px;margin-top:12px}
+.mc-progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:6px 0}
+.mc-progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .3s}
+.mc-log{max-height:240px;overflow-y:auto;font-size:.68rem;font-family:monospace;margin-top:8px}
+.mc-log::-webkit-scrollbar{width:3px}.mc-log::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.mc-log-entry{padding:2px 0;border-bottom:1px solid var(--border)}
+.mc-log-entry.ok{color:var(--green)}.mc-log-entry.error{color:var(--red)}.mc-log-entry.skip{color:var(--orange)}.mc-log-entry.skipped{color:var(--orange)}
 
 /* Modal */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center}
@@ -263,15 +397,16 @@ input:focus,select:focus{border-color:var(--accent)}
     <button class="titlebar-btn" onclick="electronAPI?.maximizeWindow?.()">&#9744;</button>
     <button class="titlebar-btn close" onclick="electronAPI?.closeWindow?.()">&#10005;</button>
 </div>
+<div class="topnav" id="topnav">
+    <div class="topnav-tab active" data-page="home" onclick="navTo(this)">&#127968; Overview</div>
+    <div class="topnav-tab" data-page="logs" onclick="navTo(this)">&#128220; All Logs</div>
+    <div class="topnav-tab" data-page="deals" onclick="navTo(this)">&#128176; Deals</div>
+    <div class="topnav-tab" data-page="massbot" onclick="navTo(this)">&#129302; Mass Bot Use</div>
+    <div class="topnav-tab" data-page="settings" onclick="navTo(this)">&#9881; Settings</div>
+</div>
 <div style="display:flex;flex:1;overflow:hidden">
 <nav class="sidebar" id="sidebar">
-    <div class="sb-header">&#9654; Monkey Idler</div>
-    <div class="sb-section">General</div>
-    <div class="sb-item active" data-page="home" onclick="navTo(this)">&#127968; Overview</div>
-    <div class="sb-item" data-page="logs" onclick="navTo(this)">&#128220; All Logs</div>
-    <div class="sb-item" data-page="playtime" onclick="navTo(this)">&#9201; Playtime</div>
-    <div class="sb-item" data-page="deals" onclick="navTo(this)">&#128176; Deals</div>
-    <div class="sb-item" data-page="settings" onclick="navTo(this)">&#9881; Global Settings</div>
+    <div class="sb-header">&#9654; Accounts</div>
     <div id="sbAccounts" style="display:none"></div>
     <div class="sb-spacer"></div>
     <div id="updateBanner" style="display:none;margin:6px;padding:8px 10px;background:linear-gradient(135deg,rgba(45,212,168,.15),rgba(124,106,255,.15));border:1px solid var(--green);border-radius:6px;font-size:.7rem;text-align:center">
@@ -304,12 +439,6 @@ input:focus,select:focus{border-color:var(--accent)}
             <div class="log-box" id="logViewer" style="height:calc(100vh - 140px)"></div>
         </div>
 
-        <!-- Playtime -->
-        <div class="page" id="page-playtime">
-            <h2 style="font-size:.88rem;margin-bottom:10px">Playtime History</h2>
-            <div id="ptAll"><div class="empty">No data yet.</div></div>
-        </div>
-
         <!-- Deals -->
         <div class="page" id="page-deals">
             <div id="dealSpotlight"></div>
@@ -328,6 +457,40 @@ input:focus,select:focus{border-color:var(--accent)}
             <div class="deal-list" id="dealsList"><div class="empty">Loading deals...</div></div>
             <div id="dealLoadMore" style="text-align:center;padding:16px;display:none">
                 <button class="btn-steam" onclick="loadMoreDeals()" id="btnLoadMore">Load More Deals</button>
+            </div>
+        </div>
+
+        <!-- Mass Bot Use -->
+        <div class="page" id="page-massbot">
+            <h2 style="font-size:.88rem;margin-bottom:14px">Mass Bot Use</h2>
+            <h3 style="font-size:.78rem;color:var(--text2);margin-bottom:10px">&#128172; Mass Commenter</h3>
+            <div class="section" style="max-width:650px">
+                <div class="section-body">
+                    <p style="font-size:.72rem;color:var(--text3);margin-bottom:12px">Post a comment on a target profile using all selected accounts at once.</p>
+                    <div class="fg">
+                        <div class="f" style="flex:1"><label>Target Steam ID</label><input id="mc-target" placeholder="76561198..."></div>
+                        <div class="f"><label>Delay Between Comments (sec)</label><input type="number" id="mc-delay" value="15" min="5" style="width:90px"></div>
+                    </div>
+                    <div class="f" style="margin-top:10px"><label>Comment Text</label><input id="mc-text" placeholder="Nice profile! +rep"></div>
+                    <div style="margin-top:12px">
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <label style="font-size:.68rem;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.3px">Accounts</label>
+                            <label style="font-size:.68rem;color:var(--text3);cursor:pointer;display:flex;align-items:center;gap:4px;margin-left:auto"><input type="checkbox" id="mc-all" onchange="mcToggleAll()"> Select All</label>
+                            <span style="font-size:.68rem;color:var(--accent)" id="mc-sel-count">0 selected</span>
+                        </div>
+                        <div class="mc-accounts" id="mc-acct-list"><div class="empty">Start bots to see accounts here.</div></div>
+                    </div>
+                    <div class="f-actions" style="margin-top:12px">
+                        <button class="btn-green btn-sm" onclick="mcStart()">Start Mass Comment</button>
+                        <button class="btn-red btn-sm" onclick="mcStop()">Stop</button>
+                        <span style="font-size:.72rem;color:var(--text3)" id="mc-status"></span>
+                    </div>
+                    <div class="mc-progress" id="mc-prog" style="display:none">
+                        <div style="font-size:.72rem;color:var(--text2)"><span id="mc-count">0/0</span> &middot; <span id="mc-errors">0 errors</span></div>
+                        <div class="mc-progress-bar"><div class="mc-progress-fill" id="mc-bar" style="width:0%"></div></div>
+                        <div class="mc-log" id="mc-log"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -419,11 +582,11 @@ const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 async function init(){
     await Promise.all([loadAccounts(),loadConfig(),loadStatus()]);
     startPolling();
-    loadPlaytime();
 }
 
 // --- Nav ---
 function navTo(el){
+    document.querySelectorAll(".topnav-tab").forEach(x=>x.classList.remove("active"));
     document.querySelectorAll(".sb-item").forEach(x=>x.classList.remove("active"));
     document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
     el.classList.add("active");
@@ -431,6 +594,7 @@ function navTo(el){
     $("pageTitle").textContent=el.textContent.replace(/[^\w\s]/g,"").trim();
     const contentEl=document.querySelector(".content");if(contentEl)contentEl.scrollTop=0;
     if(el.dataset.page==="deals")loadDeals();
+    if(el.dataset.page==="massbot")mcRenderAccounts();
     const u=el.dataset.user;
     if(u)loadAcctPage(u);
 }
@@ -508,11 +672,12 @@ function clearLogs(){$("logViewer").innerHTML=""}
 async function loadAccounts(){accounts=await A("GET","/api/accounts");renderSidebar();renderHome()}
 function renderSidebar(){
     const el=$("sbAccounts");
-    el.innerHTML=accounts.map(a=>{
+    const items=accounts.map(a=>{
         const b=bots.find(x=>x.username===a.username);
         const c=b?(b.state==="playing"?"var(--green)":b.state==="online"?"var(--orange)":"var(--text3)"):"var(--text3)";
         return `<div class="sb-item" data-page="acct-${a.username}" data-user="${a.username}" onclick="navTo(this)"><span class="dot" style="background:${c}"></span>${esc(a.username)}</div>`;
     }).join("");
+    el.innerHTML=items;
     // Ensure account pages exist
     accounts.forEach(a=>{if(!$("page-acct-"+a.username))createAcctPage(a.username)});
 }
@@ -601,6 +766,8 @@ function createAcctPage(username){
         <span style="font-size:.75rem;color:var(--text3)" id="pt-${username}">--</span>
         <button class="btn-green btn-sm" id="startBtn-${username}" onclick="startOne('${username}')">Start</button>
         <button class="btn-red btn-sm" id="stopBtn-${username}" onclick="stopOne('${username}')" style="display:none">Stop</button>
+        <button class="btn-accent btn-sm" id="idleBtn-${username}" onclick="startIdling('${username}')" style="display:none">&#9654; Start Idler</button>
+        <button class="btn-ghost btn-sm" id="stopIdleBtn-${username}" onclick="stopIdling('${username}')" style="display:none">&#9632; Stop Idler</button>
         <button class="btn-ghost btn-sm" onclick="toggleAcctLogs('${username}')" title="Toggle logs">&#128220; Logs</button>
         <button class="btn-ghost btn-sm" onclick="removeAcct('${username}')">Remove</button>
     </div>
@@ -675,82 +842,135 @@ function createAcctPage(username){
             <button class="btn-steam secondary" onclick="toggleProfileEditor('${username}')">Close</button>
         </div>
     </div>
-    <div class="acct-sections">
-        <div class="section full">
-            <div class="section-head"><h3>Currently Idling</h3><span style="font-size:.68rem;color:var(--text3)" id="ic-${username}">0 games</span></div>
-            <div class="section-body"><div class="game-grid" id="ig-${username}" style="max-height:220px"><div class="empty">Not idling any games.</div></div><p style="font-size:.65rem;color:var(--text3);margin-top:8px">Double-click a game to stop idling it.</p></div>
-        </div>
-        <div class="section">
-            <div class="section-head"><h3>Settings</h3></div>
-            <div class="section-body">
-                <div class="fg">
-                    <div class="f"><label>Online Status</label><select id="as-${username}"><option value="">Default</option><option value="0">Offline</option><option value="1">Online</option><option value="2">Busy</option><option value="3">Away</option><option value="4">Snooze</option><option value="5">Looking to Trade</option><option value="6">Looking to Play</option><option value="7">Invisible</option></select></div>
-                    <div class="f"><label>AFK Message</label><input id="aa-${username}" placeholder="Default"></div>
-                </div>
-                <div class="f-actions"><button class="btn-accent btn-sm" onclick="saveAcctCfg('${username}')">Save</button><button class="btn-ghost btn-sm" onclick="clearAcctCfg('${username}')">Reset to Default</button></div>
-            </div>
-        </div>
-        <div class="section">
-            <div class="section-head"><h3>Comment Bot</h3><span style="font-size:.68rem;color:var(--text3)" id="cb-stat-${username}"></span></div>
-            <div class="section-body">
-                <p style="font-size:.72rem;color:var(--text3);margin-bottom:10px">Post comments on Steam profiles. Use bulk mode to comment on all friends.</p>
-                <div class="fg">
-                    <div class="f" style="flex:1"><label>Comment Text</label><input id="cmt-text-${username}" placeholder="Nice profile! +rep"></div>
-                </div>
-                <div class="fg" style="margin-top:8px">
-                    <div class="f"><label>Target Steam ID (single)</label><input id="cmt-target-${username}" placeholder="76561198..."></div>
-                    <div class="f"><label>Delay Between Comments (sec)</label><input type="number" id="cmt-delay-${username}" value="15" min="5" style="width:80px"></div>
-                </div>
-                <div class="f-actions" style="margin-top:10px">
-                    <button class="btn-accent btn-sm" onclick="postSingleComment('${username}')">Comment on Profile</button>
-                    <button class="btn-green btn-sm" onclick="startBulkComment('${username}')">Comment All Friends</button>
-                    <button class="btn-red btn-sm" onclick="stopBulkComment('${username}')">Stop</button>
-                </div>
-                <div class="comment-progress" id="cmt-prog-${username}" style="display:none">
-                    <div style="font-size:.72rem;color:var(--text2)"><span id="cmt-count-${username}">0/0</span> &middot; <span id="cmt-err-${username}">0 errors</span></div>
-                    <div class="comment-progress-bar"><div class="comment-progress-fill" id="cmt-bar-${username}" style="width:0%"></div></div>
-                    <div class="comment-log" id="cmt-log-${username}"></div>
+    <div class="acct-tabs" id="acct-tabs-${username}">
+        <div class="acct-tab active" data-tab="profile" onclick="switchAcctTab('${username}','profile')">Profile</div>
+        <div class="acct-tab" data-tab="games" onclick="switchAcctTab('${username}','games')">Idler</div>
+        <div class="acct-tab" data-tab="social" onclick="switchAcctTab('${username}','social')">Social</div>
+        <div class="acct-tab" data-tab="tools" onclick="switchAcctTab('${username}','tools')">Tools</div>
+        <div class="acct-tab" data-tab="settings" onclick="switchAcctTab('${username}','settings')">Settings</div>
+    </div>
+
+    <div class="acct-tab-content active" id="tab-profile-${username}">
+        <div class="acct-sections">
+            <div class="section full">
+                <div class="section-head"><h3>Profile Comments</h3><span style="font-size:.68rem;color:var(--text3)" id="pcmt-count-${username}">--</span><button class="btn-ghost btn-sm" onclick="loadProfileComments('${username}')" style="margin-left:auto">Refresh</button></div>
+                <div class="section-body">
+                    <div style="display:flex;gap:6px;margin-bottom:8px">
+                        <input id="pcmt-input-${username}" placeholder="Write a comment on your profile..." style="flex:1;font-size:.72rem">
+                        <button class="btn-green btn-sm" onclick="postProfileComment('${username}')">Post</button>
+                    </div>
+                    <div class="profile-comments" id="pcmt-list-${username}"><div class="empty">Click refresh or start the bot to load comments.</div></div>
                 </div>
             </div>
+            <div class="section full">
+                <div class="section-head"><h3>Groups</h3><span style="font-size:.68rem;color:var(--text3)" id="pgrp-count-${username}">--</span><button class="btn-ghost btn-sm" onclick="loadProfileGroups('${username}')" style="margin-left:auto">Refresh</button></div>
+                <div class="section-body"><div class="profile-groups" id="pgrp-list-${username}"><div class="empty">Click refresh or start the bot to load groups.</div></div></div>
+            </div>
         </div>
-        <div class="section">
-            <div class="section-head"><h3>Idle Timer</h3><span style="font-size:.68rem;color:var(--text3)" id="tmr-${username}"></span></div>
-            <div class="section-body">
-                <p style="font-size:.72rem;color:var(--text3);margin-bottom:10px">Auto-stop idling after a set duration. Leave at 0 to idle indefinitely.</p>
-                <div class="fg">
-                    <div class="f"><label>Days</label><input type="number" id="td-${username}" min="0" value="0" style="width:70px"></div>
-                    <div class="f"><label>Hours</label><input type="number" id="th-${username}" min="0" max="23" value="0" style="width:70px"></div>
-                    <div class="f"><label>Minutes</label><input type="number" id="tm-${username}" min="0" max="59" value="0" style="width:70px"></div>
-                    <div class="f"><label>Seconds</label><input type="number" id="ts-${username}" min="0" max="59" value="0" style="width:70px"></div>
-                </div>
-                <div class="f-actions">
-                    <button class="btn-green btn-sm" onclick="startTimer('${username}')">Start Timer</button>
-                    <button class="btn-ghost btn-sm" onclick="cancelTimer('${username}')">Cancel Timer</button>
+    </div>
+
+    <div class="acct-tab-content" id="tab-games-${username}">
+        <div class="acct-sections">
+            <div class="section full">
+                <div class="section-head"><h3>Currently Idling</h3><span style="font-size:.68rem;color:var(--text3)" id="ic-${username}">0 games</span></div>
+                <div class="section-body"><div class="game-grid" id="ig-${username}" style="max-height:220px"><div class="empty">Not idling any games.</div></div><p style="font-size:.65rem;color:var(--text3);margin-top:8px">Double-click a game to stop idling it.</p></div>
+            </div>
+            <div class="section full">
+                <div class="section-head"><h3>Game Library</h3><span style="font-size:.7rem;color:var(--text3)" id="gc-${username}"></span><input id="gs-${username}" placeholder="Search..." oninput="renderAcctGames('${username}')" style="width:160px;margin-left:auto"></div>
+                <div class="section-body"><div class="game-grid" id="gg-${username}"><div class="empty">Start idling to load games.</div></div></div>
+            </div>
+            <div class="section full">
+                <div class="section-head"><h3>Idle Timer</h3><span style="font-size:.68rem;color:var(--text3)" id="tmr-${username}"></span></div>
+                <div class="section-body">
+                    <p style="font-size:.72rem;color:var(--text3);margin-bottom:10px">Auto-stop idling after a set duration. Leave at 0 to idle indefinitely.</p>
+                    <div class="fg">
+                        <div class="f"><label>Days</label><input type="number" id="td-${username}" min="0" value="0" style="width:70px"></div>
+                        <div class="f"><label>Hours</label><input type="number" id="th-${username}" min="0" max="23" value="0" style="width:70px"></div>
+                        <div class="f"><label>Minutes</label><input type="number" id="tm-${username}" min="0" max="59" value="0" style="width:70px"></div>
+                        <div class="f"><label>Seconds</label><input type="number" id="ts-${username}" min="0" max="59" value="0" style="width:70px"></div>
+                    </div>
+                    <div class="f-actions">
+                        <button class="btn-green btn-sm" onclick="startTimer('${username}')">Start Timer</button>
+                        <button class="btn-ghost btn-sm" onclick="cancelTimer('${username}')">Cancel Timer</button>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="section">
-            <div class="section-head"><h3>Friends</h3><span style="font-size:.68rem;color:var(--text3)" id="fc-${username}">--</span><input id="fs-${username}" placeholder="Search..." oninput="filterFriends('${username}')" style="width:130px;margin-left:auto"></div>
-            <div class="section-body"><div class="friends-list" id="fl-${username}"><div class="empty">Start the bot to load friends.</div></div></div>
-        </div>
-        <div class="section full">
-            <div class="section-head"><h3>Chat Relay</h3><span style="font-size:.68rem;color:var(--text3)" id="cc-${username}">No messages</span></div>
-            <div class="section-body">
-                <div class="chat-box" id="cb-${username}"><div class="empty">No messages yet. Incoming Steam messages will appear here.</div></div>
-                <div class="chat-input-row">
-                    <input id="ci-${username}" placeholder="Type a reply..." onkeydown="if(event.key==='Enter')sendChat('${username}')">
-                    <button class="btn-accent btn-sm" onclick="sendChat('${username}')">Send</button>
+    </div>
+
+    <div class="acct-tab-content" id="tab-social-${username}">
+        <div class="acct-sections">
+            <div class="section">
+                <div class="section-head"><h3>Friends</h3><span style="font-size:.68rem;color:var(--text3)" id="fc-${username}">--</span><input id="fs-${username}" placeholder="Search..." oninput="filterFriends('${username}')" style="width:130px;margin-left:auto"></div>
+                <div class="section-body"><div class="friends-list" id="fl-${username}"><div class="empty">Start the bot to load friends.</div></div></div>
+            </div>
+            <div class="section">
+                <div class="section-head"><h3>Chat Relay</h3><span style="font-size:.68rem;color:var(--text3)" id="cc-${username}">No messages</span></div>
+                <div class="section-body">
+                    <div class="chat-box" id="cb-${username}"><div class="empty">No messages yet. Incoming Steam messages will appear here.</div></div>
+                    <div class="chat-input-row">
+                        <input id="ci-${username}" placeholder="Type a reply..." onkeydown="if(event.key==='Enter')sendChat('${username}')">
+                        <button class="btn-accent btn-sm" onclick="sendChat('${username}')">Send</button>
+                    </div>
+                    <div style="font-size:.65rem;color:var(--text3);margin-top:4px">Replying to: <span id="cr-${username}">--</span></div>
                 </div>
-                <div style="font-size:.65rem;color:var(--text3);margin-top:4px">Replying to: <span id="cr-${username}">--</span></div>
             </div>
         </div>
-        <div class="section log-hidden" id="logSection-${username}">
-            <div class="section-head"><h3>Logs</h3><button class="btn-ghost btn-sm" onclick="$('log-${username}').innerHTML=''">Clear</button><button class="btn-ghost btn-sm" onclick="toggleAcctLogs('${username}')" style="margin-left:auto">Hide</button></div>
-            <div class="section-body"><div class="log-box" id="log-${username}"></div></div>
+    </div>
+
+    <div class="acct-tab-content" id="tab-tools-${username}">
+        <div class="acct-sections">
+            <div class="section full">
+                <div class="section-head"><h3>Comment Bot</h3><span style="font-size:.68rem;color:var(--text3)" id="cb-stat-${username}"></span></div>
+                <div class="section-body">
+                    <p style="font-size:.72rem;color:var(--text3);margin-bottom:10px">Post comments on Steam profiles. Pick specific friends or comment on all.</p>
+                    <div class="fg">
+                        <div class="f" style="flex:1"><label>Comment Text</label><input id="cmt-text-${username}" placeholder="Nice profile! +rep"></div>
+                    </div>
+                    <div class="fg" style="margin-top:8px">
+                        <div class="f"><label>Target Steam ID (single)</label><input id="cmt-target-${username}" placeholder="76561198..."></div>
+                        <div class="f"><label>Delay Between Comments (sec)</label><input type="number" id="cmt-delay-${username}" value="15" min="5" style="width:80px"></div>
+                    </div>
+                    <div class="f-actions" style="margin-top:10px">
+                        <button class="btn-accent btn-sm" onclick="postSingleComment('${username}')">Comment on Profile</button>
+                        <button class="btn-accent btn-sm" onclick="toggleFriendPicker('${username}')" id="cmt-pick-btn-${username}">Pick Friends</button>
+                        <button class="btn-green btn-sm" onclick="startBulkComment('${username}')">Comment All Friends</button>
+                        <button class="btn-green btn-sm" onclick="startSelectedComment('${username}')" id="cmt-sel-btn-${username}" style="display:none">Comment Selected<span class="cmt-fp-count" id="cmt-sel-count-${username}"></span></button>
+                        <button class="btn-red btn-sm" onclick="stopBulkComment('${username}')">Stop</button>
+                    </div>
+                    <div class="cmt-friend-picker" id="cmt-fp-${username}">
+                        <div class="cmt-fp-toolbar">
+                            <input type="text" id="cmt-fp-search-${username}" placeholder="Search friends..." oninput="filterFriendPicker('${username}')">
+                            <label><input type="checkbox" id="cmt-fp-all-${username}" onchange="toggleAllFriendPicker('${username}')"> All</label>
+                        </div>
+                        <div id="cmt-fp-list-${username}"></div>
+                    </div>
+                    <div class="comment-progress" id="cmt-prog-${username}" style="display:none">
+                        <div style="font-size:.72rem;color:var(--text2)"><span id="cmt-count-${username}">0/0</span> &middot; <span id="cmt-err-${username}">0 errors</span></div>
+                        <div class="comment-progress-bar"><div class="comment-progress-fill" id="cmt-bar-${username}" style="width:0%"></div></div>
+                        <div class="comment-log" id="cmt-log-${username}"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="section full">
-            <div class="section-head"><h3>Game Library</h3><span style="font-size:.7rem;color:var(--text3)" id="gc-${username}"></span><input id="gs-${username}" placeholder="Search..." oninput="renderAcctGames('${username}')" style="width:160px;margin-left:auto"></div>
-            <div class="section-body"><div class="game-grid" id="gg-${username}"><div class="empty">Start idling to load games.</div></div></div>
+    </div>
+
+    <div class="acct-tab-content" id="tab-settings-${username}">
+        <div class="acct-sections">
+            <div class="section full">
+                <div class="section-head"><h3>Account Settings</h3></div>
+                <div class="section-body">
+                    <div class="fg">
+                        <div class="f"><label>Online Status</label><select id="as-${username}"><option value="">Default</option><option value="0">Offline</option><option value="1">Online</option><option value="2">Busy</option><option value="3">Away</option><option value="4">Snooze</option><option value="5">Looking to Trade</option><option value="6">Looking to Play</option><option value="7">Invisible</option></select></div>
+                        <div class="f"><label>AFK Message</label><input id="aa-${username}" placeholder="Default"></div>
+                    </div>
+                    <div class="f-actions"><button class="btn-accent btn-sm" onclick="saveAcctCfg('${username}')">Save</button><button class="btn-ghost btn-sm" onclick="clearAcctCfg('${username}')">Reset to Default</button></div>
+                </div>
+            </div>
+            <div class="section full" id="logSection-${username}">
+                <div class="section-head"><h3>Logs</h3><button class="btn-ghost btn-sm" onclick="$('log-${username}').innerHTML=''">Clear</button></div>
+                <div class="section-body"><div class="log-box" id="log-${username}"></div></div>
+            </div>
         </div>
     </div>`;
     document.querySelector(".content").appendChild(div);
@@ -772,6 +992,9 @@ async function loadAcctPage(username){
     updateAcctStatus(username);
     // Load profile
     loadProfile(username);
+    // Load comments & groups
+    loadProfileComments(username);
+    loadProfileGroups(username);
     // Load friends
     loadFriends(username);
     // Backfill logs
@@ -872,35 +1095,108 @@ function updateAcctStatus(username){
     if(badge){badge.className="badge "+(st==="playing"?"badge-green":st==="online"?"badge-orange":"badge-red");badge.textContent=st==="playing"?"Idling":st==="online"?"Online":st==="logging_in"?"Logging in":"Offline"}
     const pt=$("pt-"+username);if(pt)pt.textContent=b&&b.playtimeSeconds>0?"Session: "+fmtDur(b.playtimeSeconds):"--";
     const startB=$("startBtn-"+username),stopB=$("stopBtn-"+username);
+    const idleB=$("idleBtn-"+username),stopIdleB=$("stopIdleBtn-"+username);
     if(startB&&stopB){if(b){startB.style.display="none";stopB.style.display=""}else{startB.style.display="";stopB.style.display="none"}}
-}
-function toggleAcctLogs(username){
-    const el=$("logSection-"+username);if(!el)return;
-    el.classList.toggle("log-hidden");
-    if(!el.classList.contains("log-hidden")){
-        const box=$("log-"+username);
-        if(box&&box.children.length===0){
-            allLogs.filter(l=>(l.message||"").includes("["+username+"]")).forEach(l=>appendLogTo("log-"+username,l));
+    if(idleB&&stopIdleB){
+        if(b&&(st==="online"||st==="playing")){
+            idleB.style.display=st==="playing"?"none":"";
+            stopIdleB.style.display=st==="playing"?"":"none";
+        }else{
+            idleB.style.display="none";
+            stopIdleB.style.display="none";
         }
     }
+}
+function toggleAcctLogs(username){
+    switchAcctTab(username,"settings");
+    const box=$("log-"+username);
+    if(box&&box.children.length===0){
+        allLogs.filter(l=>(l.message||"").includes("["+username+"]")).forEach(l=>appendLogTo("log-"+username,l));
+    }
+}
+function switchAcctTab(username,tab){
+    const tabs=$("acct-tabs-"+username);if(!tabs)return;
+    tabs.querySelectorAll(".acct-tab").forEach(t=>{t.classList.toggle("active",t.dataset.tab===tab)});
+    ["profile","games","social","tools","settings"].forEach(t=>{
+        const el=$("tab-"+t+"-"+username);if(el)el.classList.toggle("active",t===tab);
+    });
 }
 
 // --- Profile card ---
 const profileUrls={};
 async function loadProfile(username){
     const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/profile");
-    if(!d||!d.online)return;
+    const pd=$("pd-"+username);
+    const px=$("px-"+username);
+    const pg=$("pg-"+username);
+    if(!d||!d.online){
+        if(pd)pd.className="profile-status-dot offline";
+        if(px){px.className="profile-status-text offline";px.textContent="Offline"}
+        if(pg)pg.textContent="";
+        return;
+    }
     profileUrls[username]={url:d.profileUrl||"",steamId:d.steamId||""};
     const pa=$("pa-"+username);if(pa&&d.avatar){pa.src=d.avatar;pa.style.display=""}
     const pn=$("pn-"+username);if(pn)pn.textContent=d.name;
     const ps=$("ps-"+username);if(ps)ps.textContent="STEAM_ID: "+d.steamId;
     const pl=$("pl-"+username);if(pl)pl.textContent="Lvl "+d.level;
-    const pd=$("pd-"+username);
-    const px=$("px-"+username);
     const cls=d.gameName?"ingame":d.state>0?"online":"offline";
     if(pd)pd.className="profile-status-dot "+cls;
     if(px){px.className="profile-status-text "+cls;px.textContent=d.gameName?"In-Game":d.stateName}
-    const pg=$("pg-"+username);if(pg)pg.textContent=d.gameName?"Playing "+d.gameName:"";
+    if(pg)pg.textContent=d.gameName?"Playing "+d.gameName:"";
+}
+async function postProfileComment(username){
+    const inp=$("pcmt-input-"+username);if(!inp)return;
+    const text=inp.value.trim();if(!text){inp.focus();return;}
+    inp.disabled=true;
+    const d=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/comments",{comment:text});
+    inp.disabled=false;
+    if(d&&d.ok){inp.value="";loadProfileComments(username);}
+    else{alert("Failed to post comment: "+(d&&d.error?d.error:"Unknown error"));}
+}
+const _cmtState={};
+function _renderComments(comments){
+    return comments.map(c=>{
+        const time=c.timestamp?new Date(c.timestamp).toLocaleString():"";
+        return '<div class="pcomment">'
+            +(c.avatar?'<img src="'+esc(c.avatar)+'" onerror="this.style.display=\'none\'">':'')
+            +'<div class="pcomment-body"><div class="pcomment-author">'+esc(c.author)+'</div>'
+            +'<div class="pcomment-text">'+esc(c.text)+'</div>'
+            +(time?'<div class="pcomment-time">'+esc(time)+'</div>':'')
+            +'</div></div>';
+    }).join("");
+}
+async function loadProfileComments(username, append){
+    const el=$("pcmt-list-"+username);if(!el)return;
+    if(!append){_cmtState[username]={loaded:0,total:0};el.innerHTML='<div class="empty">Loading comments...</div>';}
+    const st=_cmtState[username]||{loaded:0,total:0};
+    const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/profile/comments?start="+st.loaded+"&count=20");
+    if(!d||!d.comments||d.comments.length===0){
+        if(!append)el.innerHTML='<div class="empty">No comments found.</div>';
+        $("pcmt-count-"+username).textContent=(st.total||0)+" comments";return;
+    }
+    st.loaded+=d.comments.length;st.total=d.total||st.loaded;_cmtState[username]=st;
+    $("pcmt-count-"+username).textContent=st.total+" comment"+(st.total!==1?"s":"");
+    const oldBtn=$("pcmt-more-"+username);if(oldBtn)oldBtn.remove();
+    if(append){el.insertAdjacentHTML("beforeend",_renderComments(d.comments));}
+    else{el.innerHTML=_renderComments(d.comments);}
+    if(d.hasMore){
+        el.insertAdjacentHTML("beforeend",'<button id="pcmt-more-'+username+'" class="btn-ghost btn-sm" style="width:100%;margin-top:6px;font-size:.7rem" onclick="loadProfileComments(\''+username+'\',true)">Load More ('+st.loaded+' / '+st.total+')</button>');
+    }
+}
+async function loadProfileGroups(username){
+    const el=$("pgrp-list-"+username);if(!el)return;
+    el.innerHTML='<div class="empty">Loading groups...</div>';
+    const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/profile/groups");
+    if(!d||!d.groups||d.groups.length===0){el.innerHTML='<div class="empty">No groups found.</div>';$("pgrp-count-"+username).textContent="0 groups";return;}
+    $("pgrp-count-"+username).textContent=d.groups.length+" group"+(d.groups.length!==1?"s":"");
+    el.innerHTML=d.groups.map(g=>{
+        const url=g.url||("https://steamcommunity.com/gid/"+g.groupId);
+        return '<div class="pgroup" onclick="window.open(\''+esc(url)+'\',\'_blank\')" title="'+esc(g.name)+'">'
+            +(g.avatar?'<img src="'+esc(g.avatar)+'" onerror="this.style.display=\'none\'">':'')
+            +'<div class="pgroup-info"><div class="pgroup-name">'+esc(g.name)+'</div>'
+            +'<div class="pgroup-members">'+g.members.toLocaleString()+' members</div></div></div>';
+    }).join("");
 }
 function toggleNameEdit(username){
     const el=$("pe-"+username);if(!el)return;
@@ -1074,7 +1370,15 @@ async function sendChat(username){
     if(r&&r.ok)input.value="";
 }
 
-function renderAllAcctPages(){accounts.forEach(a=>{updateAcctStatus(a.username);updateTimerDisplay(a.username)});renderSidebar()}
+function renderAllAcctPages(){
+    accounts.forEach(a=>{updateAcctStatus(a.username);updateTimerDisplay(a.username)});
+    renderSidebar();mcRenderAccounts();
+    const activePage=document.querySelector(".page.active");
+    if(activePage&&activePage.id&&activePage.id.startsWith("page-acct-")){
+        const u=activePage.id.replace("page-acct-","");
+        loadAcctPage(u);
+    }
+}
 
 // --- Collapsible sections ---
 document.addEventListener("click", (e) => {
@@ -1085,6 +1389,7 @@ document.addEventListener("click", (e) => {
 });
 
 // --- Comment Bot ---
+const cmtSelectedFriends={};
 async function postSingleComment(username){
     const comment=($("cmt-text-"+username)?.value||"").trim();
     const targetSteamId=($("cmt-target-"+username)?.value||"").trim();
@@ -1093,6 +1398,78 @@ async function postSingleComment(username){
     const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/comment",{targetSteamId,comment});
     if(r&&r.ok)alert("Comment posted!");
     else alert(r&&r.error?r.error:"Failed to post comment.");
+}
+async function toggleFriendPicker(username){
+    const picker=$("cmt-fp-"+username);
+    const isOpen=picker.classList.toggle("open");
+    if(isOpen){
+        const r=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/friends");
+        if(!r||!r.friends){picker.classList.remove("open");return alert("Could not load friends. Is the bot online?");}
+        if(!cmtSelectedFriends[username])cmtSelectedFriends[username]=new Set();
+        renderFriendPicker(username,r.friends);
+    }
+}
+function renderFriendPicker(username,friends){
+    const search=($("cmt-fp-search-"+username)?.value||"").toLowerCase();
+    const filtered=search?friends.filter(f=>f.name.toLowerCase().includes(search)||f.steamId.includes(search)):friends;
+    const sel=cmtSelectedFriends[username]||new Set();
+    const list=$("cmt-fp-list-"+username);
+    list.innerHTML=filtered.map(f=>{
+        const checked=sel.has(f.steamId)?"checked":"";
+        const stateClass=f.state>0?"color:var(--green)":"";
+        return '<label class="cmt-fp-row" onclick="event.stopPropagation()"><input type="checkbox" data-sid="'+f.steamId+'" '+checked+' onchange="toggleFriendSelect(\''+username+'\',\''+f.steamId+'\',this.checked)">'
+            +(f.avatar?'<img src="'+esc(f.avatar)+'" onerror="this.style.display=\'none\'">':'')
+            +'<span class="fp-name">'+esc(f.name)+'</span><span class="fp-state" style="'+stateClass+'">'+esc(f.stateName)+'</span></label>';
+    }).join("");
+    updateSelCount(username);
+}
+function filterFriendPicker(username){
+    (async()=>{
+        const r=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/friends");
+        if(r&&r.friends)renderFriendPicker(username,r.friends);
+    })();
+}
+function toggleFriendSelect(username,steamId,checked){
+    if(!cmtSelectedFriends[username])cmtSelectedFriends[username]=new Set();
+    if(checked)cmtSelectedFriends[username].add(steamId);
+    else cmtSelectedFriends[username].delete(steamId);
+    updateSelCount(username);
+}
+function toggleAllFriendPicker(username){
+    const checkAll=$("cmt-fp-all-"+username).checked;
+    const boxes=$("cmt-fp-list-"+username).querySelectorAll('input[type=checkbox]');
+    if(!cmtSelectedFriends[username])cmtSelectedFriends[username]=new Set();
+    boxes.forEach(cb=>{
+        cb.checked=checkAll;
+        if(checkAll)cmtSelectedFriends[username].add(cb.dataset.sid);
+        else cmtSelectedFriends[username].delete(cb.dataset.sid);
+    });
+    updateSelCount(username);
+}
+function updateSelCount(username){
+    const sel=cmtSelectedFriends[username]||new Set();
+    const cnt=sel.size;
+    const btn=$("cmt-sel-btn-"+username);
+    const label=$("cmt-sel-count-"+username);
+    if(cnt>0){btn.style.display="";label.textContent=" ("+cnt+")";}
+    else{btn.style.display="none";label.textContent="";}
+}
+async function startSelectedComment(username){
+    const comment=($("cmt-text-"+username)?.value||"").trim();
+    const delay=parseInt($("cmt-delay-"+username)?.value)||15;
+    if(!comment)return alert("Enter a comment.");
+    const sel=cmtSelectedFriends[username];
+    if(!sel||sel.size===0)return alert("No friends selected.");
+    const steamIds=[...sel];
+    const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/comment/bulk",{comment,delay,steamIds});
+    if(r&&r.ok){
+        $("cmt-prog-"+username).style.display="";
+        $("cmt-count-"+username).textContent="0/"+r.total;
+        $("cmt-bar-"+username).style.width="0%";
+        $("cmt-log-"+username).innerHTML="";
+        $("cb-stat-"+username).textContent="Running...";
+        pollCommentProgress(username);
+    } else alert(r&&r.error?r.error:"Failed to start.");
 }
 async function startBulkComment(username){
     const comment=($("cmt-text-"+username)?.value||"").trim();
@@ -1211,11 +1588,94 @@ async function saveAcctCfg(u){
 }
 async function clearAcctCfg(u){await A("DELETE","/api/config/"+encodeURIComponent(u));await loadConfig();loadAcctPage(u)}
 
+// --- Mass Commenter ---
+const mcSelected=new Set();
+function mcRenderAccounts(){
+    const list=$("mc-acct-list");
+    if(!bots||bots.length===0){list.innerHTML='<div class="empty">Start bots to see accounts here.</div>';mcUpdateCount();return;}
+    list.innerHTML=bots.map(b=>{
+        const checked=mcSelected.has(b.username)?"checked":"";
+        const online=b.state!=="offline"&&b.state!=="reconnecting";
+        return '<label class="mc-acct-row"><input type="checkbox" data-user="'+esc(b.username)+'" '+checked+' onchange="mcToggle(\''+esc(b.username)+'\',this.checked)">'
+            +'<span class="mc-name">'+esc(b.username)+'</span>'
+            +'<span class="mc-state'+(online?" online":"")+'">'+esc(b.state)+'</span></label>';
+    }).join("");
+    mcUpdateCount();
+}
+function mcToggle(username,checked){
+    if(checked)mcSelected.add(username);else mcSelected.delete(username);
+    mcUpdateCount();
+}
+function mcToggleAll(){
+    const checkAll=$("mc-all").checked;
+    const boxes=$("mc-acct-list").querySelectorAll('input[type=checkbox]');
+    boxes.forEach(cb=>{cb.checked=checkAll;if(checkAll)mcSelected.add(cb.dataset.user);else mcSelected.delete(cb.dataset.user);});
+    mcUpdateCount();
+}
+function mcUpdateCount(){$("mc-sel-count").textContent=mcSelected.size+" selected";}
+async function mcStart(){
+    const target=($("mc-target")?.value||"").trim();
+    const comment=($("mc-text")?.value||"").trim();
+    const delay=parseInt($("mc-delay")?.value)||15;
+    if(!target)return alert("Enter a target Steam ID.");
+    if(!comment)return alert("Enter a comment.");
+    if(mcSelected.size===0)return alert("Select at least one account.");
+    const r=await A("POST","/api/masscomment/start",{targetSteamId:target,comment,delay,usernames:[...mcSelected]});
+    if(r&&r.ok){
+        $("mc-prog").style.display="";
+        $("mc-count").textContent="0/"+r.total;
+        $("mc-bar").style.width="0%";
+        $("mc-log").innerHTML="";
+        $("mc-errors").textContent="0 errors";
+        $("mc-status").textContent="Running...";
+        mcPoll();
+    } else alert(r&&r.error?r.error:"Failed to start.");
+}
+async function mcStop(){
+    await A("POST","/api/masscomment/stop");
+    $("mc-status").innerHTML='Stopped <button class="btn-accent btn-sm" onclick="mcReset()" style="margin-left:8px">Run Again</button>';
+}
+function mcReset(){
+    $("mc-prog").style.display="none";
+    $("mc-log").innerHTML="";
+    $("mc-status").textContent="";
+    $("mc-count").textContent="0/0";
+    $("mc-bar").style.width="0%";
+    $("mc-errors").textContent="0 errors";
+}
+let mcPoller=null;
+function mcPoll(){
+    if(mcPoller)clearInterval(mcPoller);
+    mcPoller=setInterval(async()=>{
+        const d=await A("GET","/api/masscomment/progress");
+        if(!d)return;
+        const pct=d.total>0?Math.round(d.done/d.total*100):0;
+        $("mc-count").textContent=d.done+"/"+d.total;
+        $("mc-errors").textContent=d.errors+" error"+(d.errors!==1?"s":"");
+        $("mc-bar").style.width=pct+"%";
+        const log=$("mc-log");
+        if(log){
+            log.innerHTML=d.log.map(e=>'<div class="mc-log-entry '+e.status+'">'+esc(e.account)+" - "+e.status+(e.error?" ("+esc(e.error)+")":"")+"</div>").join("");
+            log.scrollTop=log.scrollHeight;
+        }
+        if(!d.running){
+            clearInterval(mcPoller);mcPoller=null;
+            const skipped=d.log?d.log.filter(e=>e.status==="skipped").length:0;
+            let msg="Done ("+d.done+" posted, "+d.errors+" error"+(d.errors!==1?"s":"");
+            if(skipped>0)msg+=", "+skipped+" skipped";
+            msg+=")";
+            $("mc-status").innerHTML=msg+' <button class="btn-accent btn-sm" onclick="mcReset()" style="margin-left:8px">Run Again</button>';
+        }
+    },2000);
+}
+
 // --- Start/Stop ---
-async function startAll(){const r=await A("POST","/api/start");if(r.error)return alert(r.error);isRunning=true;updateGlobal()}
+async function startAll(){const r=await A("POST","/api/start");if(r.error)return alert(r.error);isRunning=true;updateGlobal();setTimeout(poll,1500);setTimeout(poll,4000)}
 async function stopAll(){const r=await A("POST","/api/stop");if(r.error)return alert(r.error);isRunning=false;bots=[];updateGlobal();renderHome();renderAllAcctPages()}
-async function startOne(u){await A("POST","/api/accounts/"+encodeURIComponent(u)+"/start");isRunning=true;updateGlobal()}
-async function stopOne(u){await A("POST","/api/accounts/"+encodeURIComponent(u)+"/stop");updateGlobal()}
+async function startOne(u){await A("POST","/api/accounts/"+encodeURIComponent(u)+"/start");isRunning=true;updateGlobal();setTimeout(poll,1500);setTimeout(poll,4000)}
+async function stopOne(u){await A("POST","/api/accounts/"+encodeURIComponent(u)+"/stop");updateGlobal();setTimeout(poll,1500)}
+async function startIdling(u){const r=await A("POST","/api/accounts/"+encodeURIComponent(u)+"/startidle");if(r&&r.error)alert(r.error);setTimeout(poll,1000)}
+async function stopIdling(u){await A("POST","/api/accounts/"+encodeURIComponent(u)+"/stopidle");setTimeout(poll,1000)}
 async function loadStatus(){const r=await A("GET","/api/status");isRunning=r.isRunning;bots=r.bots||[];updateGlobal()}
 function updateGlobal(){
     const n=bots.filter(b=>b.state==="playing").length;
@@ -1370,13 +1830,6 @@ async function showDeal(appid){
         </div>`;
 }
 
-async function loadPlaytime(){
-    const d=await A("GET","/api/playtime"),c=$("ptAll");
-    if(!d||!d.length){c.innerHTML='<div class="empty">No data yet.</div>';return}
-    let h='<table class="pt"><thead><tr><th>Account</th><th>Start</th><th>End</th><th>Duration</th><th>Games</th></tr></thead><tbody>';
-    d.slice(0,100).forEach(e=>{if(e.raw){h+=`<tr><td colspan="5">${esc(e.raw)}</td></tr>`;return}h+=`<tr><td>${esc(e.account)}</td><td>${e.start}</td><td>${e.end}</td><td>${fmtDur(e.seconds)}</td><td>${esc(e.games)}</td></tr>`});
-    c.innerHTML=h+"</tbody></table>";
-}
 
 function showModal(id){$(id).classList.add("show")}
 function hideModal(id){$(id).classList.remove("show")}

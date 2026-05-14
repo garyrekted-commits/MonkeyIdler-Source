@@ -154,6 +154,9 @@ app.post("/api/refresh", (req, res) => {
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
+app.get("/bg.png", (req, res) => {
+    res.sendFile(path.join(__dirname, "bg.png"));
+});
 
 // SSE endpoint for live logs + status
 app.get("/api/logs", (req, res) => {
@@ -457,18 +460,27 @@ app.post("/api/accounts/:username/toggle", (req, res) => {
     res.json({ ok: true, idling: games });
 });
 
-// Stop idling but stay online
+// Start idling the remembered games
+app.post("/api/accounts/:username/startidle", (req, res) => {
+    const controller = require("../controller.js");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    if (!bot || !bot.client.steamID) return res.status(400).json({ error: "Bot not online" });
+    const config = loadConfig();
+    const acctCfg = (config.accountSettings && config.accountSettings[req.params.username]) || {};
+    const games = acctCfg.playingGames || config.playingGames || [];
+    if (games.length === 0) return res.status(400).json({ error: "No games configured to idle" });
+    bot.setGamesPlayed(games);
+    bot.startGoalCheck();
+    res.json({ ok: true, idling: games });
+});
+
+// Stop idling but stay online (keeps games remembered in config)
 app.post("/api/accounts/:username/stopidle", (req, res) => {
     const controller = require("../controller.js");
     const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
     if (!bot || !bot.client.steamID) return res.status(400).json({ error: "Bot not online" });
     bot.client.gamesPlayed([]);
     bot.playedAppIDs = [];
-    const config = loadConfig();
-    if (!config.accountSettings) config.accountSettings = {};
-    if (!config.accountSettings[req.params.username]) config.accountSettings[req.params.username] = {};
-    config.accountSettings[req.params.username].playingGames = [];
-    saveConfig(config);
     res.json({ ok: true });
 });
 
@@ -612,6 +624,118 @@ app.get("/api/accounts/:username/websession", (req, res) => {
     res.json({ cookies: bot.webCookies, steamId: sid64 });
 });
 
+// Fetch profile comments via Steam's AJAX comment endpoint
+app.get("/api/accounts/:username/profile/comments", async (req, res) => {
+    const controller = require("../controller.js");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    if (!bot || !bot.client.steamID) return res.json({ comments: [] });
+    const sid64 = bot.client.steamID.getSteamID64();
+    const start = parseInt(req.query.start) || 0;
+    const count = Math.min(parseInt(req.query.count) || 20, 50);
+    const https = require("https");
+    try {
+        const html = await new Promise((resolve, reject) => {
+            https.get({
+                hostname: "steamcommunity.com",
+                path: `/comment/Profile/render/${sid64}/-1/?start=${start}&count=${count}`,
+                headers: { "User-Agent": "Mozilla/5.0", Cookie: (bot.webCookies || []).join("; ") }
+            }, (r) => {
+                let d = "";
+                r.on("data", c => d += c);
+                r.on("end", () => resolve(d));
+            }).on("error", reject);
+        });
+        const parsed = JSON.parse(html);
+        const commentsHtml = parsed.comments_html || "";
+        const comments = [];
+        const blocks = commentsHtml.split(/class="commentthread_comment responsive_body_text/g);
+        for (let i = 1; i < blocks.length; i++) {
+            const b = blocks[i];
+            const avMatch = b.match(/<img src="(https:\/\/avatars[^"]*?)"/);
+            const nameMatch = b.match(/<bdi>(.*?)<\/bdi>/);
+            const textMatch = b.match(/commentthread_comment_text"[^>]*>([\s\S]*?)<\/div>/);
+            const timeMatch = b.match(/data-timestamp="(\d+)"/);
+            if (nameMatch && textMatch) {
+                comments.push({
+                    author: nameMatch[1].trim(),
+                    text: textMatch[1].replace(/<br\s*\/?>/g, "\n").replace(/<[^>]*>/g, "").trim(),
+                    avatar: avMatch ? avMatch[1] : "",
+                    timestamp: timeMatch ? parseInt(timeMatch[1]) * 1000 : 0
+                });
+            }
+        }
+        const total = parsed.total_count || comments.length;
+        res.json({ comments, total, start, hasMore: (start + comments.length) < total });
+    } catch (e) {
+        res.json({ comments: [], error: e.message });
+    }
+});
+
+// Post a comment on your own profile
+app.post("/api/accounts/:username/profile/comments", async (req, res) => {
+    const { comment } = req.body;
+    if (!comment || !comment.trim()) return res.status(400).json({ error: "Comment text required" });
+    const controller = require("../controller.js");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    if (!bot || !bot.client.steamID) return res.status(400).json({ error: "Bot not online" });
+    if (!bot.webCookies) {
+        bot.client.webLogOn();
+        return res.status(202).json({ error: "Requesting web session, try again in a moment" });
+    }
+    try {
+        const result = await steamWebPost(bot, `https://steamcommunity.com/comment/Profile/post/${bot.client.steamID.getSteamID64()}/-1/`, {
+            comment: comment.trim(),
+            count: 10,
+            feature2: -1
+        });
+        res.json({ ok: true, status: result.status });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Fetch user's Steam groups from profile page HTML
+app.get("/api/accounts/:username/profile/groups", async (req, res) => {
+    const controller = require("../controller.js");
+    const bot = controller.allBots.find(b => b.logOnOptions.accountName === req.params.username);
+    if (!bot || !bot.client.steamID) return res.json({ groups: [] });
+    const sid64 = bot.client.steamID.getSteamID64();
+    const https = require("https");
+    try {
+        const html = await new Promise((resolve, reject) => {
+            https.get({
+                hostname: "steamcommunity.com",
+                path: `/profiles/${sid64}`,
+                headers: { "User-Agent": "Mozilla/5.0" }
+            }, (r) => {
+                let d = "";
+                r.on("data", c => d += c);
+                r.on("end", () => resolve(d));
+            }).on("error", reject);
+        });
+        const groups = [];
+        const blocks = html.split(/class="profile_group(?:\s+profile_primary_group)?"/g);
+        for (let i = 1; i < blocks.length; i++) {
+            const b = blocks[i];
+            const avMatch = b.match(/<img src="(https:\/\/avatars[^"]*?)"/);
+            const urlMatch = b.match(/href="(https:\/\/steamcommunity\.com\/groups\/[^"]*?)"/);
+            const nameMatch = b.match(/whiteLink"[^>]*>([\s\S]*?)<\/a>/);
+            const memberMatch = b.match(/profile_group_membercount">\s*([\d,]+)\s*Members/);
+            if (nameMatch) {
+                groups.push({
+                    name: nameMatch[1].trim(),
+                    url: urlMatch ? urlMatch[1] : "",
+                    avatar: avMatch ? avMatch[1] : "",
+                    members: memberMatch ? parseInt(memberMatch[1].replace(/,/g, "")) : 0
+                });
+            }
+        }
+        res.json({ groups });
+    } catch (e) {
+        res.json({ groups: [], error: e.message });
+    }
+});
+
 // Edit display name
 app.post("/api/accounts/:username/profile/name", (req, res) => {
     const { name } = req.body;
@@ -661,6 +785,7 @@ async function steamWebPost(bot, endpoint, formData) {
     if (!bot.webCookies) throw new Error("No web session");
     const sessionId = bot.webCookies.find(c => c.startsWith("sessionid="))?.split("=")[1];
     if (!sessionId) throw new Error("No sessionid cookie");
+    formData.sessionid = sessionId;
     formData.sessionID = sessionId;
     const body = Object.entries(formData).map(([k,v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v || "")).join("&");
     const cookieStr = bot.webCookies.join("; ");
@@ -788,9 +913,9 @@ app.post("/api/accounts/:username/comment", async (req, res) => {
     }
 });
 
-// Bulk comment on all friends
+// Bulk comment on all friends or selected friends
 app.post("/api/accounts/:username/comment/bulk", async (req, res) => {
-    const { comment, delay } = req.body;
+    const { comment, delay, steamIds } = req.body;
     if (!comment) return res.status(400).json({ error: "comment required" });
     const controller = require("../controller.js");
     const SteamUser = require("steam-user");
@@ -801,8 +926,12 @@ app.post("/api/accounts/:username/comment/bulk", async (req, res) => {
     if (commentProgress[username] && commentProgress[username].running) return res.status(400).json({ error: "Already running" });
 
     const friends = [];
-    for (const [sid, rel] of Object.entries(bot.client.myFriends || {})) {
-        if (rel === SteamUser.EFriendRelationship.Friend) friends.push(String(sid));
+    if (Array.isArray(steamIds) && steamIds.length > 0) {
+        friends.push(...steamIds.map(String));
+    } else {
+        for (const [sid, rel] of Object.entries(bot.client.myFriends || {})) {
+            if (rel === SteamUser.EFriendRelationship.Friend) friends.push(String(sid));
+        }
     }
 
     const prog = { total: friends.length, done: 0, errors: 0, running: true, log: [] };
@@ -810,9 +939,12 @@ app.post("/api/accounts/:username/comment/bulk", async (req, res) => {
     res.json({ ok: true, total: friends.length });
 
     const delayMs = Math.max((delay || 15) * 1000, 5000);
+    const skipPatterns = /private|comment.*disabled|owner only|limit|restricted|unavailable|cannot post|you do not have permission/i;
+    const skipDelay = 2000;
     (async () => {
         for (const sid of friends) {
             if (!prog.running) { prog.log.push({ steamId: sid, status: "cancelled" }); break; }
+            let wasSkipped = false;
             try {
                 const result = await steamWebPost(bot, "https://steamcommunity.com/comment/Profile/post/" + sid + "/-1/", { comment });
                 const parsed = JSON.parse(result.data);
@@ -821,14 +953,25 @@ app.post("/api/accounts/:username/comment/bulk", async (req, res) => {
                     const name = (bot.client.users[sid] || {}).player_name || sid;
                     prog.log.push({ steamId: sid, name, status: "ok" });
                 } else {
-                    prog.errors++;
-                    prog.log.push({ steamId: sid, status: "error", error: parsed.error || "Failed" });
+                    const errMsg = parsed.error || "Failed";
+                    if (skipPatterns.test(errMsg)) {
+                        prog.log.push({ steamId: sid, status: "skipped", error: errMsg });
+                        wasSkipped = true;
+                    } else {
+                        prog.errors++;
+                        prog.log.push({ steamId: sid, status: "error", error: errMsg });
+                    }
                 }
             } catch (e) {
-                prog.errors++;
-                prog.log.push({ steamId: sid, status: "error", error: e.message });
+                if (skipPatterns.test(e.message)) {
+                    prog.log.push({ steamId: sid, status: "skipped", error: e.message });
+                    wasSkipped = true;
+                } else {
+                    prog.errors++;
+                    prog.log.push({ steamId: sid, status: "error", error: e.message });
+                }
             }
-            if (prog.running) await new Promise(r => setTimeout(r, delayMs));
+            if (prog.running) await new Promise(r => setTimeout(r, wasSkipped ? skipDelay : delayMs));
         }
         prog.running = false;
     })();
@@ -845,6 +988,80 @@ app.post("/api/accounts/:username/comment/stop", (req, res) => {
 app.get("/api/accounts/:username/comment/progress", (req, res) => {
     const prog = commentProgress[req.params.username] || { total: 0, done: 0, errors: 0, running: false, log: [] };
     res.json(prog);
+});
+
+// --- Mass account commenter ---
+let massCommentProgress = { total: 0, done: 0, errors: 0, running: false, log: [] };
+
+app.post("/api/masscomment/start", async (req, res) => {
+    const { targetSteamId, comment, delay, usernames } = req.body;
+    if (!targetSteamId || !comment) return res.status(400).json({ error: "targetSteamId and comment required" });
+    if (!Array.isArray(usernames) || usernames.length === 0) return res.status(400).json({ error: "No accounts selected" });
+    if (massCommentProgress.running) return res.status(400).json({ error: "Already running" });
+
+    const controller = require("../controller.js");
+    const selectedBots = usernames
+        .map(u => controller.allBots.find(b => b.logOnOptions.accountName === u))
+        .filter(b => b && b.client.steamID);
+
+    if (selectedBots.length === 0) return res.status(400).json({ error: "No selected accounts are online" });
+
+    const prog = { total: selectedBots.length, done: 0, errors: 0, running: true, log: [] };
+    massCommentProgress = prog;
+    res.json({ ok: true, total: selectedBots.length });
+
+    const delayMs = Math.max((delay || 15) * 1000, 5000);
+    const skipPatterns = /private|comment.*disabled|owner only|limit|restricted|unavailable|cannot post|you do not have permission/i;
+    const skipDelay = 2000;
+    (async () => {
+        for (const bot of selectedBots) {
+            if (!prog.running) { prog.log.push({ account: bot.logOnOptions.accountName, status: "cancelled" }); break; }
+            const name = bot.logOnOptions.accountName;
+            let wasSkipped = false;
+            if (!bot.webCookies) {
+                try { bot.client.webLogOn(); } catch (e) { /* ignore */ }
+                prog.log.push({ account: name, status: "skipped", error: "No web session" });
+                wasSkipped = true;
+            } else {
+                try {
+                    const result = await steamWebPost(bot, "https://steamcommunity.com/comment/Profile/post/" + targetSteamId + "/-1/", { comment });
+                    const parsed = JSON.parse(result.data);
+                    if (parsed.success) {
+                        prog.done++;
+                        prog.log.push({ account: name, status: "ok" });
+                    } else {
+                        const errMsg = parsed.error || "Failed";
+                        if (skipPatterns.test(errMsg)) {
+                            prog.log.push({ account: name, status: "skipped", error: errMsg });
+                            wasSkipped = true;
+                        } else {
+                            prog.errors++;
+                            prog.log.push({ account: name, status: "error", error: errMsg });
+                        }
+                    }
+                } catch (e) {
+                    if (skipPatterns.test(e.message)) {
+                        prog.log.push({ account: name, status: "skipped", error: e.message });
+                        wasSkipped = true;
+                    } else {
+                        prog.errors++;
+                        prog.log.push({ account: name, status: "error", error: e.message });
+                    }
+                }
+            }
+            if (prog.running) await new Promise(r => setTimeout(r, wasSkipped ? skipDelay : delayMs));
+        }
+        prog.running = false;
+    })();
+});
+
+app.post("/api/masscomment/stop", (req, res) => {
+    massCommentProgress.running = false;
+    res.json({ ok: true });
+});
+
+app.get("/api/masscomment/progress", (req, res) => {
+    res.json(massCommentProgress);
 });
 
 // Friends list

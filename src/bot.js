@@ -134,20 +134,13 @@ Bot.prototype.attachEventListeners = function() {
             }
         });
 
-        // Get games to play from per-account config (already resolved: account override or global default)
-        // Don't auto-idle any games on login -- user must manually select games
-        let configGames = [];
+        // Restore last-idled games from config so "Start All" resumes where we left off
+        let configGames = this.acctConfig.playingGames || [];
 
         const startPlaying = () => {
-            if (configGames.length > 0) {
-                this.client.gamesPlayed(configGames);
-                this.startedPlayingTimestamp = Date.now();
-                this.playedAppIDs = configGames;
-            } else {
-                this.playedAppIDs = [];
-                this.startedPlayingTimestamp = 0;
-            }
-            this.startGoalCheck();
+            this.playedAppIDs = [];
+            this.startedPlayingTimestamp = 0;
+            this.lastConfigGames = configGames;
         };
 
         // Get all licenses this account owns
