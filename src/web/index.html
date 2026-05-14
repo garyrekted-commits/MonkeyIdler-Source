@@ -487,7 +487,6 @@ input:focus,select:focus{border-color:var(--accent)}
 .modal h3{font-size:.95rem;margin-bottom:14px}
 .modal .f{margin-bottom:10px}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
 </head>
@@ -639,7 +638,6 @@ input:focus,select:focus{border-color:var(--accent)}
 
                     <div class="bc-menu-section">
                         <div class="bc-menu-title">Download</div>
-                        <button class="bc-menu-btn accent" onclick="bcDownload('all')" id="bc-dl-all-btn" disabled>Download All (ZIP)</button>
                         <button class="bc-menu-btn" onclick="bcDownload('main')" id="bc-dl-main-btn" disabled>Artwork Middle</button>
                         <button class="bc-menu-btn" onclick="bcDownload('side')" id="bc-dl-side-btn" disabled>Artwork Right</button>
                         <button class="bc-menu-btn bc-hidden" onclick="bcConvertToGif('main')" id="bc-gif-btn">Convert Main to GIF</button>
@@ -657,21 +655,6 @@ input:focus,select:focus{border-color:var(--accent)}
                         <div class="bc-menu-title">Apply to Steam</div>
                         <button class="bc-menu-btn green" onclick="bcApplyToSteam()">Set as Profile Background</button>
                         <div class="bc-status-msg" id="bc-status"></div>
-                    </div>
-
-                    <div class="bc-menu-section">
-                        <div class="bc-menu-title">Upload Artwork</div>
-                        <select class="bc-menu-select" id="au-acct">
-                            <option value="">Select account...</option>
-                        </select>
-                        <input class="bc-menu-select" id="au-title" placeholder="Artwork title...">
-                        <label style="font-size:.6rem;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:5px;cursor:pointer;margin:4px 0 6px">
-                            <input type="checkbox" id="au-animated"> Animated / Long artwork
-                        </label>
-                        <button class="bc-menu-btn" onclick="document.getElementById('au-file-input').click()">Choose File...</button>
-                        <input type="file" id="au-file-input" accept="image/*" style="display:none" onchange="auHandleFile(this.files)">
-                        <button class="bc-menu-btn green" onclick="auUpload()" id="au-upload-btn" disabled>Upload to Steam</button>
-                        <div class="bc-status-msg" id="au-status"></div>
                     </div>
                 </div>
             </div>
@@ -2405,7 +2388,6 @@ function bcBuildOverlay(){
 function bcSetupDrag(){}
 
 function bcEnableButtons(en){
-    $("bc-dl-all-btn").disabled=!en;
     $("bc-dl-main-btn").disabled=!en;
     $("bc-dl-side-btn").disabled=!en;
 }
@@ -2421,8 +2403,8 @@ function bcDownload(which){
         const a=document.createElement("a");a.href=c.toDataURL("image/png");
         a.download=name+".png";a.click();
     }
-    if(which==="main"||which==="all")crop(mainX,yOff,mainW,artH,"Artwork_Middle_"+mainW+"x"+artH);
-    if(which==="side"||which==="all")setTimeout(()=>crop(sideX,yOff,sideW,artH,"Artwork_Right_"+sideW+"x"+artH),which==="all"?300:0);
+    if(which==="main")crop(mainX,yOff,mainW,artH,"Artwork_Middle_"+mainW+"x"+artH);
+    if(which==="side")crop(sideX,yOff,sideW,artH,"Artwork_Right_"+sideW+"x"+artH);
 }
 
 function bcConvertToGif(which){
@@ -2492,46 +2474,14 @@ function bcReset(){
 
 // --- Accounts ---
 function amPopulateAccounts(){
-    [$("bc-bg-acct"),$("au-acct")].forEach(sel=>{
-        if(!sel)return;
-        const prev=sel.value;
-        sel.innerHTML='<option value="">Select account...</option>';
-        bots.filter(b=>b.state==="online"||b.state==="playing").forEach(b=>{
-            sel.innerHTML+='<option value="'+esc(b.username)+'">'+esc(b.username)+'</option>';
-        });
-        if(prev)sel.value=prev;
+    const sel=$("bc-bg-acct");
+    if(!sel)return;
+    const prev=sel.value;
+    sel.innerHTML='<option value="">Select account...</option>';
+    bots.filter(b=>b.state==="online"||b.state==="playing").forEach(b=>{
+        sel.innerHTML+='<option value="'+esc(b.username)+'">'+esc(b.username)+'</option>';
     });
-}
-
-// --- Upload Artwork ---
-let auFile=null;
-function auHandleFile(files){
-    if(!files||!files.length)return;
-    auFile=files[0];
-    if(!auFile.type.startsWith("image/"))return;
-    $("au-upload-btn").disabled=false;
-    $("au-status").textContent="Selected: "+auFile.name;$("au-status").style.color="rgba(255,255,255,.5)";
-}
-
-async function auUpload(){
-    const acct=$("au-acct").value;
-    if(!acct)return alert("Select an account first.");
-    if(!auFile)return alert("Select an image first.");
-    const title=$("au-title").value.trim()||"Artwork";
-    const animated=$("au-animated").checked;
-    const btn=$("au-upload-btn"),status=$("au-status");
-    btn.disabled=true;btn.textContent="Uploading...";
-    status.textContent="Uploading...";status.style.color="rgba(255,255,255,.5)";
-    try{
-        const resp=await fetch("/api/accounts/"+encodeURIComponent(acct)+"/artwork/upload?title="+encodeURIComponent(title)+"&animated="+animated,{
-            method:"POST",headers:{"Content-Type":auFile.type},body:auFile
-        });
-        const d=await resp.json();
-        if(d.ok){status.textContent="Uploaded!";status.style.color="var(--green)"}
-        else{status.textContent="Failed: "+(d.error||"Unknown");status.style.color="var(--red)"}
-    }catch(e){status.textContent="Error: "+e.message;status.style.color="var(--red)"}
-    btn.disabled=false;btn.textContent="Upload to Steam";
-    setTimeout(()=>{status.textContent="";status.style.color=""},6000);
+    if(prev)sel.value=prev;
 }
 
 // --- Steam Backgrounds ---

@@ -1,6 +1,6 @@
 {
     "name": "steam-idler",
-    "version": "1.16.2",
+    "version": "1.17.2",
     "description": "Steam game idler with desktop GUI and multi account support",
     "main": "idler.js",
     "dependencies": {
@@ -23,7 +23,9 @@
         "sharp": "^0.34.5"
     },
     "scripts": {
+        "prestart": "node -e \"try{require('child_process').execSync('taskkill /F /IM electron.exe',{stdio:'ignore'});}catch(e){}\"",
         "start": "electron .",
+        "restart": "npm start",
         "build": "electron-builder --win portable"
     },
     "build": {
