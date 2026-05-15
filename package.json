@@ -1,6 +1,6 @@
 {
     "name": "steam-idler",
-    "version": "1.17.12",
+    "version": "1.17.13",
     "description": "Steam game idler with desktop GUI and multi account support",
     "main": "idler.js",
     "dependencies": {
@@ -48,34 +48,20 @@
         "files": [
             "idler.js",
             "preload.js",
-            "config.json",
             "icon.ico",
             "src/**/*",
-            "node_modules/**/*",
-            "!node_modules/electron/**",
-            "!node_modules/electron-builder/**",
-            "!node_modules/sharp/**",
-            "!node_modules/eslint/**",
-            "!node_modules/@eslint/**",
-            "!node_modules/eslint-plugin-jsdoc/**",
-            "!node_modules/7zip-bin/**",
-            "!node_modules/dmg-builder/**",
-            "!node_modules/app-builder-bin/**",
-            "!node_modules/app-builder-lib/**",
+            "!src/menu.js",
+            "!src/tokens.db",
+            "!**/.git/**",
+            "!**/.github/**",
+            "!**/.cursor/**",
             "!**/*.md",
             "!**/*.map",
-            "!**/*.ts",
-            "!**/*.d.ts",
-            "!**/CHANGELOG*",
-            "!**/LICENSE*",
-            "!**/README*",
-            "!**/.eslintrc*",
             "!**/test/**",
-            "!**/tests/**",
-            "!**/docs/**",
-            "!**/example/**",
-            "!**/examples/**"
+            "!**/tests/**"
         ],
+        "npmRebuild": false,
+        "removePackageScripts": true,
         "win": {
             "target": "nsis",
             "icon": "icon.ico",
@@ -92,12 +78,8 @@
             "shortcutName": "Monkey Idler",
             "artifactName": "MonkeyIdler-Setup.${ext}"
         },
-        "compression": "normal",
-        "asar": true,
-        "asarUnpack": [
-            "src/web/bg.webp",
-            "src/web/bg.png"
-        ]
+        "compression": "maximum",
+        "asar": true
     },
     "author": "3urobeat",
     "license": "GPL-3.0",

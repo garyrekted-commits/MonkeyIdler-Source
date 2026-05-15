@@ -57,3 +57,10 @@ jobs:
           EP_DRAFT: "false"
           ELECTRON_BUILDER_CACHE: ${{ runner.temp }}\electron-builder-cache
         run: npm run release
+
+      - name: Remove blockmap-only duplicate release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REF: ${{ github.ref }}
+        run: node scripts/fix-github-release.js
