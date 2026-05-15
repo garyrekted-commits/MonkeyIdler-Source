@@ -1,5 +1,5 @@
 # Build NSIS installer and upload to GitHub Releases (latest.yml + MonkeyIdler-Setup.exe for electron-updater).
-# Trigger: push a version tag like v1.17.3 (match "version" in package.json first).
+# Trigger: push a version tag like v1.17.5 (must match "version" in package.json).
 
 name: Release Windows
 

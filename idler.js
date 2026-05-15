@@ -135,9 +135,8 @@ app.whenReady().then(async () => {
     mainWindow.loadURL(`http://localhost:${serverPort}`);
     mainWindow.on("closed", () => { mainWindow = null; });
 
-    // Auto-updater: packaged installs only (not `npm start`).
-    // Use generic feed (latest.yml under /releases/latest/download/) — avoids GitHub Atom feed quirks in Electron.
-    // Full differential downloads often break against GitHub; force full installer fetch.
+    // Auto-updater: packaged NSIS installs only (not portable .exe / not `npm start`).
+    // Use native GitHub provider (same as electron-builder publish) — more reliable than a generic "latest/download" URL.
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
     autoUpdater.allowPrerelease = false;
@@ -145,8 +144,9 @@ app.whenReady().then(async () => {
     autoUpdater.disableDifferentialDownload = true;
     autoUpdater.logger = null;
     autoUpdater.setFeedURL({
-        provider: "generic",
-        url: "https://github.com/garyrekted-commits/MonkeyIdler-Source/releases/latest/download/"
+        provider: "github",
+        owner: "garyrekted-commits",
+        repo: "MonkeyIdler-Source"
     });
 
     autoUpdater.on("update-available", (info) => {
