@@ -1,5 +1,6 @@
 # Build NSIS installer and upload to GitHub Releases (latest.yml + MonkeyIdler-Setup.exe for electron-updater).
-# Trigger: push a version tag like v1.17.6 (must match "version" in package.json).
+# Trigger: push a version tag like v1.17.7 (must match "version" in package.json).
+# electron-builder defaults to draft GitHub releases unless publish.releaseType is "release".
 
 name: Release Windows
 
@@ -44,4 +45,5 @@ jobs:
       - name: Build and publish to GitHub Releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EP_DRAFT: "false"
         run: npm run release
