@@ -22,7 +22,9 @@ html{background:transparent}
 body{font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;background:#0a0a0a;color:var(--text);height:100vh;overflow:hidden;display:flex;border-radius:12px;position:relative}
 body>*{position:relative;z-index:1}
 .titlebar{-webkit-app-region:drag;height:36px;background:#0a0a0a;display:flex;align-items:center;padding:0 14px;flex-shrink:0;border-bottom:1px solid var(--border);border-radius:12px 12px 0 0}
-.titlebar-title{font-size:.72rem;font-weight:600;color:var(--text3);flex:1;-webkit-app-region:drag}
+.titlebar-title{font-size:.72rem;font-weight:600;color:var(--text2);flex:0 0 auto;margin-right:6px;-webkit-app-region:drag}
+.titlebar-version{font-size:.62rem;font-weight:600;color:var(--accent);opacity:.9;flex:0 0 auto;margin-right:10px;-webkit-app-region:drag;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.titlebar-dragfill{flex:1;min-width:24px;-webkit-app-region:drag}
 .titlebar-btn{-webkit-app-region:no-drag;background:none;border:none;color:var(--text3);font-size:.85rem;cursor:pointer;padding:4px 10px;border-radius:6px;transition:background .12s}
 .titlebar-btn:hover{background:rgba(255,255,255,.08)}
 .titlebar-btn.close:hover{background:#e81123;color:#fff}
@@ -494,6 +496,8 @@ input:focus,select:focus{border-color:var(--accent)}
 <div style="display:flex;flex-direction:column;width:100%;height:100vh;border-radius:10px;overflow:hidden">
 <div class="titlebar">
     <span class="titlebar-title">Monkey Idler</span>
+    <span class="titlebar-version" id="titlebar-version"></span>
+    <span class="titlebar-dragfill"></span>
     <button class="titlebar-btn" onclick="electronAPI?.minimizeWindow?.()">&#8212;</button>
     <button class="titlebar-btn" onclick="electronAPI?.maximizeWindow?.()">&#9744;</button>
     <button class="titlebar-btn close" onclick="electronAPI?.closeWindow?.()">&#10005;</button>
@@ -745,7 +749,17 @@ const fmtDur=s=>{const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0
 const parseG=s=>{if(!s.trim())return[];return s.split(",").map(x=>x.trim()).filter(Boolean).map(x=>{const n=parseInt(x);return isNaN(n)?x:n})};
 const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
+async function refreshTitlebarVersion(){
+    const el=$("titlebar-version");
+    if(!el)return;
+    try{
+        const v=electronAPI?.getAppVersion&&await electronAPI.getAppVersion();
+        if(v){el.textContent="v"+v;document.title="Monkey Idler v"+v}
+    }catch(e){}
+}
+
 async function init(){
+    await refreshTitlebarVersion();
     await Promise.all([loadAccounts(),loadConfig(),loadStatus()]);
     startPolling();
 }

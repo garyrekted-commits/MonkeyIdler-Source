@@ -82,6 +82,11 @@ const controller = require("./src/controller.js");
 controller.isRunning = false;
 controller.allBots.length = 0;
 
+let appVersion = "";
+try {
+    appVersion = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf8")).version || "";
+} catch (e) { /* ignore */ }
+
 let mainWindow;
 let serverPort;
 
@@ -114,7 +119,7 @@ app.whenReady().then(async () => {
         height: 800,
         minWidth: 800,
         minHeight: 600,
-        title: "Monkey Idler",
+        title: appVersion ? "Monkey Idler v" + appVersion : "Monkey Idler",
         icon: path.join(__dirname, "icon.ico"),
         autoHideMenuBar: true,
         transparent: true,
@@ -165,6 +170,8 @@ app.whenReady().then(async () => {
         runUpdateCheck();
     });
 });
+
+ipcMain.handle("get-app-version", () => appVersion);
 
 // Window controls
 ipcMain.handle("window-minimize", () => { if (mainWindow) mainWindow.minimize(); });
