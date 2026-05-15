@@ -513,6 +513,40 @@ app.post("/api/accounts/:username/chat", (req, res) => {
     }
 });
 
+/** Up to `limit` games for profile UI: last played time, then 2-week playtime, then total time. */
+function pickRecentPlayedGames(bot, limit = 3) {
+    const games = bot.ownedGames;
+    if (!games || !games.length) return [];
+    const seen = new Set();
+    const out = [];
+    const push = (g) => {
+        if (out.length >= limit || seen.has(g.appid)) return;
+        seen.add(g.appid);
+        out.push({
+            appid: g.appid,
+            name: g.name,
+            img: g.img,
+            rtimeLastPlayed: g.rtimeLastPlayed || 0,
+            playtimeForever: g.playtimeForever || 0,
+            playtime2weeks: g.playtime2weeks || 0
+        });
+    };
+    [...games].filter(g => (g.rtimeLastPlayed || 0) > 0)
+        .sort((a, b) => (b.rtimeLastPlayed || 0) - (a.rtimeLastPlayed || 0))
+        .forEach(push);
+    if (out.length < limit) {
+        [...games].filter(g => !seen.has(g.appid))
+            .sort((a, b) => (b.playtime2weeks || 0) - (a.playtime2weeks || 0))
+            .forEach(push);
+    }
+    if (out.length < limit) {
+        [...games].filter(g => !seen.has(g.appid))
+            .sort((a, b) => (b.playtimeForever || 0) - (a.playtimeForever || 0))
+            .forEach(push);
+    }
+    return out.slice(0, limit);
+}
+
 // Profile info
 app.get("/api/accounts/:username/profile", (req, res) => {
     const controller = require("../controller.js");
@@ -529,7 +563,8 @@ app.get("/api/accounts/:username/profile", (req, res) => {
         stateName: ["Offline","Online","Busy","Away","Snooze","Looking to Trade","Looking to Play"][me.persona_state || 0] || "Offline",
         gameName: me.game_name || "",
         profileUrl: "https://steamcommunity.com/profiles/" + sid64,
-        level: bot.steamLevel || 0
+        level: bot.steamLevel || 0,
+        recentGames: pickRecentPlayedGames(bot, 3)
     });
 });
 

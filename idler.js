@@ -84,10 +84,13 @@ controller.allBots.length = 0;
 
 let mainWindow;
 let serverPort;
+/** True after electron-updater has downloaded an installer for this session (quitAndInstall is safe). */
+let updateInstallerDownloaded = false;
 
 function notifyUpdateStatus(payload) {
     try {
-        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("update-status", payload);
+        const msg = { ...payload, currentVersion: app.getVersion() };
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("update-status", msg);
     } catch (e) { /* ignore */ }
 }
 
@@ -131,33 +134,53 @@ app.whenReady().then(async () => {
     mainWindow.on("closed", () => { mainWindow = null; });
 
     // Auto-updater: packaged installs only (not `npm start`).
-    // Use generic feed (latest.yml under /releases/latest/download/) — avoids GitHub Atom feed quirks in Electron.
-    // Full differential downloads often break against GitHub; force full installer fetch.
+    // Generic URL uses GitHub’s /releases/latest/download/ which follows the “Latest” release only.
+    // The GitHub *provider* builds .../download/TAG/latest.yml; duplicate releases for the same tag
+    // (e.g. one with only .blockmap) can make that URL 404 while /latest/download/latest.yml still works.
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
     autoUpdater.allowPrerelease = false;
     autoUpdater.disableWebInstaller = true;
     autoUpdater.disableDifferentialDownload = true;
     autoUpdater.logger = null;
+    autoUpdater.requestHeaders = { "User-Agent": "MonkeyIdler/electron-updater" };
     autoUpdater.setFeedURL({
         provider: "generic",
-        url: "https://github.com/garyrekted-commits/MonkeyIdler-Source/releases/latest/download/"
+        url: "https://github.com/garyrekted-commits/MonkeyIdler-Source/releases/latest/download/",
+        useMultipleRangeRequest: false
+    });
+
+    autoUpdater.on("checking-for-update", () => {
+        notifyUpdateStatus({ status: "checking" });
     });
 
     autoUpdater.on("update-available", (info) => {
+        updateInstallerDownloaded = false;
         notifyUpdateStatus({ status: "downloading", version: info.version });
     });
 
+    autoUpdater.on("download-progress", (p) => {
+        notifyUpdateStatus({
+            status: "progress",
+            percent: typeof p.percent === "number" ? Math.round(p.percent) : 0,
+            transferred: p.transferred,
+            total: p.total
+        });
+    });
+
     autoUpdater.on("update-downloaded", (info) => {
+        updateInstallerDownloaded = true;
         notifyUpdateStatus({ status: "ready", version: info.version });
     });
 
     autoUpdater.on("update-not-available", (info) => {
+        updateInstallerDownloaded = false;
         notifyUpdateStatus({ status: "up-to-date", feedVersion: info?.version || "" });
     });
 
     autoUpdater.on("error", (err) => {
         console.error("[updater] error event:", err);
+        updateInstallerDownloaded = false;
         notifyUpdateStatus({ status: "error", error: err?.message || String(err) });
     });
 
@@ -172,8 +195,15 @@ ipcMain.handle("window-maximize", () => { if (mainWindow) { mainWindow.isMaximiz
 ipcMain.handle("window-close", () => { if (mainWindow) mainWindow.close(); });
 
 // Auto-updater controls
-ipcMain.handle("check-for-update", () => { runUpdateCheck(); });
+ipcMain.handle("check-for-update", () => runUpdateCheck());
+
 ipcMain.handle("install-update", () => {
+    if (!app.isPackaged) {
+        return Promise.resolve({ ok: false, reason: "not-packaged" });
+    }
+    if (!updateInstallerDownloaded) {
+        return Promise.resolve({ ok: false, reason: "no-download" });
+    }
     setImmediate(() => {
         app.removeAllListeners("window-all-closed");
         if (mainWindow) {
@@ -182,27 +212,39 @@ ipcMain.handle("install-update", () => {
         }
         autoUpdater.quitAndInstall(false, true);
     });
+    return Promise.resolve({ ok: true });
 });
+
+// Apply Steam webSession cookies to both community and store (Points Shop lives on store.steampowered.com).
+async function applySteamWebCookies(ses, cookies) {
+    if (!Array.isArray(cookies)) return;
+    for (const raw of cookies) {
+        if (!raw || typeof raw !== "string") continue;
+        const firstPart = raw.split(";")[0].trim();
+        const eq = firstPart.indexOf("=");
+        if (eq <= 0) continue;
+        const name = firstPart.slice(0, eq).trim();
+        const value = firstPart.slice(eq + 1).trim();
+        if (!name) continue;
+        const base = { name, value, path: "/", secure: true, sameSite: "no_restriction" };
+        const targets = [
+            { url: "https://steamcommunity.com", domain: ".steamcommunity.com" },
+            { url: "https://store.steampowered.com", domain: ".steampowered.com" }
+        ];
+        for (const t of targets) {
+            try {
+                await ses.cookies.set({ ...base, ...t, httpOnly: true });
+            } catch (e) { /* ignore per-host cookie rejects */ }
+        }
+    }
+}
 
 // Open an authenticated Steam profile browser window (reuse a single partition)
 let profileSession = null;
 ipcMain.handle("open-steam-profile", async (event, { cookies, url }) => {
     if (!profileSession) profileSession = session.fromPartition("steam-profile");
     await profileSession.clearStorageData();
-    for (const cookieStr of cookies) {
-        const [nameVal] = cookieStr.split(";");
-        const [name, ...valParts] = nameVal.split("=");
-        const value = valParts.join("=");
-        await profileSession.cookies.set({
-            url: "https://steamcommunity.com",
-            name: name.trim(),
-            value: value,
-            domain: ".steamcommunity.com",
-            path: "/",
-            secure: name.trim().toLowerCase().includes("secure"),
-            httpOnly: true
-        });
-    }
+    await applySteamWebCookies(profileSession, cookies);
     const win = new BrowserWindow({
         width: 1100,
         height: 750,
@@ -212,6 +254,24 @@ ipcMain.handle("open-steam-profile", async (event, { cookies, url }) => {
         webPreferences: { session: profileSession, nodeIntegration: false, contextIsolation: true }
     });
     win.loadURL(url);
+});
+
+const STEAM_POINTS_SHOP_URL = "https://store.steampowered.com/points/shop/";
+let pointsShopSession = null;
+ipcMain.handle("open-steam-points-shop", async (event, { cookies, accountName }) => {
+    if (!pointsShopSession) pointsShopSession = session.fromPartition("steam-points-shop");
+    await pointsShopSession.clearStorageData();
+    await applySteamWebCookies(pointsShopSession, cookies);
+    const title = accountName ? `Steam Points Shop — ${accountName}` : "Steam Points Shop";
+    const win = new BrowserWindow({
+        width: 1180,
+        height: 820,
+        title,
+        icon: path.join(__dirname, "icon.ico"),
+        autoHideMenuBar: true,
+        webPreferences: { session: pointsShopSession, nodeIntegration: false, contextIsolation: true }
+    });
+    win.loadURL(STEAM_POINTS_SHOP_URL);
 });
 
 app.on("window-all-closed", () => {
