@@ -256,6 +256,15 @@ input:focus,select:focus{border-color:var(--accent)}
 .profile-status-text{color:var(--text2)}
 .profile-status-text.online{color:#57cbde}.profile-status-text.ingame{color:var(--green)}
 .profile-game{font-size:.72rem;color:var(--green);margin-bottom:8px}
+.profile-recent{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.profile-recent-title{font-size:.62rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.profile-recent-row{display:flex;flex-direction:column;gap:8px}
+.profile-recent-game{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;border-radius:8px;padding:6px 8px;margin:0 -8px;transition:background .12s;border:1px solid transparent}
+.profile-recent-game:hover{background:var(--bg4);border-color:var(--border)}
+.profile-recent-game img{width:120px;height:45px;object-fit:cover;border-radius:4px;flex-shrink:0;border:1px solid var(--border);background:var(--bg)}
+.profile-recent-name{font-size:.74rem;font-weight:600;color:var(--text);line-height:1.25}
+.profile-recent-sub{font-size:.62rem;color:var(--text3);margin-top:2px}
+.profile-recent-empty{font-size:.68rem;color:var(--text3)}
 .profile-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .profile-actions .btn-steam{background:var(--accent);color:#fff;border:none;padding:6px 16px;border-radius:8px;font-size:.72rem;cursor:pointer;font-weight:500;transition:all .15s}
 .profile-actions .btn-steam:hover{background:var(--accent2)}
@@ -513,12 +522,14 @@ input:focus,select:focus{border-color:var(--accent)}
     <div class="sb-header">&#128295; Tools</div>
     <div class="sb-item" data-page="massbot" onclick="navTo(this)">&#129302; Mass Bot Use</div>
     <div class="sb-item" data-page="artmaker" onclick="navTo(this)">&#127912; Art Maker</div>
+    <div class="sb-item" onclick="openPointsShop()">&#9733; Points Shop</div>
     <div class="sb-section-toggle" id="sbAcctToggle" onclick="toggleAcctDropdown()">Accounts <span id="sbAcctCount" style="margin-left:auto;font-size:.58rem;color:var(--accent)">0</span></div>
     <div class="sb-acct-list" id="sbAccounts"></div>
     <div class="sb-spacer"></div>
     <div id="updateBanner" style="display:none;margin:6px;padding:8px 10px;background:rgba(232,115,14,.1);border:1px solid var(--accent);border-radius:8px;font-size:.7rem;text-align:center">
         <div style="font-weight:600;color:var(--green);margin-bottom:4px" id="updateMsg">Update available!</div>
-        <button onclick="electronAPI?.installUpdate?.()" style="background:var(--green);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:.68rem;font-weight:600;cursor:pointer">Install &amp; Restart</button>
+        <div style="font-size:.65rem;color:var(--text2);margin-bottom:6px;min-height:1em" id="updateSub"></div>
+        <button type="button" id="updateInstallBtn" onclick="installAppUpdate()" style="background:var(--green);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:.68rem;font-weight:600;cursor:pointer">Install &amp; Restart</button>
     </div>
     <div class="sb-footer" id="sbFooter"><span style="color:var(--red)">&#9679;</span> Disconnected</div>
 </nav>
@@ -830,6 +841,17 @@ async function poll(){
         if(d.qrDone){cancelQrLogin();hideModal("addModal");await loadAccounts();}
         if(d.chatSeq)chatSeq=d.chatSeq;
         processChatPoll(d.chats);
+        const ap=document.querySelector(".page.active");
+        if(ap&&ap.id&&ap.id.startsWith("page-acct-")){
+            const u=ap.id.replace("page-acct-","");
+            if(bots.some(x=>x.username===u&&(x.state==="online"||x.state==="playing"))){
+                const t=Date.now();
+                if(t-(profilePollTick[u]||0)>8000){
+                    profilePollTick[u]=t;
+                    loadProfile(u);
+                }
+            }
+        }
     }catch(e){
         $("sbFooter").innerHTML='<span style="color:var(--red)">&#9679;</span> Disconnected';
     }
@@ -1020,11 +1042,7 @@ function createAcctPage(username){
                 <span class="profile-status-text" id="px-${username}">Offline</span>
             </div>
             <div class="profile-game" id="pg-${username}"></div>
-            <div class="profile-edit-row" id="pcg-${username}">
-                <input id="pcgi-${username}" placeholder="Custom &quot;playing&quot; text (leave empty for normal)">
-                <button class="btn-steam" onclick="saveCustomGame('${username}')">Set</button>
-                <button class="btn-steam secondary" onclick="clearCustomGame('${username}')">Clear</button>
-            </div>
+            <div class="profile-recent" id="pr-${username}"></div>
             <div class="profile-actions">
                 <button class="btn-steam" onclick="openProfile('${username}')">View Steam Profile</button>
                 <button class="btn-steam secondary" onclick="toggleProfileEditor('${username}')">Edit Profile</button>
@@ -1102,6 +1120,17 @@ function createAcctPage(username){
 
     <div class="acct-tab-content" id="tab-games-${username}">
         <div class="acct-sections">
+            <div class="section full">
+                <div class="section-head"><h3>Custom &quot;Playing&quot; status</h3><span style="font-size:.68rem;color:var(--text3)">Steam presence</span></div>
+                <div class="section-body">
+                    <p style="font-size:.72rem;color:var(--text3);margin-bottom:10px">Show custom text as what you are playing instead of real game titles. Leave empty for normal Steam behavior.</p>
+                    <div class="profile-edit-row" id="pcg-${username}" style="margin-top:0">
+                        <input id="pcgi-${username}" placeholder="Custom &quot;playing&quot; text (leave empty for normal)" style="flex:1;min-width:0">
+                        <button class="btn-steam" onclick="saveCustomGame('${username}')">Set</button>
+                        <button class="btn-steam secondary" onclick="clearCustomGame('${username}')">Clear</button>
+                    </div>
+                </div>
+            </div>
             <div class="section full">
                 <div class="section-head"><h3>Currently Idling</h3><span style="font-size:.68rem;color:var(--text3)" id="ic-${username}">0 games</span></div>
                 <div class="section-body"><div class="game-grid" id="ig-${username}" style="max-height:220px"><div class="empty">Not idling any games.</div></div><p style="font-size:.65rem;color:var(--text3);margin-top:8px">Double-click a game to stop idling it.</p></div>
@@ -1383,15 +1412,18 @@ function switchAcctTab(username,tab){
 
 // --- Profile card ---
 const profileUrls={};
+const profilePollTick={};
 async function loadProfile(username){
     const d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/profile");
     const pd=$("pd-"+username);
     const px=$("px-"+username);
     const pg=$("pg-"+username);
+    const pr=$("pr-"+username);
     if(!d||!d.online){
         if(pd)pd.className="profile-status-dot offline";
         if(px){px.className="profile-status-text offline";px.textContent="Offline"}
         if(pg)pg.textContent="";
+        if(pr)pr.innerHTML="";
         return;
     }
     profileUrls[username]={url:d.profileUrl||"",steamId:d.steamId||""};
@@ -1403,6 +1435,24 @@ async function loadProfile(username){
     if(pd)pd.className="profile-status-dot "+cls;
     if(px){px.className="profile-status-text "+cls;px.textContent=d.gameName?"In-Game":d.stateName}
     if(pg)pg.textContent=d.gameName?"Playing "+d.gameName:"";
+    if(pr){
+        const list=d.recentGames||[];
+        if(!list.length){
+            pr.innerHTML='<div class="profile-recent-title">Recently played</div><div class="profile-recent-empty">No data yet — starts after Steam sends your library (a few seconds online).</div>';
+        } else {
+            const rows=list.map(g=>{
+                let sub="";
+                if(g.rtimeLastPlayed)sub="Last played "+new Date(g.rtimeLastPlayed*1000).toLocaleDateString();
+                else if(g.playtime2weeks)sub=(g.playtime2weeks>=60?Math.round(g.playtime2weeks/60)+" hrs in past 2 weeks":g.playtime2weeks+" min in past 2 weeks");
+                else if(g.playtimeForever)sub=Math.round(g.playtimeForever/60)+" hrs total";
+                return '<a class="profile-recent-game" href="https://store.steampowered.com/app/'+g.appid+'/" target="_blank" rel="noopener noreferrer">'
+                    +'<img src="'+esc(g.img)+'" alt="" onerror="this.style.display=\'none\'">'
+                    +'<div><div class="profile-recent-name">'+esc(g.name)+"</div>"
+                    +(sub?'<div class="profile-recent-sub">'+esc(sub)+"</div>":"")+"</div></a>";
+            }).join("");
+            pr.innerHTML='<div class="profile-recent-title">Recently played</div><div class="profile-recent-row">'+rows+"</div>";
+        }
+    }
 }
 async function postProfileComment(username){
     const inp=$("pcmt-input-"+username);if(!inp)return;
@@ -1474,9 +1524,11 @@ async function saveCustomGame(username){
     const text=inp.value.trim();
     await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/customgame",{text});
     const pg=$("pg-"+username);if(pg)pg.textContent=text?"Playing "+text:"";
+    const ped=$("ped-cg-"+username);if(ped)ped.value=text;
 }
 async function clearCustomGame(username){
     const inp=$("pcgi-"+username);if(inp)inp.value="";
+    const ped=$("ped-cg-"+username);if(ped)ped.value="";
     await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/customgame",{text:""});
     loadProfile(username);
 }
@@ -1490,6 +1542,31 @@ async function openProfile(username){
         window.electronAPI.openSteamProfile({cookies:d.cookies,url});
     } else {
         window.open(url,"_blank");
+    }
+}
+async function openPointsShop(){
+    const online=accounts.filter(a=>bots.some(b=>b.username===a.username&&(b.state==="online"||b.state==="playing")));
+    if(!online.length){
+        alert("Start at least one account so it is online, then open the Points Shop. The shop uses that account’s Steam session.");
+        return;
+    }
+    const username=online[0].username;
+    let d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/websession");
+    let n=0;
+    while(d&&d.error&&/try again|moment/i.test(d.error||"")&&n<12){
+        await new Promise(r=>setTimeout(r,450));
+        d=await A("GET","/api/accounts/"+encodeURIComponent(username)+"/websession");
+        n++;
+    }
+    if(!d||!d.cookies){
+        alert(d&&d.error?d.error:"Could not get a web session for "+username+". Wait a few seconds after going online and try again.");
+        return;
+    }
+    const shopUrl="https://store.steampowered.com/points/shop/";
+    if(window.electronAPI&&window.electronAPI.openSteamPointsShop){
+        window.electronAPI.openSteamPointsShop({cookies:d.cookies,accountName:username});
+    } else {
+        window.open(shopUrl,"_blank");
     }
 }
 
@@ -1521,7 +1598,10 @@ async function saveProfileEdit(username){
     if(customGame)await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/customgame",{text:customGame});
     // Save web profile (bio, real name, custom URL)
     const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/profile/edit",{summary,realName,customURL});
-    if(r&&r.ok){alert("Profile saved!");loadProfile(username)}
+    if(r&&r.ok){
+        const pci=$("pcgi-"+username);if(pci)pci.value=customGame;
+        alert("Profile saved!");loadProfile(username);
+    }
     else alert(r&&r.error?r.error:"Failed to save. Try again.");
 }
 async function savePrivacy(username){
@@ -2227,7 +2307,19 @@ async function refreshSettingsAppVersion(){
     }catch(e){el.textContent="—"}
 }
 
+function semverNums(v){return String(v||"").replace(/^v/i,"").split(".").map(n=>parseInt(n,10)||0)}
+function semverGt(a,b){const x=semverNums(a),y=semverNums(b),len=Math.max(x.length,y.length);for(let i=0;i<len;i++){const p=x[i]||0,q=y[i]||0;if(p!==q)return p>q}return false}
+
 // --- Auto-updater ---
+let lastUpdaterFetchVersion="";
+async function installAppUpdate(){
+    if(!window.electronAPI||!window.electronAPI.installUpdate){alert("Updater not available.");return}
+    const r=await window.electronAPI.installUpdate();
+    if(r&&r.ok)return;
+    if(r&&r.reason==="no-download"){alert("Wait until the download finishes (sidebar shows a percentage), then click Install again.");}
+    else if(r&&r.reason==="not-packaged"){alert("Automatic install only works in the GitHub release installer (.exe), not when running from npm start.");}
+    else{alert("Could not start the installer.");}
+}
 async function manualUpdateCheck(){
     const el=$("updateCheckResult");
     let prefix="";
@@ -2251,23 +2343,64 @@ async function manualUpdateCheck(){
 }
 if(window.electronAPI&&window.electronAPI.onUpdateStatus){
     window.electronAPI.onUpdateStatus(function(data){
-        const banner=$("updateBanner"),msg=$("updateMsg"),result=$("updateCheckResult");
+        const banner=$("updateBanner"),msg=$("updateMsg"),sub=$("updateSub"),btn=$("updateInstallBtn"),result=$("updateCheckResult");
+        const cur=data.currentVersion||"";
+        if(data.status==="checking"){
+            if(result)result.textContent="Checking...";
+            return;
+        }
         if(data.status==="downloading"){
-            if(banner){banner.style.display="";msg.textContent="Downloading v"+data.version+"...";banner.querySelector("button").style.display="none"}
-            if(result)result.textContent="Downloading v"+data.version+"...";
-        }else if(data.status==="ready"){
-            if(banner){banner.style.display="";msg.textContent="v"+data.version+" ready to install!";banner.querySelector("button").style.display=""}
-            if(result)result.textContent="v"+data.version+" ready! Click Install & Restart in the sidebar.";
-        }else if(data.status==="up-to-date"){
-            const fv=data.feedVersion?` (updater feed: v${data.feedVersion})`:"";
-            if(result)result.textContent="No newer installer on the update feed"+fv+". If GitHub shows a newer tag but this message appears, the release workflow may not have uploaded assets yet — use Open GitHub downloads.";
-        }else if(data.status==="dev-mode"){
+            if(data.version)lastUpdaterFetchVersion=data.version;
+            if(banner){banner.style.display="";}
+            if(btn)btn.style.display="none";
+            if(sub)sub.textContent="";
+            if(msg)msg.textContent=(lastUpdaterFetchVersion?"Downloading v"+lastUpdaterFetchVersion+"…":"Downloading update…");
+            if(result)result.textContent=msg?msg.textContent:"Downloading…";
+            return;
+        }
+        if(data.status==="progress"){
+            if(banner){banner.style.display="";}
+            if(btn)btn.style.display="none";
+            if(msg)msg.textContent=(lastUpdaterFetchVersion?"Downloading v"+lastUpdaterFetchVersion+"…":"Downloading update…");
+            const pct=typeof data.percent==="number"?data.percent:0;
+            if(sub)sub.textContent=pct+"% complete";
+            if(result)result.textContent=(lastUpdaterFetchVersion?"Downloading v"+lastUpdaterFetchVersion:"Downloading")+" ("+pct+"%)";
+            return;
+        }
+        if(data.status==="ready"){
+            if(data.version)lastUpdaterFetchVersion=data.version;
+            if(banner){banner.style.display="";}
+            if(sub)sub.textContent="";
+            if(btn)btn.style.display="";
+            if(msg)msg.textContent=(data.version?"v"+data.version+" ":"")+"Ready to install.";
+            if(result)result.textContent=(data.version?"v"+data.version+" ":"")+"Ready. Click Install & Restart in the sidebar.";
+            return;
+        }
+        if(data.status==="up-to-date"){
+            lastUpdaterFetchVersion="";
+            if(banner)banner.style.display="none";
+            const fv=data.feedVersion||"";
+            let line="You are up to date.";
+            if(fv&&cur&&semverGt(cur,fv))line="You are on v"+cur+" (ahead of published v"+fv+").";
+            else if(fv&&cur)line="No newer build than v"+cur+" (release feed: v"+fv+"). Use Open GitHub downloads if a newer tag was just published.";
+            else if(cur)line="No newer build (this app: v"+cur+").";
+            if(result)result.textContent=line;
+            return;
+        }
+        if(data.status==="dev-mode"){
+            lastUpdaterFetchVersion="";
             if(banner)banner.style.display="none";
             if(result)result.textContent=data.message||"Updater: use the installed NSIS build from GitHub.";
-        }else if(data.status==="portable-mode"){
+            return;
+        }
+        if(data.status==="portable-mode"){
+            lastUpdaterFetchVersion="";
             if(banner)banner.style.display="none";
             if(result)result.textContent=data.message||"Portable build: download a new copy or install MonkeyIdler-Setup.exe.";
-        }else if(data.status==="error"){
+            return;
+        }
+        if(data.status==="error"){
+            lastUpdaterFetchVersion="";
             if(banner)banner.style.display="none";
             if(result)result.textContent="Update check failed: "+(data.error||"unknown error");
         }

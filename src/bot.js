@@ -129,7 +129,9 @@ Bot.prototype.attachEventListeners = function() {
                 this.ownedGames = res.apps.map(a => ({
                     appid: a.appid,
                     name: a.name,
-                    playtimeForever: a.playtime_forever || 0,
+                    playtimeForever: a.playtime_forever ?? a.playtimeForever ?? 0,
+                    playtime2weeks: a.playtime_2weeks ?? a.playtime2weeks ?? 0,
+                    rtimeLastPlayed: a.rtime_last_played ?? a.rtimeLastPlayed ?? 0,
                     img: `https://cdn.akamai.steamstatic.com/steam/apps/${a.appid}/header.jpg`
                 })).sort((a, b) => a.name.localeCompare(b.name));
                 logger("info", `[${this.logOnOptions.accountName}] Loaded ${this.ownedGames.length} owned games for dashboard.`);
