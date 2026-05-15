@@ -1,6 +1,6 @@
 {
     "name": "steam-idler",
-    "version": "1.17.2",
+    "version": "1.17.3",
     "description": "Steam game idler with desktop GUI and multi account support",
     "main": "idler.js",
     "dependencies": {
@@ -28,7 +28,9 @@
         "start": "electron .",
         "restart": "npm start",
         "dev": "nodemon",
-        "build": "electron-builder --win portable"
+        "build": "electron-builder --win nsis",
+        "build:portable": "electron-builder --win portable",
+        "release": "electron-builder --win nsis --publish always"
     },
     "build": {
         "appId": "com.monkeyidler.app",
@@ -70,16 +72,6 @@
             "!**/docs/**",
             "!**/example/**",
             "!**/examples/**"
-        ],
-        "extraResources": [
-            {
-                "from": "accounts.txt",
-                "to": "."
-            },
-            {
-                "from": "proxies.txt",
-                "to": "."
-            }
         ],
         "win": {
             "target": "nsis",

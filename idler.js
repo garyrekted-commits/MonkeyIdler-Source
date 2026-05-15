@@ -85,6 +85,27 @@ controller.allBots.length = 0;
 let mainWindow;
 let serverPort;
 
+function notifyUpdateStatus(payload) {
+    try {
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("update-status", payload);
+    } catch (e) { /* ignore */ }
+}
+
+function runUpdateCheck() {
+    if (!app.isPackaged) {
+        console.log("[updater] Skipped: not a packaged build (dev / npm start).");
+        notifyUpdateStatus({
+            status: "dev-mode",
+            message: "Automatic updates only work in the installed .exe from GitHub releases (not when running from source / npm start)."
+        });
+        return Promise.resolve();
+    }
+    return autoUpdater.checkForUpdates().catch((err) => {
+        console.error("[updater] checkForUpdates failed:", err);
+        notifyUpdateStatus({ status: "error", error: err?.message || String(err) });
+    });
+}
+
 app.whenReady().then(async () => {
     serverPort = await startServer();
 
@@ -109,28 +130,40 @@ app.whenReady().then(async () => {
     mainWindow.loadURL(`http://localhost:${serverPort}`);
     mainWindow.on("closed", () => { mainWindow = null; });
 
-    // Auto-updater: check for updates once the window is ready
+    // Auto-updater: packaged installs only (not `npm start`).
+    // Use generic feed (latest.yml under /releases/latest/download/) — avoids GitHub Atom feed quirks in Electron.
+    // Full differential downloads often break against GitHub; force full installer fetch.
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.allowPrerelease = false;
+    autoUpdater.disableWebInstaller = true;
+    autoUpdater.disableDifferentialDownload = true;
     autoUpdater.logger = null;
+    autoUpdater.setFeedURL({
+        provider: "generic",
+        url: "https://github.com/garyrekted-commits/MonkeyIdler-Source/releases/latest/download/"
+    });
 
     autoUpdater.on("update-available", (info) => {
-        if (mainWindow) mainWindow.webContents.send("update-status", { status: "downloading", version: info.version });
+        notifyUpdateStatus({ status: "downloading", version: info.version });
     });
 
     autoUpdater.on("update-downloaded", (info) => {
-        if (mainWindow) mainWindow.webContents.send("update-status", { status: "ready", version: info.version });
+        notifyUpdateStatus({ status: "ready", version: info.version });
     });
 
-    autoUpdater.on("update-not-available", () => {
-        if (mainWindow) mainWindow.webContents.send("update-status", { status: "up-to-date" });
+    autoUpdater.on("update-not-available", (info) => {
+        notifyUpdateStatus({ status: "up-to-date", feedVersion: info?.version || "" });
     });
 
     autoUpdater.on("error", (err) => {
-        if (mainWindow) mainWindow.webContents.send("update-status", { status: "error", error: err?.message || String(err) });
+        console.error("[updater] error event:", err);
+        notifyUpdateStatus({ status: "error", error: err?.message || String(err) });
     });
 
-    autoUpdater.checkForUpdates().catch(() => {});
+    mainWindow.webContents.once("did-finish-load", () => {
+        runUpdateCheck();
+    });
 });
 
 // Window controls
@@ -139,7 +172,7 @@ ipcMain.handle("window-maximize", () => { if (mainWindow) { mainWindow.isMaximiz
 ipcMain.handle("window-close", () => { if (mainWindow) mainWindow.close(); });
 
 // Auto-updater controls
-ipcMain.handle("check-for-update", () => { autoUpdater.checkForUpdates().catch(() => {}); });
+ipcMain.handle("check-for-update", () => { runUpdateCheck(); });
 ipcMain.handle("install-update", () => {
     setImmediate(() => {
         app.removeAllListeners("window-all-closed");

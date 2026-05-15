@@ -2214,7 +2214,11 @@ if(window.electronAPI&&window.electronAPI.onUpdateStatus){
             if(banner){banner.style.display="";msg.textContent="v"+data.version+" ready to install!";banner.querySelector("button").style.display=""}
             if(result)result.textContent="v"+data.version+" ready! Click Install & Restart in the sidebar.";
         }else if(data.status==="up-to-date"){
-            if(result)result.textContent="You're up to date!";
+            const fv=data.feedVersion?` (release feed: v${data.feedVersion})`:"";
+            if(result)result.textContent="No newer build on the update feed"+fv+".";
+        }else if(data.status==="dev-mode"){
+            if(banner)banner.style.display="none";
+            if(result)result.textContent=data.message||"Updater: use the installed release from GitHub.";
         }else if(data.status==="error"){
             if(banner)banner.style.display="none";
             if(result)result.textContent="Update check failed: "+(data.error||"unknown error");
