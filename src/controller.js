@@ -216,7 +216,8 @@ module.exports.startOne = async function(username) {
         afkMessage:        acctOverrides.afkMessage        ?? config.afkMessage,
         loginDelay:        acctOverrides.loginDelay        ?? config.loginDelay,
         relogDelay:        acctOverrides.relogDelay        ?? config.relogDelay,
-        logPlaytimeToFile: acctOverrides.logPlaytimeToFile ?? config.logPlaytimeToFile
+        logPlaytimeToFile: acctOverrides.logPlaytimeToFile ?? config.logPlaytimeToFile,
+        wasIdling:         acctOverrides.wasIdling === true
     };
 
     const botfile = require("./bot.js");
@@ -262,7 +263,8 @@ module.exports.start = async () => {
                 afkMessage:       acctOverrides.afkMessage       ?? config.afkMessage,
                 loginDelay:       acctOverrides.loginDelay       ?? config.loginDelay,
                 relogDelay:       acctOverrides.relogDelay       ?? config.relogDelay,
-                logPlaytimeToFile: acctOverrides.logPlaytimeToFile ?? config.logPlaytimeToFile
+                logPlaytimeToFile: acctOverrides.logPlaytimeToFile ?? config.logPlaytimeToFile,
+                wasIdling:        acctOverrides.wasIdling === true
             };
 
             const botfile = require("./bot.js");

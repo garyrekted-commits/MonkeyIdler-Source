@@ -46,6 +46,7 @@ const Bot = function(logOnOptions, loginindex, proxies, acctConfig) {
     // Populated by loggedOn event handler, is used by logPlaytime to calculate playtime report for this account
     this.startedPlayingTimestamp = 0;
     this.playedAppIDs = [];
+    this._skipAutoResume = false;
     this.steamLevel = 0;
 
     // Cached list of owned games, populated after login
@@ -140,16 +141,27 @@ Bot.prototype.attachEventListeners = function() {
 
         // Restore last-idled games from config so "Start All" resumes where we left off
         let configGames = this.acctConfig.playingGames || [];
-        const shouldAutoResume = this.acctConfig.wasIdling === true;
 
         const startPlaying = () => {
+            if (this._skipAutoResume) return;
+
+            let freshGames = configGames;
+            let shouldAutoResume = false;
+            try {
+                const freshConfig = JSON.parse(readSecure(path.join(dataDir, "config.json")));
+                const overrides = (freshConfig.accountSettings && freshConfig.accountSettings[this.logOnOptions.accountName]) || {};
+                freshGames = overrides.playingGames ?? freshConfig.playingGames ?? configGames;
+                shouldAutoResume = overrides.wasIdling === true;
+            } catch (_) { /* use login-time values */ shouldAutoResume = this.acctConfig.wasIdling === true; }
+
             this.playedAppIDs = [];
             this.startedPlayingTimestamp = 0;
-            this.lastConfigGames = configGames;
+            this.lastConfigGames = freshGames;
+            configGames = freshGames;
 
-            if (shouldAutoResume && configGames.length > 0) {
-                logger("info", `[${this.logOnOptions.accountName}] Resuming idle for ${configGames.length} game(s) (was idling before restart)...`);
-                this.setGamesPlayed(configGames);
+            if (shouldAutoResume && freshGames.length > 0) {
+                logger("info", `[${this.logOnOptions.accountName}] Resuming idle for ${freshGames.length} game(s) (was idling before restart)...`);
+                this.setGamesPlayed(freshGames);
                 this.startGoalCheck();
             }
         };
@@ -417,6 +429,7 @@ Bot.prototype.stopGoalCheck = function() {
  */
 Bot.prototype.setGamesPlayed = function(games) {
     if (!this.client.steamID) return;
+    this._skipAutoResume = true;
     this.client.gamesPlayed(games);
     this.playedAppIDs = games;
     if (games.length > 0 && this.startedPlayingTimestamp === 0) {

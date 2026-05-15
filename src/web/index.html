@@ -24,16 +24,14 @@ body{
   background:transparent;color:var(--text);height:100vh;overflow:hidden;
   display:flex;flex-direction:column;border-radius:12px;position:relative;
 }
-body::before{
-  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:url('/bg.png') center/cover no-repeat;border-radius:12px;
-}
+.app-bg{position:fixed;inset:0;z-index:0;pointer-events:none;border-radius:12px;overflow:hidden}
+.app-bg img{width:100%;height:100%;object-fit:cover;display:block}
 body::after{
-  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  content:'';position:fixed;inset:0;z-index:1;pointer-events:none;
   background:linear-gradient(180deg,rgba(8,8,10,.52) 0%,rgba(8,8,10,.78) 100%);
   border-radius:12px;
 }
-body>*{position:relative;z-index:1}
+body>*{position:relative;z-index:2}
 .titlebar{
   -webkit-app-region:drag;height:36px;flex-shrink:0;
   display:flex;align-items:center;padding:0 14px;
@@ -144,8 +142,8 @@ input:focus,select:focus{border-color:var(--accent)}
 .bc-zoom-val{font-size:.62rem;color:rgba(255,255,255,.4);min-width:30px;text-align:right;font-variant-numeric:tabular-nums}
 
 /* Sidebar */
-.sidebar{width:200px;background:rgba(17,17,17,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sidebar{width:200px;background:rgba(17,17,17,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;min-height:0;overflow:hidden}
+.sb-sidebar-top{flex-shrink:0}
 .sb-header{padding:18px 16px 12px;font-size:.85rem;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
 .sb-section{
   padding:6px 16px;margin:8px 10px 2px;
@@ -187,13 +185,20 @@ input:focus,select:focus{border-color:var(--accent)}
 .sb-section-toggle:hover{color:var(--text2)}
 .sb-section-toggle::before{content:"▼";font-size:.5rem;transition:transform .2s}
 .sb-section-toggle.collapsed::before{transform:rotate(-90deg)}
-.sb-acct-list{transition:max-height .25s ease;overflow:hidden}
-.sb-acct-list.collapsed{max-height:0!important}
+.sb-acct-list{
+  flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;
+  transition:max-height .25s ease,opacity .2s ease;
+}
+.sb-acct-list::-webkit-scrollbar{width:5px}
+.sb-acct-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.sb-acct-list::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+.sb-acct-list.collapsed{flex:0 0 auto;max-height:0!important;overflow:hidden!important;opacity:0}
+.sb-sidebar-bottom{flex-shrink:0}
 .sb-acct-stat{display:flex;align-items:center;gap:4px;font-size:.58rem;color:var(--text3)}
 .sb-acct-stat .val{color:var(--text2)}
 .sb-add{margin:4px 10px;padding:7px 14px;font-size:.72rem;text-align:center;border-radius:8px;cursor:pointer;color:var(--accent);border:1px dashed var(--border);transition:all .12s}
 .sb-add:hover{background:var(--accent-bg);border-color:var(--accent)}
-.sb-spacer{flex:1}
+.sb-spacer{display:none}
 .sb-footer{padding:12px 16px;border-top:1px solid var(--border);font-size:.68rem;color:var(--text3)}
 
 /* Main */
@@ -356,7 +361,7 @@ input:focus,select:focus{border-color:var(--accent)}
 .game-tile .gn{padding:5px 7px;font-size:.66rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .game-tile .gb{position:absolute;top:4px;right:4px;display:none}
 .game-tile.active .gb{display:block}
-.game-tile[ondblclick]:hover{border-color:var(--red);opacity:.85}
+.game-tile.stop-tile:hover{border-color:var(--red);opacity:.85}
 .game-tile .goal-bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(0,0,0,.4)}
 .game-tile .goal-fill{height:100%;background:var(--accent);border-radius:0 2px 2px 0;transition:width .3s}
 .game-tile .goal-badge{position:absolute;top:4px;left:4px;background:rgba(232,115,14,.85);color:#fff;font-size:.55rem;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap}
@@ -519,8 +524,10 @@ input:focus,select:focus{border-color:var(--accent)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js"></script>
+<script src="/bg-embedded.js"></script>
 </head>
 <body>
+<div class="app-bg" aria-hidden="true"><img id="appBgImg" src="/app-background" alt="" draggable="false"></div>
 <div style="display:flex;flex-direction:column;width:100%;height:100vh;border-radius:10px;overflow:hidden">
 <div class="titlebar">
     <span class="titlebar-title">Monkey Idler</span>
@@ -536,7 +543,7 @@ input:focus,select:focus{border-color:var(--accent)}
     <div class="topnav-tab" data-page="deals" onclick="navTo(this)">&#128176; Deals</div>
     <div class="topnav-tab" data-page="settings" onclick="navTo(this)">&#9881; Settings</div>
 </div>
-<div style="display:flex;flex:1;overflow:hidden">
+<div style="display:flex;flex:1;overflow:hidden;min-height:0">
 <nav class="sidebar" id="sidebar">
     <div class="sb-header">&#128295; Tools</div>
     <div class="sb-item" data-page="massbot" onclick="navTo(this)">&#129302; Mass Bot Use</div>
@@ -792,7 +799,18 @@ async function refreshTitlebarVersion(){
     }catch(e){}
 }
 
+function refreshAppBackground(){
+    const img=$("appBgImg");
+    if(!img)return;
+    img.onerror=function(){
+        this.onerror=null;
+        if(window.APP_BG_DATA_URI) this.src=window.APP_BG_DATA_URI;
+    };
+    img.src="/app-background?"+Date.now();
+}
+
 async function init(){
+    refreshAppBackground();
     await refreshTitlebarVersion();
     await refreshSettingsAppVersion();
     await Promise.all([loadAccounts(),loadConfig(),loadStatus()]);
@@ -1152,7 +1170,7 @@ function createAcctPage(username){
             </div>
             <div class="section full">
                 <div class="section-head"><h3>Currently Idling</h3><span style="font-size:.68rem;color:var(--text3)" id="ic-${username}">0 games</span></div>
-                <div class="section-body"><div class="game-grid" id="ig-${username}" style="max-height:220px"><div class="empty">Not idling any games.</div></div><p style="font-size:.65rem;color:var(--text3);margin-top:8px">Double-click a game to stop idling it.</p></div>
+                <div class="section-body"><div class="game-grid" id="ig-${username}" style="max-height:220px"><div class="empty">Not idling any games.</div></div><p style="font-size:.65rem;color:var(--text3);margin-top:8px">Click a game below to stop idling it.</p></div>
             </div>
             <div class="section full">
                 <div class="section-head"><h3>Game Library</h3><span style="font-size:.7rem;color:var(--text3)" id="gc-${username}"></span><input id="gs-${username}" placeholder="Search..." oninput="renderAcctGames('${username}')" style="width:160px;margin-left:auto"></div>
@@ -1325,7 +1343,7 @@ function renderAcctGames(username){
         const goalHtml=goal?`<div class="goal-badge">${Math.round(currentH)}/${goal}h</div><div class="goal-bar"><div class="goal-fill" style="width:${pct}%"></div></div>`:"";
         const hrs=(x.playtimeForever||0)/60;
         const hrsStr=hrs>=1?hrs.toFixed(1)+"h":(x.playtimeForever||0)+"m";
-        return `<div class="game-tile ${idling.includes(x.appid)?"active":""}" onclick="toggleGame('${username}',${x.appid})" oncontextmenu="event.preventDefault();showGoalCtx(event,'${username}',${x.appid},'${esc(x.name)}',${x.playtimeForever||0})" title="${esc(x.name)}">
+        return `<div class="game-tile ${idling.includes(x.appid)?"active":""}" onclick="selectGame('${username}',${x.appid})" oncontextmenu="event.preventDefault();showGoalCtx(event,'${username}',${x.appid},'${esc(x.name)}',${x.playtimeForever||0})" title="${esc(x.name)}">
         <span class="gb badge badge-green">Idling</span>${goalHtml}
         <img src="${x.img}" alt="" loading="lazy" onerror="this.style.display='none'">
         <div class="gn">${esc(x.name)}<span style="float:right;color:var(--text3);font-size:.58rem">${hrsStr}</span></div></div>`;
@@ -1350,14 +1368,14 @@ function renderIdlingGames(username){
         const goalHtml=goal?`<div class="goal-badge">${Math.round(currentH)}/${goal}h</div><div class="goal-bar"><div class="goal-fill" style="width:${pct}%"></div></div>`:"";
         const hrsVal=g?(g.playtimeForever||0)/60:0;
         const hrsStr=hrsVal>=1?hrsVal.toFixed(1)+"h":(g?(g.playtimeForever||0):0)+"m";
-        return `<div class="game-tile active" ondblclick="toggleGame('${username}',${id})" title="Double-click to stop: ${name}">
+        return `<div class="game-tile active stop-tile" onclick="selectGame('${username}',${id})" title="Click to stop: ${name}">
         <span class="gb badge badge-red">&#10005;</span>${goalHtml}
         <img src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">
         <div class="gn">${name}<span style="float:right;color:var(--text3);font-size:.58rem">${hrsStr}</span></div></div>`;
     }).join("");
 }
 
-async function toggleGame(username,appid){
+async function selectGame(username,appid){
     const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/toggle",{appid});
     if(r.idling){const el=$("gg-"+username);if(el){el._idling=r.idling.filter(g=>typeof g==="number");renderAcctGames(username);renderIdlingGames(username)}await loadConfig()}
 }

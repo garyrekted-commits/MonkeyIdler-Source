@@ -78,6 +78,20 @@ const { migrateFile } = require("./src/dataCrypt.js");
     try { migrateFile(path.join(dataDir, f)); } catch (e) { /* ignore */ }
 });
 
+// Always sync bundled dashboard background into AppData (correct mime + no stale cache)
+function ensureAppBackground() {
+    const webDir = path.join(__dirname, "src", "web");
+    const names = ["bg.webp", "bg.png"];
+    try {
+        for (const name of names) {
+            const bundled = path.join(webDir, name);
+            if (!fs.existsSync(bundled)) continue;
+            fs.copyFileSync(bundled, path.join(dataDir, name));
+        }
+        const oldGif = path.join(dataDir, "bg.gif");
+        if (fs.existsSync(oldGif)) fs.unlinkSync(oldGif);
+    } catch (e) { /* ignore */ }
+}
 const { startServer }        = require("./src/web/server.js");
 const controller = require("./src/controller.js");
 controller.isRunning = false;
@@ -167,7 +181,10 @@ function runUpdateCheck() {
 }
 
 app.whenReady().then(async () => {
-    serverPort = await startServer();
+    ensureAppBackground();
+    serverPort = await startServer(path.join(__dirname, "src", "web"));
+
+    try { await session.defaultSession.clearCache(); } catch (e) { /* ignore */ }
 
     mainWindow = new BrowserWindow({
         width: 1200,
@@ -187,7 +204,7 @@ app.whenReady().then(async () => {
         }
     });
 
-    mainWindow.loadURL(`http://localhost:${serverPort}`);
+    mainWindow.loadURL(`http://localhost:${serverPort}/?t=${Date.now()}`);
     mainWindow.on("closed", () => { mainWindow = null; });
 
     // Auto-updater: packaged NSIS installs only (not portable .exe / not `npm start`).

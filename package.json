@@ -1,6 +1,6 @@
 {
     "name": "steam-idler",
-    "version": "1.17.10",
+    "version": "1.17.11",
     "description": "Steam game idler with desktop GUI and multi account support",
     "main": "idler.js",
     "dependencies": {
@@ -15,11 +15,13 @@
     },
     "devDependencies": {
         "@eslint/js": "^9.39.2",
+        "@napi-rs/canvas": "^1.0.0",
         "app-builder-lib": "^26.8.1",
         "electron": "^42.0.1",
         "electron-builder": "^26.10.0",
         "eslint": "^9.39.2",
         "eslint-plugin-jsdoc": "^62.0.0",
+        "gifsicle": "^7.0.1",
         "nodemon": "^3.1.14",
         "sharp": "^0.34.5"
     },
@@ -91,7 +93,11 @@
             "artifactName": "MonkeyIdler-Setup.${ext}"
         },
         "compression": "maximum",
-        "asar": true
+        "asar": true,
+        "asarUnpack": [
+            "src/web/bg.webp",
+            "src/web/bg.png"
+        ]
     },
     "author": "3urobeat",
     "license": "GPL-3.0",

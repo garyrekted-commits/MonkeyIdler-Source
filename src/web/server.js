@@ -154,8 +154,67 @@ app.post("/api/refresh", (req, res) => {
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
-app.get("/bg.png", (req, res) => {
-    res.sendFile(path.join(__dirname, "bg.png"));
+function detectImageMime(filePath) {
+    try {
+        const buf = Buffer.alloc(12);
+        const fd = fs.openSync(filePath, "r");
+        fs.readSync(fd, buf, 0, 12, 0);
+        fs.closeSync(fd);
+        if (buf[0] === 0x89 && buf[1] === 0x50) return "image/png";
+        if (buf[0] === 0xFF && buf[1] === 0xD8) return "image/jpeg";
+        if (buf.toString("ascii", 0, 3) === "GIF") return "image/gif";
+        if (buf.toString("ascii", 0, 4) === "RIFF" && buf.toString("ascii", 8, 12) === "WEBP") return "image/webp";
+    } catch (e) { /* ignore */ }
+    return "application/octet-stream";
+}
+
+function resolveAppBackground() {
+    const names = ["bg.webp", "bg.png", "bg.gif", "bg.jpg", "bg.jpeg"];
+    const dirs = [];
+    if (global.dataDir) dirs.push(global.dataDir);
+    if (bundledWebDir) dirs.push(bundledWebDir);
+    dirs.push(__dirname);
+    for (const dir of dirs) {
+        for (const name of names) {
+            const filePath = path.join(dir, name);
+            if (fs.existsSync(filePath)) {
+                return { filePath, mime: detectImageMime(filePath) };
+            }
+        }
+    }
+    return null;
+}
+
+function sendAppBackground(req, res) {
+    const bg = resolveAppBackground();
+    if (!bg) return res.status(404).end();
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.set("Pragma", "no-cache");
+    res.type(bg.mime);
+    res.sendFile(bg.filePath);
+}
+
+let embeddedBgDataUri = null;
+
+function refreshEmbeddedBgDataUri() {
+    const bg = resolveAppBackground();
+    if (!bg) { embeddedBgDataUri = null; return; }
+    try {
+        embeddedBgDataUri = `data:${bg.mime};base64,${fs.readFileSync(bg.filePath).toString("base64")}`;
+    } catch (e) {
+        embeddedBgDataUri = null;
+    }
+}
+
+app.get("/app-background", sendAppBackground);
+app.get("/bg.png", sendAppBackground);
+app.get("/bg.webp", sendAppBackground);
+app.get("/bg.gif", sendAppBackground);
+app.get("/bg-embedded.js", (req, res) => {
+    if (!embeddedBgDataUri) refreshEmbeddedBgDataUri();
+    res.set("Cache-Control", "no-store");
+    res.type("application/javascript");
+    res.send(`window.APP_BG_DATA_URI=${JSON.stringify(embeddedBgDataUri || "")};`);
 });
 
 // Same-origin assets (e.g. gif.js Web Worker — cross-origin worker URLs are blocked)
@@ -436,31 +495,44 @@ app.put("/api/accounts/:username/goals", (req, res) => {
     res.json({ ok: true, goals: config.accountSettings[username].playtimeGoals });
 });
 
-// Toggle a game for idling on a specific account
+function getAccountPlayingGames(config, username, bot) {
+    const acctCfg = (config.accountSettings && config.accountSettings[username]) || {};
+    const fromCfg = acctCfg.playingGames ?? config.playingGames ?? [];
+    const customs = fromCfg.filter(g => typeof g === "string");
+    if (bot && bot.client.steamID) {
+        const live = (bot.playedAppIDs || []).filter(g => typeof g === "number");
+        return [...customs, ...live];
+    }
+    return [...fromCfg];
+}
+
+// Pick or stop idling a game (library: one click selects only that game; click again to stop)
 app.post("/api/accounts/:username/toggle", (req, res) => {
-    const { appid } = req.body;
+    const { appid, mode } = req.body;
     if (!appid) return res.status(400).json({ error: "appid required" });
     const config = loadConfig();
     if (!config.accountSettings) config.accountSettings = {};
     const username = req.params.username;
     if (!config.accountSettings[username]) config.accountSettings[username] = {};
-    let games = config.accountSettings[username].playingGames || [...(config.playingGames || [])];
-    // Only keep numeric appids for toggling; preserve custom game strings
-    const idx = games.indexOf(appid);
-    if (idx !== -1) {
-        games.splice(idx, 1);
-    } else {
-        games.push(appid);
-    }
-    config.accountSettings[username].playingGames = games;
-    saveConfig(config);
-    // Apply live if bot is running
     const controller = require("../controller.js");
     const bot = controller.allBots.find(b => b.logOnOptions.accountName === username);
+    let games = getAccountPlayingGames(config, username, bot);
+    const idx = games.indexOf(appid);
+    if (mode === "toggle") {
+        if (idx !== -1) games.splice(idx, 1);
+        else games.push(appid);
+    } else {
+        const customs = games.filter(g => typeof g !== "number");
+        if (idx !== -1) games = games.filter(g => g !== appid);
+        else games = [...customs, appid];
+    }
+    config.accountSettings[username].playingGames = games;
+    config.accountSettings[username].wasIdling = games.some(g => typeof g === "number");
+    saveConfig(config);
     if (bot && bot.client.steamID) {
         bot.setGamesPlayed(games);
     }
-    res.json({ ok: true, idling: games });
+    res.json({ ok: true, idling: games.filter(g => typeof g === "number") });
 });
 
 // Start idling the remembered games
@@ -1804,9 +1876,19 @@ app.get("/api/gif/search", async (req, res) => {
 
 // --- Start server ---
 
-module.exports.startServer = function() {
+let bundledWebDir = null;
+
+module.exports.startServer = function(webDir) {
+    if (webDir) bundledWebDir = webDir;
     return new Promise((resolve) => {
         app.listen(PORT, () => {
+            const bg = resolveAppBackground();
+            if (bg) {
+                refreshEmbeddedBgDataUri();
+                console.log(`  Dashboard background: ${bg.filePath} (${bg.mime})`);
+            } else {
+                console.warn("  Warning: No dashboard background image found (bg.webp / bg.png).");
+            }
             console.log(`\n  Steam Idler dashboard running at http://localhost:${PORT}\n`);
             resolve(PORT);
         });
