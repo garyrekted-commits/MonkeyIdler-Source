@@ -1,0 +1,7 @@
+{
+  "watch": ["idler.js", "preload.js", "src"],
+  "ext": "js,html,css,json",
+  "ignore": ["node_modules", "src/**/*.md"],
+  "delay": "400",
+  "exec": "electron ."
+}

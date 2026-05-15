@@ -1,0 +1,107 @@
+{
+    "name": "steam-idler",
+    "version": "1.17.2",
+    "description": "Steam game idler with desktop GUI and multi account support",
+    "main": "idler.js",
+    "dependencies": {
+        "@seald-io/nedb": "^4.1.2",
+        "electron-updater": "^6.8.3",
+        "express": "^5.2.1",
+        "output-logger": "^2.3.8",
+        "qrcode": "^1.5.4",
+        "steam-session": "^1.9.4",
+        "steam-totp": "^2.1.2",
+        "steam-user": "^5.3.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.39.2",
+        "app-builder-lib": "^26.8.1",
+        "electron": "^42.0.1",
+        "electron-builder": "^26.10.0",
+        "eslint": "^9.39.2",
+        "eslint-plugin-jsdoc": "^62.0.0",
+        "nodemon": "^3.1.14",
+        "sharp": "^0.34.5"
+    },
+    "scripts": {
+        "prestart": "node -e \"try{require('child_process').execSync('taskkill /F /IM electron.exe',{stdio:'ignore'});}catch(e){}\"",
+        "start": "electron .",
+        "restart": "npm start",
+        "dev": "nodemon",
+        "build": "electron-builder --win portable"
+    },
+    "build": {
+        "appId": "com.monkeyidler.app",
+        "productName": "Monkey Idler",
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "garyrekted-commits",
+                "repo": "MonkeyIdler-Source"
+            }
+        ],
+        "files": [
+            "idler.js",
+            "preload.js",
+            "config.json",
+            "icon.ico",
+            "src/**/*",
+            "node_modules/**/*",
+            "!node_modules/electron/**",
+            "!node_modules/electron-builder/**",
+            "!node_modules/sharp/**",
+            "!node_modules/eslint/**",
+            "!node_modules/@eslint/**",
+            "!node_modules/eslint-plugin-jsdoc/**",
+            "!node_modules/7zip-bin/**",
+            "!node_modules/dmg-builder/**",
+            "!node_modules/app-builder-bin/**",
+            "!node_modules/app-builder-lib/**",
+            "!**/*.md",
+            "!**/*.map",
+            "!**/*.ts",
+            "!**/*.d.ts",
+            "!**/CHANGELOG*",
+            "!**/LICENSE*",
+            "!**/README*",
+            "!**/.eslintrc*",
+            "!**/test/**",
+            "!**/tests/**",
+            "!**/docs/**",
+            "!**/example/**",
+            "!**/examples/**"
+        ],
+        "extraResources": [
+            {
+                "from": "accounts.txt",
+                "to": "."
+            },
+            {
+                "from": "proxies.txt",
+                "to": "."
+            }
+        ],
+        "win": {
+            "target": "nsis",
+            "icon": "icon.ico",
+            "signAndEditExecutable": false
+        },
+        "nsis": {
+            "oneClick": false,
+            "perMachine": false,
+            "allowToChangeInstallationDirectory": true,
+            "installerIcon": "icon.ico",
+            "uninstallerIcon": "icon.ico",
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "Monkey Idler",
+            "artifactName": "MonkeyIdler-Setup.${ext}"
+        },
+        "compression": "maximum",
+        "asar": true
+    },
+    "author": "3urobeat",
+    "license": "GPL-3.0",
+    "homepage": "https://github.com/garyrekted-commits/MonkeyIdler-Source",
+    "repository": "https://github.com/garyrekted-commits/MonkeyIdler-Source"
+}
