@@ -20,6 +20,7 @@ const { app, BrowserWindow, ipcMain, session } = require("electron");
 const { autoUpdater }        = require("electron-updater");
 const path                   = require("path");
 const fs                     = require("fs");
+const https                  = require("https");
 
 // Set working directory to where the app files live so relative paths work when installed
 const appRoot = path.dirname(__dirname.includes("app.asar") ? process.execPath : __filename);
@@ -82,10 +83,52 @@ const controller = require("./src/controller.js");
 controller.isRunning = false;
 controller.allBots.length = 0;
 
+// electron-updater compares app.getVersion() — keep display in sync
 let appVersion = "";
 try {
-    appVersion = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf8")).version || "";
+    appVersion = app.getVersion() || JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf8")).version || "";
 } catch (e) { /* ignore */ }
+
+const GITHUB_OWNER = "garyrekted-commits";
+const GITHUB_REPO  = "MonkeyIdler-Source";
+
+function fetchLatestReleaseMeta() {
+    return new Promise((resolve) => {
+        const opts = {
+            hostname: "api.github.com",
+            path: "/repos/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/releases/latest",
+            headers: {
+                "User-Agent": "MonkeyIdler",
+                Accept: "application/vnd.github+json"
+            }
+        };
+        https.get(opts, (res) => {
+            let body = "";
+            res.on("data", (c) => { body += c; });
+            res.on("end", () => {
+                if (res.statusCode !== 200) {
+                    resolve({ ok: false, error: "GitHub API HTTP " + res.statusCode });
+                    return;
+                }
+                try {
+                    const j = JSON.parse(body);
+                    const setup = (j.assets || []).find((a) => a.name === "MonkeyIdler-Setup.exe");
+                    resolve({
+                        ok: true,
+                        tag: j.tag_name || "",
+                        name: j.name || "",
+                        htmlUrl: j.html_url || "",
+                        setupUrl: setup ? setup.browser_download_url : ""
+                    });
+                } catch (e) {
+                    resolve({ ok: false, error: e.message || String(e) });
+                }
+            });
+        }).on("error", (err) => {
+            resolve({ ok: false, error: err.message || String(err) });
+        });
+    });
+}
 
 let mainWindow;
 let serverPort;
@@ -101,7 +144,16 @@ function runUpdateCheck() {
         console.log("[updater] Skipped: not a packaged build (dev / npm start).");
         notifyUpdateStatus({
             status: "dev-mode",
-            message: "Automatic updates only work in the installed .exe from GitHub releases (not when running from source / npm start)."
+            message: "Automatic updates only work in the installed NSIS build from GitHub releases (not when running from source / npm start)."
+        });
+        return Promise.resolve();
+    }
+    // electron-builder portable sets this — NSIS auto-update does not apply
+    if (process.env.PORTABLE_EXECUTABLE_DIR) {
+        console.log("[updater] Skipped: portable build (PORTABLE_EXECUTABLE_DIR).");
+        notifyUpdateStatus({
+            status: "portable-mode",
+            message: "Portable .exe: in-app updates are not supported. Download MonkeyIdler-Setup.exe from GitHub Releases and install, or replace your portable file manually."
         });
         return Promise.resolve();
     }
@@ -145,8 +197,8 @@ app.whenReady().then(async () => {
     autoUpdater.logger = null;
     autoUpdater.setFeedURL({
         provider: "github",
-        owner: "garyrekted-commits",
-        repo: "MonkeyIdler-Source"
+        owner: GITHUB_OWNER,
+        repo: GITHUB_REPO
     });
 
     autoUpdater.on("update-available", (info) => {
@@ -172,6 +224,7 @@ app.whenReady().then(async () => {
 });
 
 ipcMain.handle("get-app-version", () => appVersion);
+ipcMain.handle("get-latest-release-meta", () => fetchLatestReleaseMeta());
 
 // Window controls
 ipcMain.handle("window-minimize", () => { if (mainWindow) mainWindow.minimize(); });

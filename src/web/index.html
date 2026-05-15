@@ -682,9 +682,13 @@ input:focus,select:focus{border-color:var(--accent)}
             </div>
             <div class="section" style="max-width:600px;margin-top:16px">
                 <div class="section-head"><h3>Updates</h3></div>
-                <div class="section-body" style="display:flex;align-items:center;gap:12px">
+                <div class="section-body">
+                    <p style="font-size:.72rem;color:var(--text3);margin:0 0 10px;line-height:1.45">This build: <strong id="settings-app-version" style="color:var(--text2)">—</strong> · In-app updates only work with the <strong>NSIS installer</strong> (<span style="font-size:.65rem;opacity:.9">MonkeyIdler-Setup.exe</span>). The standalone portable .exe does not receive automatic updates.</p>
+                    <p style="margin:0 0 10px"><button type="button" class="btn-ghost btn-sm" onclick="openReleaseDownloads()">Open GitHub downloads</button></p>
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
                     <button class="btn-accent btn-sm" onclick="manualUpdateCheck()">Check for Updates</button>
                     <span style="font-size:.75rem;color:var(--text2)" id="updateCheckResult"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -760,6 +764,7 @@ async function refreshTitlebarVersion(){
 
 async function init(){
     await refreshTitlebarVersion();
+    await refreshSettingsAppVersion();
     await Promise.all([loadAccounts(),loadConfig(),loadStatus()]);
     startPolling();
 }
@@ -776,6 +781,7 @@ function navTo(el){
     if(el.dataset.page==="deals")loadDeals();
     if(el.dataset.page==="massbot")mcRenderAccounts();
     if(el.dataset.page==="artmaker"){amPopulateAccounts();bcSetZoom(75)}
+    if(el.dataset.page==="settings")refreshSettingsAppVersion();
     const u=el.dataset.user;
     if(u)loadAcctPage(u);
 }
@@ -2208,14 +2214,39 @@ function hideModal(id){$(id).classList.remove("show")}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){hideModal("addModal");hideModal("guardModal");hideModal("dealModal");hideGoalCtx()}});
 $("guardCode").addEventListener("keydown",e=>{if(e.key==="Enter")submitGuard()});
 
+function openReleaseDownloads(){
+    window.open("https://github.com/garyrekted-commits/MonkeyIdler-Source/releases/latest","_blank");
+}
+
+async function refreshSettingsAppVersion(){
+    const el=$("settings-app-version");
+    if(!el)return;
+    try{
+        const v=window.electronAPI?.getAppVersion&&await window.electronAPI.getAppVersion();
+        el.textContent=v?"v"+v:"—";
+    }catch(e){el.textContent="—"}
+}
+
 // --- Auto-updater ---
-function manualUpdateCheck(){
+async function manualUpdateCheck(){
     const el=$("updateCheckResult");
-    if(el)el.textContent="Checking...";
+    let prefix="";
+    try{
+        if(window.electronAPI?.getLatestReleaseMeta&&window.electronAPI?.getAppVersion){
+            const meta=await window.electronAPI.getLatestReleaseMeta();
+            const ver=await window.electronAPI.getAppVersion();
+            if(meta&&meta.ok){
+                prefix="This app v"+ver+" · GitHub latest "+(meta.tag||meta.name)+". ";
+            }else if(meta&&!meta.ok){
+                prefix="GitHub: "+(meta.error||"?")+". ";
+            }
+        }
+    }catch(e){}
+    if(el)el.textContent=prefix+"Checking updater…";
     if(window.electronAPI&&window.electronAPI.checkForUpdate){
         window.electronAPI.checkForUpdate();
     }else{
-        if(el)el.textContent="Updater not available (running in browser?)";
+        if(el)el.textContent=(prefix||"")+"Updater not available (not running in the desktop app).";
     }
 }
 if(window.electronAPI&&window.electronAPI.onUpdateStatus){
@@ -2228,11 +2259,14 @@ if(window.electronAPI&&window.electronAPI.onUpdateStatus){
             if(banner){banner.style.display="";msg.textContent="v"+data.version+" ready to install!";banner.querySelector("button").style.display=""}
             if(result)result.textContent="v"+data.version+" ready! Click Install & Restart in the sidebar.";
         }else if(data.status==="up-to-date"){
-            const fv=data.feedVersion?` (release feed: v${data.feedVersion})`:"";
-            if(result)result.textContent="No newer build on the update feed"+fv+".";
+            const fv=data.feedVersion?` (updater feed: v${data.feedVersion})`:"";
+            if(result)result.textContent="No newer installer on the update feed"+fv+". If GitHub shows a newer tag but this message appears, the release workflow may not have uploaded assets yet — use Open GitHub downloads.";
         }else if(data.status==="dev-mode"){
             if(banner)banner.style.display="none";
-            if(result)result.textContent=data.message||"Updater: use the installed release from GitHub.";
+            if(result)result.textContent=data.message||"Updater: use the installed NSIS build from GitHub.";
+        }else if(data.status==="portable-mode"){
+            if(banner)banner.style.display="none";
+            if(result)result.textContent=data.message||"Portable build: download a new copy or install MonkeyIdler-Setup.exe.";
         }else if(data.status==="error"){
             if(banner)banner.style.display="none";
             if(result)result.textContent="Update check failed: "+(data.error||"unknown error");
