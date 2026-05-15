@@ -506,7 +506,7 @@ function getAccountPlayingGames(config, username, bot) {
     return [...fromCfg];
 }
 
-// Pick or stop idling a game (library: one click selects only that game; click again to stop)
+// Toggle games on/off the idle list (multiple games supported)
 app.post("/api/accounts/:username/toggle", (req, res) => {
     const { appid, mode } = req.body;
     if (!appid) return res.status(400).json({ error: "appid required" });
@@ -518,13 +518,13 @@ app.post("/api/accounts/:username/toggle", (req, res) => {
     const bot = controller.allBots.find(b => b.logOnOptions.accountName === username);
     let games = getAccountPlayingGames(config, username, bot);
     const idx = games.indexOf(appid);
-    if (mode === "toggle") {
-        if (idx !== -1) games.splice(idx, 1);
-        else games.push(appid);
-    } else {
+    if (mode === "select") {
         const customs = games.filter(g => typeof g !== "number");
         if (idx !== -1) games = games.filter(g => g !== appid);
         else games = [...customs, appid];
+    } else {
+        if (idx !== -1) games.splice(idx, 1);
+        else games.push(appid);
     }
     config.accountSettings[username].playingGames = games;
     config.accountSettings[username].wasIdling = games.some(g => typeof g === "number");

@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     minimizeWindow: () => ipcRenderer.invoke("window-minimize"),
     maximizeWindow: () => ipcRenderer.invoke("window-maximize"),
     closeWindow: () => ipcRenderer.invoke("window-close"),
+    showWindow: () => ipcRenderer.invoke("window-show"),
     checkForUpdate: () => ipcRenderer.invoke("check-for-update"),
     installUpdate: () => ipcRenderer.invoke("install-update"),
     onUpdateStatus: (callback) => ipcRenderer.on("update-status", (event, data) => callback(data))

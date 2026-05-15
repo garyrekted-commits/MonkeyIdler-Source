@@ -704,6 +704,7 @@ input:focus,select:focus{border-color:var(--accent)}
         <!-- Global Settings -->
         <div class="page" id="page-settings">
             <h2 style="font-size:.88rem;margin-bottom:14px">Global Default Settings</h2>
+            <p style="font-size:.72rem;color:var(--text3);margin:-6px 0 14px;max-width:600px">Minimize or close sends the app to the system tray. Double-click the tray icon to restore; right-click and choose Quit to exit.</p>
             <div class="section" style="max-width:600px">
                 <div class="section-body">
                     <div class="fg">
@@ -1170,7 +1171,7 @@ function createAcctPage(username){
             </div>
             <div class="section full">
                 <div class="section-head"><h3>Currently Idling</h3><span style="font-size:.68rem;color:var(--text3)" id="ic-${username}">0 games</span></div>
-                <div class="section-body"><div class="game-grid" id="ig-${username}" style="max-height:220px"><div class="empty">Not idling any games.</div></div><p style="font-size:.65rem;color:var(--text3);margin-top:8px">Click a game below to stop idling it.</p></div>
+                <div class="section-body"><div class="game-grid" id="ig-${username}" style="max-height:220px"><div class="empty">Not idling any games.</div></div><p style="font-size:.65rem;color:var(--text3);margin-top:8px">Click games in the library to add or remove idle. Multiple games can run at once.</p></div>
             </div>
             <div class="section full">
                 <div class="section-head"><h3>Game Library</h3><span style="font-size:.7rem;color:var(--text3)" id="gc-${username}"></span><input id="gs-${username}" placeholder="Search..." oninput="renderAcctGames('${username}')" style="width:160px;margin-left:auto"></div>
@@ -1376,7 +1377,7 @@ function renderIdlingGames(username){
 }
 
 async function selectGame(username,appid){
-    const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/toggle",{appid});
+    const r=await A("POST","/api/accounts/"+encodeURIComponent(username)+"/toggle",{appid,mode:"toggle"});
     if(r.idling){const el=$("gg-"+username);if(el){el._idling=r.idling.filter(g=>typeof g==="number");renderAcctGames(username);renderIdlingGames(username)}await loadConfig()}
 }
 

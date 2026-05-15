@@ -16,7 +16,7 @@
 
 
 // Launch the web dashboard server and open the Electron desktop window
-const { app, BrowserWindow, ipcMain, session } = require("electron");
+const { app, BrowserWindow, ipcMain, session, Tray, Menu } = require("electron");
 const { autoUpdater }        = require("electron-updater");
 const path                   = require("path");
 const fs                     = require("fs");
@@ -145,7 +145,33 @@ function fetchLatestReleaseMeta() {
 }
 
 let mainWindow;
+let tray = null;
+let isQuitting = false;
 let serverPort;
+
+function showMainWindow() {
+    if (!mainWindow) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+}
+
+function hideMainWindow() {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.hide();
+}
+
+function createTray() {
+    const iconPath = path.join(__dirname, "icon.ico");
+    if (!fs.existsSync(iconPath)) return;
+    tray = new Tray(iconPath);
+    tray.setToolTip(appVersion ? "Monkey Idler v" + appVersion : "Monkey Idler");
+    tray.setContextMenu(Menu.buildFromTemplate([
+        { label: "Show Monkey Idler", click: showMainWindow },
+        { type: "separator" },
+        { label: "Quit", click: () => { isQuitting = true; app.quit(); } }
+    ]));
+    tray.on("double-click", showMainWindow);
+}
 /** True after electron-updater has downloaded an installer for this session (quitAndInstall is safe). */
 let updateInstallerDownloaded = false;
 
@@ -205,7 +231,16 @@ app.whenReady().then(async () => {
     });
 
     mainWindow.loadURL(`http://localhost:${serverPort}/?t=${Date.now()}`);
+
+    mainWindow.on("close", (e) => {
+        if (!isQuitting) {
+            e.preventDefault();
+            hideMainWindow();
+        }
+    });
     mainWindow.on("closed", () => { mainWindow = null; });
+
+    createTray();
 
     // Auto-updater: packaged NSIS installs only (not portable .exe / not `npm start`).
     // Generic /releases/latest/download/ avoids 404 when duplicate GitHub releases share the same tag.
@@ -264,10 +299,13 @@ app.whenReady().then(async () => {
 ipcMain.handle("get-app-version", () => appVersion);
 ipcMain.handle("get-latest-release-meta", () => fetchLatestReleaseMeta());
 
-// Window controls
-ipcMain.handle("window-minimize", () => { if (mainWindow) mainWindow.minimize(); });
+// Window controls (minimize / close hide to system tray)
+ipcMain.handle("window-minimize", () => hideMainWindow());
 ipcMain.handle("window-maximize", () => { if (mainWindow) { mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize(); } });
-ipcMain.handle("window-close", () => { if (mainWindow) mainWindow.close(); });
+ipcMain.handle("window-close", () => hideMainWindow());
+ipcMain.handle("window-show", () => showMainWindow());
+
+app.on("before-quit", () => { isQuitting = true; });
 
 // Auto-updater controls
 ipcMain.handle("check-for-update", () => runUpdateCheck());
@@ -350,6 +388,8 @@ ipcMain.handle("open-steam-points-shop", async (event, { cookies, accountName })
 });
 
 app.on("window-all-closed", () => {
-    try { if (controller.isRunning) controller.stop(); } catch (e) { /* ignore */ }
-    app.quit();
+    if (process.platform !== "darwin" && !tray) {
+        try { if (controller.isRunning) controller.stop(); } catch (e) { /* ignore */ }
+        app.quit();
+    }
 });
