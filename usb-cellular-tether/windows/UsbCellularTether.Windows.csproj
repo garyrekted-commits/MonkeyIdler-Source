@@ -15,4 +15,9 @@
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="native\amd64\wintun.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="native\amd64\tun2socks.exe" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="native\TUN2SOCKS-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
