@@ -1,6 +1,6 @@
 {
     "name": "steam-idler",
-    "version": "1.17.15",
+    "version": "1.17.16",
     "description": "Steam game idler with desktop GUI and multi account support",
     "main": "idler.js",
     "dependencies": {

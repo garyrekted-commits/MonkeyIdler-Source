@@ -85,7 +85,6 @@ setInterval(() => {
     } catch (e) { /* ignore */ }
 }, 3000);
 
-
 /**
  * Helper function to import login information from accounts.txt
  * @returns {Promise} logininfo object on success, bot is stopped on failure
@@ -168,6 +167,45 @@ const allBots = [];
 
 module.exports.allBots   = allBots;
 module.exports.isRunning = false;
+
+// Ensure every running account that dropped offline is nudged to reconnect (parallel per bot)
+const RECONNECT_WATCH_MS = 30000;
+setInterval(() => {
+    if (!module.exports.isRunning || allBots.length === 0) return;
+
+    const now = Date.now();
+    let offline = 0;
+    let reconnecting = 0;
+
+    for (const bot of allBots) {
+        if (bot.client.steamID) {
+            bot._lastOnlineAt = now;
+            bot._needsReconnect = false;
+            continue;
+        }
+
+        const wasOnline = bot._lastOnlineAt > 0;
+        const shouldReconnect = bot._needsReconnect || wasOnline
+            || (bot._resumeGamesAfterRelog && bot._resumeGamesAfterRelog.length > 0);
+
+        if (!shouldReconnect) continue;
+
+        offline++;
+        if (bot._relogPending || bot._reconnectTimer || module.exports.relogQueue.includes(bot.loginindex)) {
+            reconnecting++;
+            continue;
+        }
+
+        logger("info", `[${bot.logOnOptions.accountName}] Still offline — scheduling reconnect...`);
+        bot.prepareReconnectResume();
+        bot.scheduleReconnectFallback();
+        reconnecting++;
+    }
+
+    if (offline > 0 && offline === reconnecting) {
+        logger("debug", `Reconnect watch: ${offline} account(s) offline, all have reconnect scheduled.`);
+    }
+}, RECONNECT_WATCH_MS);
 
 /**
  * Returns status objects for all bots

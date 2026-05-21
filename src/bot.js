@@ -57,6 +57,9 @@ const Bot = function(logOnOptions, loginindex, proxies, acctConfig) {
     this.client = new SteamUser({ autoRelogin: true, renewRefreshTokens: true, httpProxy: this.proxy, protocol: SteamUser.EConnectionProtocol.WebSocket });
     this._resumeGamesAfterRelog = null;
     this._reconnectTimer = null;
+    this._relogPending = false;
+    this._needsReconnect = false;
+    this._lastOnlineAt = 0;
 
     this.session;
 
@@ -109,6 +112,9 @@ Bot.prototype.attachEventListeners = function() {
             clearTimeout(this._reconnectTimer);
             this._reconnectTimer = null;
         }
+        this._relogPending = false;
+        this._needsReconnect = false;
+        this._lastOnlineAt = Date.now();
 
         const pendingResume = (this._resumeGamesAfterRelog && this._resumeGamesAfterRelog.length > 0)
             ? [...this._resumeGamesAfterRelog]
@@ -213,7 +219,7 @@ Bot.prototype.attachEventListeners = function() {
 
                     setTimeout(() => {
                         logger("info", `[${this.logOnOptions.accountName}] Relogging account to register the next 50 licenses...`);
-                        this.handleRelog();
+                        this.handleRelog({ queued: true });
                     }, 3.6e+6 + 300000); // 1 hour plus 5 minutes for good measure
                 }
 
@@ -278,11 +284,12 @@ Bot.prototype.attachEventListeners = function() {
 
 
     this.client.on("disconnected", (eresult, msg) => { // Steam autoRelogin reconnects; we resume games on loggedOn
-        if (controller.relogQueue.includes(this.loginindex)) return;
+        this._needsReconnect = true;
         this.stopGoalCheck();
         this.prepareReconnectResume();
         const sec = (this.acctConfig.relogDelay || 15000) / 1000;
         logger("info", `[${this.logOnOptions.accountName}] Lost connection to Steam (${msg || eresult}). Auto-reconnecting (about ${sec}s)...`);
+        this.scheduleReconnectFallback();
     });
 
 
@@ -313,21 +320,19 @@ Bot.prototype.attachEventListeners = function() {
             controller.loginEvents.emit("nextacc", controller.nextacc);
 
         } else { // Connection loss while logged in (or failed manual relog)
+            this._needsReconnect = true;
             this.prepareReconnectResume();
             this.stopGoalCheck();
 
             if (controller.relogQueue.includes(this.loginindex)) {
-                logger("warn", `[${this.logOnOptions.accountName}] Failed to relog. Retrying... ${err}`);
+                logger("warn", `[${this.logOnOptions.accountName}] Queued relog failed. Retrying in 10 seconds... ${err}`);
                 const qi = controller.relogQueue.indexOf(this.loginindex);
-                if (qi !== -1) {
-                    controller.relogQueue.splice(qi, 1);
-                    controller.relogQueue.push(this.loginindex);
-                }
-                this.handleRelog();
+                if (qi !== -1) controller.relogQueue.splice(qi, 1);
+                setTimeout(() => this.handleRelog({ queued: true }), 10000);
             } else {
                 const sec = (this.acctConfig.relogDelay || 15000) / 1000;
                 logger("info", `[${this.logOnOptions.accountName}] Connection error: ${err}. Auto-reconnecting (about ${sec}s)...`);
-                this.scheduleReconnectFallback(err);
+                this.scheduleReconnectFallback();
             }
         }
     });
@@ -353,60 +358,90 @@ Bot.prototype.prepareReconnectResume = function() {
 
 
 /**
- * Fallback when steam-user autoRelogin does not recover (token refresh / queued relog)
+ * Fallback when steam-user autoRelogin does not recover (runs per account in parallel)
  */
 Bot.prototype.scheduleReconnectFallback = function() {
-    if (this._reconnectTimer || controller.relogQueue.includes(this.loginindex)) return;
+    if (this._reconnectTimer || this._relogPending) return;
+    if (this.client.steamID) return;
     const delay = this.acctConfig.relogDelay || 15000;
     this._reconnectTimer = setTimeout(() => {
         this._reconnectTimer = null;
         if (this.client.steamID) return;
-        this.handleRelog();
+        this.handleRelog({ parallel: true });
     }, delay);
 };
 
 
 /**
- * Handles relogging this bot account (manual / token / license batch)
+ * Logs in with a fresh token (shared by parallel + queued relog paths)
  */
-Bot.prototype.handleRelog = function() {
-    if (controller.relogQueue.includes(this.loginindex)) return;
+Bot.prototype._performRelog = async function() {
+    if (this.logOnOptions.sharedSecret) {
+        this.logOnOptions.steamGuardCode = SteamTotp.generateAuthCode(this.logOnOptions.sharedSecret);
+    }
+
+    const refreshToken = await this.session.getToken();
+    if (!refreshToken) {
+        logger("warn", `[${this.logOnOptions.accountName}] Could not get login token for relog. Retrying in 30 seconds...`);
+        setTimeout(() => this.handleRelog({ parallel: true }), 30000);
+        return;
+    }
+
+    logger("info", `[${this.logOnOptions.accountName}] Logging in...`);
+    try { this.client.logOff(); } catch (e) { /* ignore */ }
+    this.client.logOn({ refreshToken });
+};
+
+
+/**
+ * Parallel relog for connection loss (all accounts reconnect; staggered to avoid rate limits)
+ */
+Bot.prototype._runParallelRelog = function() {
+    this._relogPending = false;
+    if (this.client.steamID) return;
+
+    const loginDelay = this.acctConfig.loginDelay || 2000;
+    logger("info", `[${this.logOnOptions.accountName}] Reconnecting in ${loginDelay / 1000} seconds...`);
+
+    setTimeout(() => this._performRelog(), loginDelay);
+};
+
+
+/**
+ * Handles relogging this bot account
+ * @param {{ queued?: boolean, parallel?: boolean }} options queued = serial license relog; parallel = connection-loss reconnect
+ */
+Bot.prototype.handleRelog = function(options) {
+    options = options || {};
+    const useQueue = options.queued === true;
 
     this.prepareReconnectResume();
     this.logPlaytimeToFile({ preservePlaying: true });
 
-    controller.relogQueue.push(this.loginindex);
+    if (useQueue) {
+        if (controller.relogQueue.includes(this.loginindex)) return;
+        controller.relogQueue.push(this.loginindex);
 
-    const relogDelay = this.acctConfig.relogDelay || 15000;
+        const relogDelay = this.acctConfig.relogDelay || 15000;
+        setTimeout(() => {
+            const relogInterval = setInterval(() => {
+                if (controller.relogQueue.indexOf(this.loginindex) != 0) return;
 
-    setTimeout(() => {
-        const relogInterval = setInterval(() => {
-            if (controller.relogQueue.indexOf(this.loginindex) != 0) return;
+                clearInterval(relogInterval);
+                logger("info", `[${this.logOnOptions.accountName}] It is now my turn. Relogging in ${(this.acctConfig.loginDelay || 2000) / 1000} seconds...`);
+                setTimeout(() => this._performRelog(), this.acctConfig.loginDelay || 2000);
+            }, 1000);
+        }, relogDelay);
+        return;
+    }
 
-            clearInterval(relogInterval);
-            try { this.client.logOff(); } catch (e) { /* ignore */ }
+    if (this._relogPending) return;
+    this._relogPending = true;
 
-            logger("info", `[${this.logOnOptions.accountName}] It is now my turn. Relogging in ${(this.acctConfig.loginDelay || 2000) / 1000} seconds...`);
+    const stagger = this.loginindex * Math.max(1000, Math.floor((this.acctConfig.loginDelay || 2000) / 2));
+    const delay = (this.acctConfig.relogDelay || 15000) + stagger;
 
-            setTimeout(async () => {
-                if (this.logOnOptions.sharedSecret) {
-                    this.logOnOptions.steamGuardCode = SteamTotp.generateAuthCode(this.logOnOptions.sharedSecret);
-                }
-
-                const refreshToken = await this.session.getToken();
-                if (!refreshToken) {
-                    logger("warn", `[${this.logOnOptions.accountName}] Could not get login token for relog. Retrying in 30 seconds...`);
-                    const qi = controller.relogQueue.indexOf(this.loginindex);
-                    if (qi !== -1) controller.relogQueue.splice(qi, 1);
-                    setTimeout(() => this.handleRelog(), 30000);
-                    return;
-                }
-
-                logger("info", `[${this.logOnOptions.accountName}] Logging in...`);
-                this.client.logOn({ refreshToken });
-            }, this.acctConfig.loginDelay || 2000);
-        }, 1000);
-    }, relogDelay);
+    setTimeout(() => this._runParallelRelog(), delay);
 };
 
 
@@ -502,7 +537,7 @@ Bot.prototype.getStatus = function() {
     let state = "offline";
     if (this.client.steamID) {
         state = this.startedPlayingTimestamp > 0 ? "playing" : "online";
-    } else if (controller.relogQueue.includes(this.loginindex)) {
+    } else if (this._needsReconnect || this._relogPending || this._reconnectTimer || controller.relogQueue.includes(this.loginindex)) {
         state = "reconnecting";
     }
 
