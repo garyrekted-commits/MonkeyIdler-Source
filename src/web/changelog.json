@@ -1,0 +1,64 @@
+{
+  "versions": [
+    {
+      "version": "1.17.17",
+      "date": "2026-05-21",
+      "title": "Updates tab & release notes",
+      "changes": [
+        "New Updates page in the top bar with full what's-new history",
+        "Sidebar update banner shows changelog bullets for the new version",
+        "Settings still has quick check-for-updates controls"
+      ]
+    },
+    {
+      "version": "1.17.16",
+      "date": "2026-05-21",
+      "title": "All accounts reconnect",
+      "changes": [
+        "Every account reconnects in parallel after a drop (not one-at-a-time)",
+        "30-second watchdog schedules reconnect for any account still offline",
+        "Idling games resume automatically after reconnect"
+      ]
+    },
+    {
+      "version": "1.17.15",
+      "date": "2026-05-21",
+      "title": "Auto-reconnect & resume idling",
+      "changes": [
+        "Steam auto-relogin when connection is lost",
+        "Fix relog delay for older configs (relogTimeout in seconds)",
+        "Resume active games after reconnect without restarting the app"
+      ]
+    },
+    {
+      "version": "1.17.13",
+      "date": "2026-05-15",
+      "title": "Smaller installer",
+      "changes": [
+        "Leaner Windows installer bundle",
+        "CI removes duplicate blockmap-only GitHub releases (updater fix)",
+        "Single background image file in the app package"
+      ]
+    },
+    {
+      "version": "1.17.12",
+      "date": "2026-05-15",
+      "title": "Multi-game & system tray",
+      "changes": [
+        "Click games to add/remove multiple idle titles per account",
+        "Minimize and close hide to system tray; double-click tray to show",
+        "Quit from tray menu for a real exit"
+      ]
+    },
+    {
+      "version": "1.17.11",
+      "date": "2026-05-15",
+      "title": "UI & game selection",
+      "changes": [
+        "Surprised-cat dashboard background",
+        "Single-click game pick; fix last game sticking when switching",
+        "Scrollable accounts list in the sidebar"
+      ]
+    }
+  ]
+}

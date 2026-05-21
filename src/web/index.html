@@ -84,6 +84,18 @@ input:focus,select:focus{border-color:var(--accent)}
 .topnav-tab[data-page="deals"].active{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
 .topnav-tab[data-page="settings"]{color:var(--text2)}
 .topnav-tab[data-page="settings"].active{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
+.topnav-tab[data-page="updates"]{color:var(--text2)}
+.topnav-tab[data-page="updates"].active{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
+.update-changelog{margin:6px 0 0;padding:0 0 0 16px;text-align:left;font-size:.62rem;color:var(--text2);line-height:1.45;max-height:72px;overflow-y:auto}
+.update-changelog li{margin:2px 0}
+.changelog-entry{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.changelog-entry:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.changelog-entry h4{margin:0 0 4px;font-size:.78rem;color:var(--text)}
+.changelog-entry .changelog-meta{font-size:.65rem;color:var(--text3);margin-bottom:6px}
+.changelog-entry ul{margin:0;padding-left:18px;font-size:.72rem;color:var(--text2);line-height:1.5}
+.changelog-entry li{margin:3px 0}
+.updates-available-card{padding:12px 14px;margin-bottom:14px;border-radius:8px;border:1px solid var(--green);background:rgba(34,197,94,.08)}
+.updates-available-card h4{margin:0 0 8px;font-size:.8rem;color:var(--green)}
 
 /* Background Cropper */
 .bc-hidden{display:none!important}
@@ -541,6 +553,7 @@ input:focus,select:focus{border-color:var(--accent)}
     <div class="topnav-tab active" data-page="home" onclick="navTo(this)">&#127968; Overview</div>
     <div class="topnav-tab" data-page="logs" onclick="navTo(this)">&#128220; All Logs</div>
     <div class="topnav-tab" data-page="deals" onclick="navTo(this)">&#128176; Deals</div>
+    <div class="topnav-tab" data-page="updates" onclick="navTo(this)">&#128640; Updates</div>
     <div class="topnav-tab" data-page="settings" onclick="navTo(this)">&#9881; Settings</div>
 </div>
 <div style="display:flex;flex:1;overflow:hidden;min-height:0">
@@ -552,10 +565,12 @@ input:focus,select:focus{border-color:var(--accent)}
     <div class="sb-section-toggle" id="sbAcctToggle" onclick="toggleAcctDropdown()">Accounts <span id="sbAcctCount" style="margin-left:auto;font-size:.58rem;color:var(--accent)">0</span></div>
     <div class="sb-acct-list" id="sbAccounts"></div>
     <div class="sb-spacer"></div>
-    <div id="updateBanner" style="display:none;margin:6px;padding:8px 10px;background:rgba(232,115,14,.1);border:1px solid var(--accent);border-radius:8px;font-size:.7rem;text-align:center">
+    <div id="updateBanner" style="display:none;margin:6px;padding:8px 10px;background:rgba(232,115,14,.1);border:1px solid var(--accent);border-radius:8px;font-size:.7rem;text-align:center;cursor:pointer" onclick="openUpdatesTab()" title="Open Updates tab">
         <div style="font-weight:600;color:var(--green);margin-bottom:4px" id="updateMsg">Update available!</div>
-        <div style="font-size:.65rem;color:var(--text2);margin-bottom:6px;min-height:1em" id="updateSub"></div>
-        <button type="button" id="updateInstallBtn" onclick="installAppUpdate()" style="background:var(--green);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:.68rem;font-weight:600;cursor:pointer">Install &amp; Restart</button>
+        <div style="font-size:.65rem;color:var(--text2);margin-bottom:4px;min-height:1em" id="updateSub"></div>
+        <ul class="update-changelog" id="updateBannerList" style="display:none"></ul>
+        <button type="button" id="updateInstallBtn" onclick="event.stopPropagation();installAppUpdate()" style="background:var(--green);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:.68rem;font-weight:600;cursor:pointer;margin-top:4px">Install &amp; Restart</button>
+        <div style="font-size:.58rem;color:var(--text3);margin-top:4px">Tap for full changelog</div>
     </div>
     <div class="sb-footer" id="sbFooter"><span style="color:var(--red)">&#9679;</span> Disconnected</div>
 </nav>
@@ -701,6 +716,30 @@ input:focus,select:focus{border-color:var(--accent)}
             </div>
         </div>
 
+        <!-- Updates / What's New -->
+        <div class="page" id="page-updates">
+            <div class="section" style="max-width:720px">
+                <div class="section-head"><h3>App updates</h3></div>
+                <div class="section-body">
+                    <p style="font-size:.72rem;color:var(--text3);margin:0 0 12px;line-height:1.45">Installed build: <strong id="updates-current-ver" style="color:var(--text2)">—</strong>. In-app updates work with the <strong>NSIS installer</strong> (<span style="font-size:.65rem">MonkeyIdler-Setup.exe</span>), not the portable .exe or <code style="font-size:.65rem">npm start</code>.</p>
+                    <div id="updates-available-card" class="updates-available-card" style="display:none">
+                        <h4 id="updates-available-title">Update available</h4>
+                        <ul id="updates-available-list"></ul>
+                        <button type="button" class="btn-green btn-sm" id="updates-page-install-btn" onclick="installAppUpdate()" style="margin-top:8px;display:none">Install &amp; Restart</button>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+                        <button class="btn-accent btn-sm" onclick="manualUpdateCheck()">Check for Updates</button>
+                        <button type="button" class="btn-ghost btn-sm" onclick="openReleaseDownloads()">Open GitHub downloads</button>
+                    </div>
+                    <span style="font-size:.75rem;color:var(--text2);display:block" id="updates-check-line"></span>
+                </div>
+            </div>
+            <div class="section" style="max-width:720px;margin-top:16px">
+                <div class="section-head"><h3>What's new</h3></div>
+                <div class="section-body" id="updates-changelog-list"><div class="empty" style="padding:12px">Loading changelog…</div></div>
+            </div>
+        </div>
+
         <!-- Global Settings -->
         <div class="page" id="page-settings">
             <h2 style="font-size:.88rem;margin-bottom:14px">Global Default Settings</h2>
@@ -721,8 +760,7 @@ input:focus,select:focus{border-color:var(--accent)}
             <div class="section" style="max-width:600px;margin-top:16px">
                 <div class="section-head"><h3>Updates</h3></div>
                 <div class="section-body">
-                    <p style="font-size:.72rem;color:var(--text3);margin:0 0 10px;line-height:1.45">This build: <strong id="settings-app-version" style="color:var(--text2)">—</strong> · In-app updates only work with the <strong>NSIS installer</strong> (<span style="font-size:.65rem;opacity:.9">MonkeyIdler-Setup.exe</span>). The standalone portable .exe does not receive automatic updates.</p>
-                    <p style="margin:0 0 10px"><button type="button" class="btn-ghost btn-sm" onclick="openReleaseDownloads()">Open GitHub downloads</button></p>
+                    <p style="font-size:.72rem;color:var(--text3);margin:0 0 10px;line-height:1.45">This build: <strong id="settings-app-version" style="color:var(--text2)">—</strong> · See the <button type="button" class="btn-ghost btn-sm" style="padding:2px 8px;vertical-align:baseline" onclick="openUpdatesTab()">Updates</button> tab for what's new in each version.</p>
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
                     <button class="btn-accent btn-sm" onclick="manualUpdateCheck()">Check for Updates</button>
                     <span style="font-size:.75rem;color:var(--text2)" id="updateCheckResult"></span>
@@ -814,6 +852,7 @@ async function init(){
     refreshAppBackground();
     await refreshTitlebarVersion();
     await refreshSettingsAppVersion();
+    loadChangelogData();
     await Promise.all([loadAccounts(),loadConfig(),loadStatus()]);
     startPolling();
 }
@@ -831,6 +870,7 @@ function navTo(el){
     if(el.dataset.page==="massbot")mcRenderAccounts();
     if(el.dataset.page==="artmaker"){amPopulateAccounts();bcSetZoom(75)}
     if(el.dataset.page==="settings")refreshSettingsAppVersion();
+    if(el.dataset.page==="updates")loadUpdatesPage();
     const u=el.dataset.user;
     if(u)loadAcctPage(u);
 }
@@ -2348,6 +2388,95 @@ async function refreshSettingsAppVersion(){
 function semverNums(v){return String(v||"").replace(/^v/i,"").split(".").map(n=>parseInt(n,10)||0)}
 function semverGt(a,b){const x=semverNums(a),y=semverNums(b),len=Math.max(x.length,y.length);for(let i=0;i<len;i++){const p=x[i]||0,q=y[i]||0;if(p!==q)return p>q}return false}
 
+// --- Changelog / Updates tab ---
+let changelogCache=null;
+let pendingUpdateVersion="";
+let pendingUpdateNotes=[];
+
+function openUpdatesTab(){
+    const tab=document.querySelector('.topnav-tab[data-page="updates"]');
+    if(tab)navTo(tab);
+    else loadUpdatesPage();
+}
+function escHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function parseNotesToBullets(text){
+    if(!text)return[];
+    if(Array.isArray(text))return text.map(String).filter(Boolean);
+    return String(text).split(/\r?\n/).map(l=>l.trim()).filter(l=>/^[-*•]/.test(l)||/^\d+\./.test(l)).map(l=>l.replace(/^[-*•]\s*/,"").replace(/^\d+\.\s*/,"")).filter(Boolean);
+}
+function findChangelogEntry(version, data){
+    if(!data||!data.versions)return null;
+    const v=String(version||"").replace(/^v/i,"");
+    return data.versions.find(e=>String(e.version).replace(/^v/i,"")===v)||null;
+}
+async function loadChangelogData(){
+    if(changelogCache)return changelogCache;
+    try{
+        const d=await A("GET","/api/changelog");
+        if(d&&d.versions){changelogCache=d;return d}
+    }catch(e){}
+    changelogCache={versions:[]};
+    return changelogCache;
+}
+function renderChangelogHtml(versions, highlightVersion){
+    if(!versions||!versions.length)return'<div class="empty">No changelog entries yet.</div>';
+    return versions.map(e=>{
+        const v=escHtml(e.version);
+        const hi=highlightVersion&&String(e.version).replace(/^v/i,"")===String(highlightVersion).replace(/^v/i,"")?' style="border-left:3px solid var(--accent);padding-left:10px"':'';
+        const bullets=(e.changes||[]).map(c=>'<li>'+escHtml(c)+'</li>').join("");
+        return'<div class="changelog-entry"'+hi+'><h4>v'+v+(e.title?' — '+escHtml(e.title):'')+'</h4><div class="changelog-meta">'+(e.date?escHtml(e.date):"")+'</div><ul>'+bullets+'</ul></div>';
+    }).join("");
+}
+function getNotesForVersion(version, releaseNotes){
+    const fromNotes=parseNotesToBullets(releaseNotes);
+    if(fromNotes.length)return fromNotes;
+    const entry=findChangelogEntry(version,changelogCache);
+    return entry?(entry.changes||[]):[];
+}
+function showUpdateNotes(version, releaseNotes, ready){
+    pendingUpdateVersion=version||"";
+    pendingUpdateNotes=getNotesForVersion(version,releaseNotes);
+    const bullets=pendingUpdateNotes;
+    const list=$("updateBannerList");
+    if(list){
+        if(bullets.length){
+            list.style.display="";
+            list.innerHTML=bullets.slice(0,5).map(c=>'<li>'+escHtml(c)+'</li>').join("");
+        }else{list.style.display="none";list.innerHTML=""}
+    }
+    const card=$("updates-available-card"),title=$("updates-available-title"),ul=$("updates-available-list"),btn=$("updates-page-install-btn");
+    if(card&&version){
+        card.style.display="";
+        if(title)title.textContent=(ready?"Ready to install":"Downloading")+" v"+version;
+        if(ul)ul.innerHTML=bullets.length?bullets.map(c=>'<li>'+escHtml(c)+'</li>').join(""):'<li>See What\'s new below for details.</li>';
+        if(btn)btn.style.display=ready?"":"none";
+    }
+}
+async function loadUpdatesPage(){
+    const verEl=$("updates-current-ver");
+    try{
+        const v=window.electronAPI?.getAppVersion&&await window.electronAPI.getAppVersion();
+        if(verEl&&v)verEl.textContent="v"+v;
+    }catch(e){if(verEl)verEl.textContent="—"}
+    const data=await loadChangelogData();
+    const list=$("updates-changelog-list");
+    if(list)list.innerHTML=renderChangelogHtml(data.versions,pendingUpdateVersion);
+    if(pendingUpdateVersion)showUpdateNotes(pendingUpdateVersion,pendingUpdateNotes,$("updates-page-install-btn")&&$("updates-page-install-btn").style.display!=="none");
+    try{
+        if(window.electronAPI?.getLatestReleaseMeta){
+            const meta=await window.electronAPI.getLatestReleaseMeta();
+            const cur=window.electronAPI?.getAppVersion&&await window.electronAPI.getAppVersion();
+            if(meta&&meta.ok&&cur&&semverGt((meta.tag||"").replace(/^v/i,""),cur)){
+                const ghNotes=parseNotesToBullets(meta.body);
+                if(ghNotes.length&&!pendingUpdateVersion){
+                    const card=$("updates-available-card");
+                    if(card){card.style.display="";$("updates-available-title").textContent="Newer on GitHub: "+(meta.tag||"");$("updates-available-list").innerHTML=ghNotes.slice(0,6).map(c=>'<li>'+escHtml(c)+'</li>').join("")}
+                }
+            }
+        }
+    }catch(e){}
+}
+
 // --- Auto-updater ---
 let lastUpdaterFetchVersion="";
 async function installAppUpdate(){
@@ -2360,6 +2489,7 @@ async function installAppUpdate(){
 }
 async function manualUpdateCheck(){
     const el=$("updateCheckResult");
+    const line=$("updates-check-line");
     let prefix="";
     try{
         if(window.electronAPI?.getLatestReleaseMeta&&window.electronAPI?.getAppVersion){
@@ -2372,19 +2502,29 @@ async function manualUpdateCheck(){
             }
         }
     }catch(e){}
-    if(el)el.textContent=prefix+"Checking updater…";
+    const checking=prefix+"Checking updater…";
+    if(el)el.textContent=checking;
+    if(line)line.textContent=checking;
     if(window.electronAPI&&window.electronAPI.checkForUpdate){
         window.electronAPI.checkForUpdate();
     }else{
-        if(el)el.textContent=(prefix||"")+"Updater not available (not running in the desktop app).";
+        const msg=(prefix||"")+"Updater not available (not running in the desktop app).";
+        if(el)el.textContent=msg;
+        if(line)line.textContent=msg;
     }
 }
 if(window.electronAPI&&window.electronAPI.onUpdateStatus){
     window.electronAPI.onUpdateStatus(function(data){
-        const banner=$("updateBanner"),msg=$("updateMsg"),sub=$("updateSub"),btn=$("updateInstallBtn"),result=$("updateCheckResult");
+        const banner=$("updateBanner"),msg=$("updateMsg"),sub=$("updateSub"),btn=$("updateInstallBtn"),result=$("updateCheckResult"),line=$("updates-check-line");
         const cur=data.currentVersion||"";
+        const setLines=function(t){if(result)result.textContent=t;if(line)line.textContent=t};
+        const afterNotes=async function(ver,notes,ready){
+            await loadChangelogData();
+            showUpdateNotes(ver,notes,ready);
+            if($("page-updates")&&$("page-updates").classList.contains("active"))loadUpdatesPage();
+        };
         if(data.status==="checking"){
-            if(result)result.textContent="Checking...";
+            setLines("Checking...");
             return;
         }
         if(data.status==="downloading"){
@@ -2392,8 +2532,10 @@ if(window.electronAPI&&window.electronAPI.onUpdateStatus){
             if(banner){banner.style.display="";}
             if(btn)btn.style.display="none";
             if(sub)sub.textContent="";
-            if(msg)msg.textContent=(lastUpdaterFetchVersion?"Downloading v"+lastUpdaterFetchVersion+"…":"Downloading update…");
-            if(result)result.textContent=msg?msg.textContent:"Downloading…";
+            const t=(lastUpdaterFetchVersion?"Downloading v"+lastUpdaterFetchVersion+"…":"Downloading update…");
+            if(msg)msg.textContent=t;
+            setLines(t);
+            afterNotes(data.version,data.releaseNotes,false);
             return;
         }
         if(data.status==="progress"){
@@ -2402,7 +2544,7 @@ if(window.electronAPI&&window.electronAPI.onUpdateStatus){
             if(msg)msg.textContent=(lastUpdaterFetchVersion?"Downloading v"+lastUpdaterFetchVersion+"…":"Downloading update…");
             const pct=typeof data.percent==="number"?data.percent:0;
             if(sub)sub.textContent=pct+"% complete";
-            if(result)result.textContent=(lastUpdaterFetchVersion?"Downloading v"+lastUpdaterFetchVersion:"Downloading")+" ("+pct+"%)";
+            setLines((lastUpdaterFetchVersion?"Downloading v"+lastUpdaterFetchVersion:"Downloading")+" ("+pct+"%)");
             return;
         }
         if(data.status==="ready"){
@@ -2411,36 +2553,40 @@ if(window.electronAPI&&window.electronAPI.onUpdateStatus){
             if(sub)sub.textContent="";
             if(btn)btn.style.display="";
             if(msg)msg.textContent=(data.version?"v"+data.version+" ":"")+"Ready to install.";
-            if(result)result.textContent=(data.version?"v"+data.version+" ":"")+"Ready. Click Install & Restart in the sidebar.";
+            setLines((data.version?"v"+data.version+" ":"")+"Ready. Install from sidebar or Updates tab.");
+            afterNotes(data.version,data.releaseNotes,true);
             return;
         }
         if(data.status==="up-to-date"){
             lastUpdaterFetchVersion="";
+            pendingUpdateVersion="";
+            pendingUpdateNotes=[];
             if(banner)banner.style.display="none";
+            const card=$("updates-available-card");if(card)card.style.display="none";
             const fv=data.feedVersion||"";
-            let line="You are up to date.";
-            if(fv&&cur&&semverGt(cur,fv))line="You are on v"+cur+" (ahead of published v"+fv+").";
-            else if(fv&&cur)line="No newer build than v"+cur+" (release feed: v"+fv+"). Use Open GitHub downloads if a newer tag was just published.";
-            else if(cur)line="No newer build (this app: v"+cur+").";
-            if(result)result.textContent=line;
+            let txt="You are up to date.";
+            if(fv&&cur&&semverGt(cur,fv))txt="You are on v"+cur+" (ahead of published v"+fv+").";
+            else if(fv&&cur)txt="No newer build than v"+cur+" (release feed: v"+fv+").";
+            else if(cur)txt="No newer build (this app: v"+cur+").";
+            setLines(txt);
             return;
         }
         if(data.status==="dev-mode"){
             lastUpdaterFetchVersion="";
             if(banner)banner.style.display="none";
-            if(result)result.textContent=data.message||"Updater: use the installed NSIS build from GitHub.";
+            setLines(data.message||"Updater: use the installed NSIS build from GitHub.");
             return;
         }
         if(data.status==="portable-mode"){
             lastUpdaterFetchVersion="";
             if(banner)banner.style.display="none";
-            if(result)result.textContent=data.message||"Portable build: download a new copy or install MonkeyIdler-Setup.exe.";
+            setLines(data.message||"Portable build: download a new copy or install MonkeyIdler-Setup.exe.");
             return;
         }
         if(data.status==="error"){
             lastUpdaterFetchVersion="";
             if(banner)banner.style.display="none";
-            if(result)result.textContent="Update check failed: "+(data.error||"unknown error");
+            setLines("Update check failed: "+(data.error||"unknown error"));
         }
     });
 }

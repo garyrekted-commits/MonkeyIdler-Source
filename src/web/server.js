@@ -298,6 +298,16 @@ app.get("/api/config", (req, res) => {
     res.json(loadConfig());
 });
 
+app.get("/api/changelog", (req, res) => {
+    try {
+        const filePath = path.join(bundledWebDir || __dirname, "changelog.json");
+        const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+        res.json(data);
+    } catch (e) {
+        res.status(500).json({ error: "Changelog not available", versions: [] });
+    }
+});
+
 app.put("/api/config", (req, res) => {
     const config = loadConfig();
     const allowed = ["playingGames", "onlinestatus", "afkMessage", "loginDelay", "relogDelay", "useLocalIP", "logPlaytimeToFile"];

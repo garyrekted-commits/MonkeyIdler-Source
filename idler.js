@@ -132,7 +132,8 @@ function fetchLatestReleaseMeta() {
                         tag: j.tag_name || "",
                         name: j.name || "",
                         htmlUrl: j.html_url || "",
-                        setupUrl: setup ? setup.browser_download_url : ""
+                        setupUrl: setup ? setup.browser_download_url : "",
+                        body: j.body || ""
                     });
                 } catch (e) {
                     resolve({ ok: false, error: e.message || String(e) });
@@ -263,7 +264,11 @@ app.whenReady().then(async () => {
 
     autoUpdater.on("update-available", (info) => {
         updateInstallerDownloaded = false;
-        notifyUpdateStatus({ status: "downloading", version: info.version });
+        notifyUpdateStatus({
+            status: "downloading",
+            version: info.version,
+            releaseNotes: info.releaseNotes || info.releaseName || ""
+        });
     });
 
     autoUpdater.on("download-progress", (p) => {
@@ -277,7 +282,11 @@ app.whenReady().then(async () => {
 
     autoUpdater.on("update-downloaded", (info) => {
         updateInstallerDownloaded = true;
-        notifyUpdateStatus({ status: "ready", version: info.version });
+        notifyUpdateStatus({
+            status: "ready",
+            version: info.version,
+            releaseNotes: info.releaseNotes || info.releaseName || ""
+        });
     });
 
     autoUpdater.on("update-not-available", (info) => {
