@@ -63,7 +63,7 @@ if (!fs.existsSync(newTokenPath)) {
 
 // Ensure essential files exist (first run after install)
 const defaults = {
-    "config.json": JSON.stringify({ playingGames: [], onlinestatus: 1, afkMessage: "", relogTimeout: 15, useLocalIP: true, accountSettings: {} }, null, 4),
+    "config.json": JSON.stringify({ playingGames: [], onlinestatus: 1, afkMessage: "", loginDelay: 2000, relogDelay: 15000, useLocalIP: true, logPlaytimeToFile: true, accountSettings: {} }, null, 4),
     "accounts.txt": "",
     "proxies.txt": ""
 };

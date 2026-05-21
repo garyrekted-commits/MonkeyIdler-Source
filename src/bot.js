@@ -53,8 +53,10 @@ const Bot = function(logOnOptions, loginindex, proxies, acctConfig) {
     this.ownedGames = [];
     this.goalCheckInterval = null;
 
-    // Create new steam-user bot object. Disable autoRelogin as we have our own queue system
-    this.client = new SteamUser({ autoRelogin: false, renewRefreshTokens: true, httpProxy: this.proxy, protocol: SteamUser.EConnectionProtocol.WebSocket }); // Forcing protocol for now: https://dev.doctormckay.com/topic/4187-disconnect-due-to-encryption-error-causes-relog-to-break-error-already-logged-on/?do=findComment&comment=10917
+    // autoRelogin: Steam reconnects on network/CM drops; handleRelog + resume games covers token/manual relogs
+    this.client = new SteamUser({ autoRelogin: true, renewRefreshTokens: true, httpProxy: this.proxy, protocol: SteamUser.EConnectionProtocol.WebSocket });
+    this._resumeGamesAfterRelog = null;
+    this._reconnectTimer = null;
 
     this.session;
 
@@ -103,11 +105,23 @@ Bot.prototype.attachEventListeners = function() {
         controller.nextacc++;
         controller.loginEvents.emit("nextacc", controller.nextacc);
 
+        if (this._reconnectTimer) {
+            clearTimeout(this._reconnectTimer);
+            this._reconnectTimer = null;
+        }
+
+        const pendingResume = (this._resumeGamesAfterRelog && this._resumeGamesAfterRelog.length > 0)
+            ? [...this._resumeGamesAfterRelog]
+            : null;
+        this._resumeGamesAfterRelog = null;
+
         // If this is a relog then remove this account from the queue and let the next account be able to relog
         if (controller.relogQueue.includes(this.loginindex)) {
             logger("info", `[${this.logOnOptions.accountName}] Relog successful.`);
 
             controller.relogQueue.splice(controller.relogQueue.indexOf(this.loginindex), 1); // Remove this loginindex from the queue
+        } else if (pendingResume) {
+            logger("info", `[${this.logOnOptions.accountName}] Reconnected to Steam.`);
         } else {
             logger("info", `[${this.logOnOptions.accountName}] Logged in! Checking for missing licenses...`);
         }
@@ -139,11 +153,17 @@ Bot.prototype.attachEventListeners = function() {
             }
         });
 
-        // Restore last-idled games from config so "Start All" resumes where we left off
-        let configGames = this.acctConfig.playingGames || [];
+        // Restore games after reconnect, or from config on cold start
+        let configGames = pendingResume || this.acctConfig.playingGames || [];
 
         const startPlaying = () => {
             if (this._skipAutoResume) return;
+
+            if (pendingResume && pendingResume.length > 0) {
+                logger("info", `[${this.logOnOptions.accountName}] Resuming idle for ${pendingResume.length} game(s) after reconnect...`);
+                this.setGamesPlayed(pendingResume);
+                return;
+            }
 
             let freshGames = configGames;
             let shouldAutoResume = false;
@@ -257,11 +277,12 @@ Bot.prototype.attachEventListeners = function() {
     });
 
 
-    this.client.on("disconnected", (eresult, msg) => { // Handle relogging
-        if (controller.relogQueue.includes(this.loginindex)) return; // Don't handle this event if account is already waiting for relog
+    this.client.on("disconnected", (eresult, msg) => { // Steam autoRelogin reconnects; we resume games on loggedOn
+        if (controller.relogQueue.includes(this.loginindex)) return;
         this.stopGoalCheck();
-        logger("info", `[${this.logOnOptions.accountName}] Lost connection to Steam. Message: ${msg}. Trying to relog in ${this.acctConfig.relogDelay / 1000} seconds...`);
-        this.handleRelog();
+        this.prepareReconnectResume();
+        const sec = (this.acctConfig.relogDelay || 15000) / 1000;
+        logger("info", `[${this.logOnOptions.accountName}] Lost connection to Steam (${msg || eresult}). Auto-reconnecting (about ${sec}s)...`);
     });
 
 
@@ -291,17 +312,23 @@ Bot.prototype.attachEventListeners = function() {
             controller.nextacc++;
             controller.loginEvents.emit("nextacc", controller.nextacc);
 
-        } else { // Connection loss
+        } else { // Connection loss while logged in (or failed manual relog)
+            this.prepareReconnectResume();
+            this.stopGoalCheck();
 
-            // If error occurred during relog (aka logOn gave up because connection is still down), move account to the back of the queue and call handleRelog again
             if (controller.relogQueue.includes(this.loginindex)) {
-                logger("warn", `[${this.logOnOptions.accountName}] Failed to relog. Repositioning to the back of the queue and trying again. ${err}`);
-                controller.relogQueue.splice(0, 1);
+                logger("warn", `[${this.logOnOptions.accountName}] Failed to relog. Retrying... ${err}`);
+                const qi = controller.relogQueue.indexOf(this.loginindex);
+                if (qi !== -1) {
+                    controller.relogQueue.splice(qi, 1);
+                    controller.relogQueue.push(this.loginindex);
+                }
+                this.handleRelog();
             } else {
-                logger("info", `[${this.logOnOptions.accountName}] Lost connection to Steam. ${err}. Trying to relog in ${this.acctConfig.relogDelay / 1000} seconds...`);
+                const sec = (this.acctConfig.relogDelay || 15000) / 1000;
+                logger("info", `[${this.logOnOptions.accountName}] Connection error: ${err}. Auto-reconnecting (about ${sec}s)...`);
+                this.scheduleReconnectFallback(err);
             }
-
-            this.handleRelog();
         }
     });
 
@@ -316,43 +343,70 @@ Bot.prototype.attachEventListeners = function() {
 
 
 /**
- * Handles relogging this bot account
+ * Remembers active games so they can resume after reconnect
+ */
+Bot.prototype.prepareReconnectResume = function() {
+    if (this.playedAppIDs && this.playedAppIDs.length > 0) {
+        this._resumeGamesAfterRelog = [...this.playedAppIDs];
+    }
+};
+
+
+/**
+ * Fallback when steam-user autoRelogin does not recover (token refresh / queued relog)
+ */
+Bot.prototype.scheduleReconnectFallback = function() {
+    if (this._reconnectTimer || controller.relogQueue.includes(this.loginindex)) return;
+    const delay = this.acctConfig.relogDelay || 15000;
+    this._reconnectTimer = setTimeout(() => {
+        this._reconnectTimer = null;
+        if (this.client.steamID) return;
+        this.handleRelog();
+    }, delay);
+};
+
+
+/**
+ * Handles relogging this bot account (manual / token / license batch)
  */
 Bot.prototype.handleRelog = function() {
-    if (controller.relogQueue.includes(this.loginindex)) return; // Don't handle this request if account is already waiting for relog
+    if (controller.relogQueue.includes(this.loginindex)) return;
 
-    // Call logPlaytime to print session results and reset startedPlayingTimestamp
-    this.logPlaytimeToFile();
+    this.prepareReconnectResume();
+    this.logPlaytimeToFile({ preservePlaying: true });
 
-    // Add account to queue
     controller.relogQueue.push(this.loginindex);
 
-    // Check if it's our turn to relog every 1 sec after waiting relogDelay ms
+    const relogDelay = this.acctConfig.relogDelay || 15000;
+
     setTimeout(() => {
         const relogInterval = setInterval(() => {
-            if (controller.relogQueue.indexOf(this.loginindex) != 0) return; // Not our turn? stop and retry in the next iteration
+            if (controller.relogQueue.indexOf(this.loginindex) != 0) return;
 
-            clearInterval(relogInterval); // Prevent any retries
-            this.client.logOff();
+            clearInterval(relogInterval);
+            try { this.client.logOff(); } catch (e) { /* ignore */ }
 
-            logger("info", `[${this.logOnOptions.accountName}] It is now my turn. Relogging in ${this.acctConfig.loginDelay / 1000} seconds...`);
+            logger("info", `[${this.logOnOptions.accountName}] It is now my turn. Relogging in ${(this.acctConfig.loginDelay || 2000) / 1000} seconds...`);
 
-            // Attach relogdelay timeout
             setTimeout(async () => {
-                // Generate steamGuardCode with shared secret if one was provided
                 if (this.logOnOptions.sharedSecret) {
                     this.logOnOptions.steamGuardCode = SteamTotp.generateAuthCode(this.logOnOptions.sharedSecret);
                 }
 
                 const refreshToken = await this.session.getToken();
-                if (!refreshToken) return; // Stop execution if getToken aborted login attempt
+                if (!refreshToken) {
+                    logger("warn", `[${this.logOnOptions.accountName}] Could not get login token for relog. Retrying in 30 seconds...`);
+                    const qi = controller.relogQueue.indexOf(this.loginindex);
+                    if (qi !== -1) controller.relogQueue.splice(qi, 1);
+                    setTimeout(() => this.handleRelog(), 30000);
+                    return;
+                }
 
                 logger("info", `[${this.logOnOptions.accountName}] Logging in...`);
-
-                this.client.logOn({ "refreshToken": refreshToken });
-            }, this.acctConfig.loginDelay);
+                this.client.logOn({ refreshToken });
+            }, this.acctConfig.loginDelay || 2000);
         }, 1000);
-    }, this.acctConfig.relogDelay);
+    }, relogDelay);
 };
 
 
@@ -474,7 +528,8 @@ Bot.prototype.getStatus = function() {
 
 
 // Logs playtime to playtime.txt file
-Bot.prototype.logPlaytimeToFile = function() {
+Bot.prototype.logPlaytimeToFile = function(options) {
+    const preservePlaying = options && options.preservePlaying === true;
 
     if (this.acctConfig.logPlaytimeToFile && this.startedPlayingTimestamp != 0) { // If timestamp is 0 then this was already logged
         logger("debug", `Logging playtime for '${this.logOnOptions.accountName}' to playtime.txt...`);
@@ -490,8 +545,7 @@ Bot.prototype.logPlaytimeToFile = function() {
         });
     }
 
-    // Reset startedPlayingTimestamp
     this.startedPlayingTimestamp = 0;
-    this.playedAppIDs = [];
+    if (!preservePlaying) this.playedAppIDs = [];
 
 };

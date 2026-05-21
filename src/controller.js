@@ -25,6 +25,25 @@ const dataDir = global.dataDir || ".";
 const { readSecure } = require("./dataCrypt.js");
 let config = JSON.parse(readSecure(path.join(dataDir, "config.json")));
 
+/** @returns {number} ms to wait before reconnecting (supports legacy relogTimeout key) */
+function resolveRelogDelay(cfg, overrides) {
+    let raw = overrides.relogDelay ?? cfg.relogDelay;
+    if (raw === undefined) {
+        raw = overrides.relogTimeout ?? cfg.relogTimeout;
+        // Legacy configs used relogTimeout as seconds (e.g. 15 = 15s)
+        const legacy = Number(raw);
+        if (Number.isFinite(legacy) && legacy > 0 && legacy < 1000) raw = legacy * 1000;
+    }
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : 15000;
+}
+
+function resolveLoginDelay(cfg, overrides) {
+    const raw = overrides.loginDelay ?? cfg.loginDelay;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : 2000;
+}
+
 // Export both values to make them accessable from bot.js
 module.exports.nextacc    = 0;
 module.exports.relogQueue = []; // Queue tracking disconnected accounts to relog them after eachother with a delay
@@ -214,8 +233,8 @@ module.exports.startOne = async function(username) {
         playingGames:      acctOverrides.playingGames      ?? config.playingGames,
         onlinestatus:      acctOverrides.onlinestatus      ?? config.onlinestatus,
         afkMessage:        acctOverrides.afkMessage        ?? config.afkMessage,
-        loginDelay:        acctOverrides.loginDelay        ?? config.loginDelay,
-        relogDelay:        acctOverrides.relogDelay        ?? config.relogDelay,
+        loginDelay:        resolveLoginDelay(config, acctOverrides),
+        relogDelay:        resolveRelogDelay(config, acctOverrides),
         logPlaytimeToFile: acctOverrides.logPlaytimeToFile ?? config.logPlaytimeToFile,
         wasIdling:         acctOverrides.wasIdling === true
     };
@@ -261,8 +280,8 @@ module.exports.start = async () => {
                 playingGames:     acctOverrides.playingGames     ?? config.playingGames,
                 onlinestatus:     acctOverrides.onlinestatus     ?? config.onlinestatus,
                 afkMessage:       acctOverrides.afkMessage       ?? config.afkMessage,
-                loginDelay:       acctOverrides.loginDelay       ?? config.loginDelay,
-                relogDelay:       acctOverrides.relogDelay       ?? config.relogDelay,
+                loginDelay:       resolveLoginDelay(config, acctOverrides),
+                relogDelay:       resolveRelogDelay(config, acctOverrides),
                 logPlaytimeToFile: acctOverrides.logPlaytimeToFile ?? config.logPlaytimeToFile,
                 wasIdling:        acctOverrides.wasIdling === true
             };
