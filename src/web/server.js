@@ -308,6 +308,16 @@ app.get("/api/changelog", (req, res) => {
     }
 });
 
+app.get("/api/ideas", (req, res) => {
+    try {
+        const filePath = path.join(bundledWebDir || __dirname, "ideas.json");
+        const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+        res.json(data);
+    } catch (e) {
+        res.status(500).json({ error: "Ideas list not available", categories: [] });
+    }
+});
+
 app.put("/api/config", (req, res) => {
     const config = loadConfig();
     const allowed = ["playingGames", "onlinestatus", "afkMessage", "loginDelay", "relogDelay", "useLocalIP", "logPlaytimeToFile"];

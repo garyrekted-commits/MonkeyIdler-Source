@@ -76,16 +76,25 @@ input:focus,select:focus{border-color:var(--accent)}
 }
 .topnav-tab:hover{color:var(--text)}
 .topnav-tab.active{font-weight:600;color:var(--accent);border-bottom-color:var(--accent)}
-.topnav-tab[data-page="home"]{color:var(--text2)}
-.topnav-tab[data-page="home"].active{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
-.topnav-tab[data-page="logs"]{color:var(--text2)}
-.topnav-tab[data-page="logs"].active{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
-.topnav-tab[data-page="deals"]{color:var(--text2)}
-.topnav-tab[data-page="deals"].active{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
-.topnav-tab[data-page="settings"]{color:var(--text2)}
-.topnav-tab[data-page="settings"].active{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
-.topnav-tab[data-page="updates"]{color:var(--text2)}
-.topnav-tab[data-page="updates"].active{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
+.page-hero{margin-bottom:20px;max-width:800px}
+.page-hero h2{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:-.02em}
+.page-hero p{font-size:.78rem;color:var(--text2);line-height:1.55;margin:0}
+.page-hero .page-hero-actions{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+.panel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.panel-card{background:rgba(22,22,22,.88);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.panel-card h4{font-size:.7rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px}
+.panel-card .hint{font-size:.65rem;color:var(--text3);margin-top:8px;line-height:1.45}
+.tray-tip{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:16px;max-width:640px;background:rgba(232,115,14,.06);border:1px solid rgba(232,115,14,.2);border-radius:var(--radius);font-size:.72rem;color:var(--text2);line-height:1.5}
+.tray-tip span:first-child{font-size:1rem;flex-shrink:0}
+.ideas-intro{max-width:720px;margin-bottom:18px;padding:14px 16px;background:rgba(22,22,22,.88);border:1px solid var(--border);border-radius:var(--radius);font-size:.78rem;color:var(--text2);line-height:1.55}
+.ideas-cat{margin-bottom:22px}
+.ideas-cat-title{font-size:.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.ideas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.idea-card{background:rgba(22,22,22,.88);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;transition:border-color .15s,transform .12s}
+.idea-card:hover{border-color:rgba(232,115,14,.35);transform:translateY(-1px)}
+.idea-card .idea-id{font-size:.58rem;font-weight:700;color:var(--accent);font-family:monospace;margin-bottom:4px}
+.idea-card h5{font-size:.78rem;font-weight:600;color:var(--text);margin:0 0 6px;line-height:1.3}
+.idea-card p{font-size:.68rem;color:var(--text2);margin:0;line-height:1.45}
 .update-changelog{margin:6px 0 0;padding:0 0 0 16px;text-align:left;font-size:.62rem;color:var(--text2);line-height:1.45;max-height:72px;overflow-y:auto}
 .update-changelog li{margin:2px 0}
 .changelog-entry{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
@@ -215,9 +224,10 @@ input:focus,select:focus{border-color:var(--accent)}
 
 /* Main */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-.topbar{display:flex;align-items:center;padding:12px 24px;gap:12px;border-bottom:1px solid var(--border);background:rgba(17,17,17,.75);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-shrink:0}
-.topbar h1{font-size:.9rem;font-weight:600;flex:1}
-.content{flex:1;overflow-y:auto;padding:20px}
+.topbar{display:flex;align-items:center;padding:10px 20px;gap:10px;border-bottom:1px solid var(--border);background:rgba(14,14,14,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-shrink:0}
+.topbar h1{font-size:.88rem;font-weight:600;flex:1;letter-spacing:-.01em}
+.topbar .topbar-status{font-size:.72rem;color:var(--text3);padding:4px 10px;border-radius:20px;background:var(--bg4);border:1px solid var(--border)}
+.content{flex:1;overflow-y:auto;padding:22px 24px 28px}
 .content::-webkit-scrollbar{width:4px}.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .page{display:none}.page.active{display:block}
 
@@ -550,21 +560,25 @@ input:focus,select:focus{border-color:var(--accent)}
     <button class="titlebar-btn close" onclick="electronAPI?.closeWindow?.()">&#10005;</button>
 </div>
 <div class="topnav" id="topnav">
-    <div class="topnav-tab active" data-page="home" onclick="navTo(this)">&#127968; Overview</div>
-    <div class="topnav-tab" data-page="logs" onclick="navTo(this)">&#128220; All Logs</div>
-    <div class="topnav-tab" data-page="deals" onclick="navTo(this)">&#128176; Deals</div>
-    <div class="topnav-tab" data-page="updates" onclick="navTo(this)">&#128640; Updates</div>
-    <div class="topnav-tab" data-page="settings" onclick="navTo(this)">&#9881; Settings</div>
+    <div class="topnav-tab active" data-page="home" data-title="Overview" onclick="navTo(this)">Overview</div>
+    <div class="topnav-tab" data-page="logs" data-title="All Logs" onclick="navTo(this)">Logs</div>
+    <div class="topnav-tab" data-page="deals" data-title="Deals" onclick="navTo(this)">Deals</div>
+    <div class="topnav-tab" data-page="updates" data-title="Updates" onclick="navTo(this)">Updates</div>
+    <div class="topnav-tab" data-page="ideas" data-title="Ideas" onclick="navTo(this)">Ideas</div>
 </div>
 <div style="display:flex;flex:1;overflow:hidden;min-height:0">
 <nav class="sidebar" id="sidebar">
-    <div class="sb-header">&#128295; Tools</div>
-    <div class="sb-item" data-page="massbot" onclick="navTo(this)">&#129302; Mass Bot Use</div>
-    <div class="sb-item" data-page="artmaker" onclick="navTo(this)">&#127912; Art Maker</div>
-    <div class="sb-item" onclick="openPointsShop()">&#9733; Points Shop</div>
+    <div class="sb-sidebar-top">
+    <div class="sb-header">Monkey Idler</div>
+    <div class="sb-item" data-page="defaults" data-title="Bot Defaults" onclick="navTo(this)">Bot Defaults</div>
+    <div class="sb-section">Tools</div>
+    <div class="sb-item" data-page="massbot" data-title="Mass Bot Use" onclick="navTo(this)">Mass Bot Use</div>
+    <div class="sb-item" data-page="artmaker" data-title="Art Maker" onclick="navTo(this)">Art Maker</div>
+    <div class="sb-item" onclick="openPointsShop()">Points Shop</div>
+    </div>
     <div class="sb-section-toggle" id="sbAcctToggle" onclick="toggleAcctDropdown()">Accounts <span id="sbAcctCount" style="margin-left:auto;font-size:.58rem;color:var(--accent)">0</span></div>
     <div class="sb-acct-list" id="sbAccounts"></div>
-    <div class="sb-spacer"></div>
+    <div class="sb-sidebar-bottom">
     <div id="updateBanner" style="display:none;margin:6px;padding:8px 10px;background:rgba(232,115,14,.1);border:1px solid var(--accent);border-radius:8px;font-size:.7rem;text-align:center;cursor:pointer" onclick="openUpdatesTab()" title="Open Updates tab">
         <div style="font-weight:600;color:var(--green);margin-bottom:4px" id="updateMsg">Update available!</div>
         <div style="font-size:.65rem;color:var(--text2);margin-bottom:4px;min-height:1em" id="updateSub"></div>
@@ -573,12 +587,13 @@ input:focus,select:focus{border-color:var(--accent)}
         <div style="font-size:.58rem;color:var(--text3);margin-top:4px">Tap for full changelog</div>
     </div>
     <div class="sb-footer" id="sbFooter"><span style="color:var(--red)">&#9679;</span> Disconnected</div>
+    </div>
 </nav>
 
 <div class="main">
     <div class="topbar">
         <h1 id="pageTitle">Overview</h1>
-        <span style="font-size:.75rem;color:var(--text3)" id="globalStatus">Stopped</span>
+        <span class="topbar-status" id="globalStatus">Stopped</span>
         <button class="btn-green btn-sm" id="btnStartAll" onclick="startAll()">Start All</button>
         <button class="btn-red btn-sm" id="btnStopAll" onclick="stopAll()" style="display:none">Stop All</button>
         <button class="btn-sm" id="btnRefresh" onclick="refreshAll()" style="background:var(--bg4);color:var(--text);border:1px solid var(--border);margin-left:auto" title="Refresh all account data">&#8635; Refresh</button>
@@ -586,6 +601,10 @@ input:focus,select:focus{border-color:var(--accent)}
     <div class="content">
         <!-- Home/Overview -->
         <div class="page active" id="page-home">
+            <div class="page-hero">
+                <h2>Your accounts</h2>
+                <p>Start all bots, pick games per account, and monitor status from the cards below. Bot defaults and tray behavior live under <strong>Bot Defaults</strong> in the sidebar.</p>
+            </div>
             <div class="home-grid" id="homeList"><div class="empty">No accounts yet.</div></div>
             <div style="text-align:center;margin-top:20px">
                 <button onclick="showModal('addModal')" style="background:linear-gradient(135deg,#7b2ff7,#a855f7);color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;transition:filter .15s;box-shadow:0 4px 14px rgba(123,47,247,.3)" onmouseover="this.style.filter='brightness(1.2)'" onmouseout="this.style.filter=''">+ Add Account</button>
@@ -594,7 +613,10 @@ input:focus,select:focus{border-color:var(--accent)}
 
         <!-- All Logs -->
         <div class="page" id="page-logs">
-            <div style="display:flex;align-items:center;margin-bottom:10px"><h2 style="flex:1;font-size:.88rem">All Logs</h2><button class="btn-ghost btn-sm" onclick="clearLogs()">Clear</button></div>
+            <div class="page-hero" style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+                <div style="flex:1;min-width:200px"><h2>Logs</h2><p>Live output from all accounts. Use Clear to reset the viewer (file on disk is unchanged).</p></div>
+                <button class="btn-ghost btn-sm" onclick="clearLogs()" style="margin-top:4px">Clear</button>
+            </div>
             <div class="log-box" id="logViewer" style="height:calc(100vh - 140px)"></div>
         </div>
 
@@ -716,8 +738,58 @@ input:focus,select:focus{border-color:var(--accent)}
             </div>
         </div>
 
+        <!-- Bot defaults (sidebar only — replaces old Settings tab) -->
+        <div class="page" id="page-defaults">
+            <div class="page-hero">
+                <h2>Bot defaults</h2>
+                <p>Default values for new sessions. Per-account overrides are still available on each account page.</p>
+            </div>
+            <div class="tray-tip"><span>&#128230;</span><span><strong>System tray:</strong> Minimize or close hides the window. Double-click the tray icon to restore; right-click the tray and choose <strong>Quit</strong> to exit for real.</span></div>
+            <div class="section" style="max-width:720px">
+                <div class="section-head"><h3>Connection &amp; status</h3></div>
+                <div class="section-body">
+                    <div class="panel-grid">
+                        <div class="panel-card f-full" style="grid-column:1/-1">
+                            <h4>Steam presence</h4>
+                            <div class="f"><label>Online status</label><select id="cfgStatus"><option value="0">Offline</option><option value="1">Online</option><option value="2">Busy</option><option value="3">Away</option><option value="4">Snooze</option><option value="5">Looking to Trade</option><option value="6">Looking to Play</option><option value="7">Invisible</option></select></div>
+                        </div>
+                        <div class="panel-card">
+                            <h4>Timing</h4>
+                            <div class="f"><label>Login delay (ms)</label><input type="number" id="cfgLD" min="0"></div>
+                            <div class="f" style="margin-top:8px"><label>Relog delay (ms)</label><input type="number" id="cfgRD" min="0"></div>
+                            <p class="hint">Relog delay is wait time before reconnecting after a drop. Use 15000+ with many accounts.</p>
+                        </div>
+                        <div class="panel-card">
+                            <h4>Network &amp; logs</h4>
+                            <div class="f"><label>Use local IP</label><select id="cfgLIP"><option value="true">Yes</option><option value="false">No</option></select></div>
+                            <div class="f" style="margin-top:8px"><label>Log playtime to file</label><select id="cfgLP"><option value="true">Yes</option><option value="false">No</option></select></div>
+                        </div>
+                        <div class="panel-card f-full" style="grid-column:1/-1">
+                            <h4>Auto-reply</h4>
+                            <div class="f"><label>AFK message</label><input id="cfgAfk" placeholder="Leave empty to disable friend auto-replies"></div>
+                        </div>
+                    </div>
+                    <div class="f-actions"><button class="btn-accent" onclick="saveGlobal()">Save defaults</button></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ideas (feature backlog for you to pick from) -->
+        <div class="page" id="page-ideas">
+            <div class="page-hero">
+                <h2>Ideas</h2>
+                <p>Possible features for a future update. When you're ready, tell me which IDs you want (e.g. <code style="font-size:.7rem;color:var(--accent)">idle-1</code>, <code style="font-size:.7rem;color:var(--accent)">qol-1</code>) and which you don't like.</p>
+            </div>
+            <div class="ideas-intro" id="ideasIntro">Loading ideas…</div>
+            <div id="ideasList"></div>
+        </div>
+
         <!-- Updates / What's New -->
         <div class="page" id="page-updates">
+            <div class="page-hero">
+                <h2>Updates</h2>
+                <p>Check for new builds, read release notes, and install when ready.</p>
+            </div>
             <div class="section" style="max-width:720px">
                 <div class="section-head"><h3>App updates</h3></div>
                 <div class="section-body">
@@ -737,35 +809,6 @@ input:focus,select:focus{border-color:var(--accent)}
             <div class="section" style="max-width:720px;margin-top:16px">
                 <div class="section-head"><h3>What's new</h3></div>
                 <div class="section-body" id="updates-changelog-list"><div class="empty" style="padding:12px">Loading changelog…</div></div>
-            </div>
-        </div>
-
-        <!-- Global Settings -->
-        <div class="page" id="page-settings">
-            <h2 style="font-size:.88rem;margin-bottom:14px">Global Default Settings</h2>
-            <p style="font-size:.72rem;color:var(--text3);margin:-6px 0 14px;max-width:600px">Minimize or close sends the app to the system tray. Double-click the tray icon to restore; right-click and choose Quit to exit.</p>
-            <div class="section" style="max-width:600px">
-                <div class="section-body">
-                    <div class="fg">
-                        <div class="f"><label>Online Status</label><select id="cfgStatus"><option value="0">Offline</option><option value="1">Online</option><option value="2">Busy</option><option value="3">Away</option><option value="4">Snooze</option><option value="5">Looking to Trade</option><option value="6">Looking to Play</option><option value="7">Invisible</option></select></div>
-                        <div class="f"><label>AFK Message</label><input id="cfgAfk" placeholder="Leave empty to disable"></div>
-                        <div class="f"><label>Login Delay (ms)</label><input type="number" id="cfgLD" min="0"></div>
-                        <div class="f"><label>Relog Delay (ms)</label><input type="number" id="cfgRD" min="0"></div>
-                        <div class="f"><label>Use Local IP</label><select id="cfgLIP"><option value="true">Yes</option><option value="false">No</option></select></div>
-                        <div class="f"><label>Log Playtime</label><select id="cfgLP"><option value="true">Yes</option><option value="false">No</option></select></div>
-                    </div>
-                    <div class="f-actions"><button class="btn-accent" onclick="saveGlobal()">Save</button></div>
-                </div>
-            </div>
-            <div class="section" style="max-width:600px;margin-top:16px">
-                <div class="section-head"><h3>Updates</h3></div>
-                <div class="section-body">
-                    <p style="font-size:.72rem;color:var(--text3);margin:0 0 10px;line-height:1.45">This build: <strong id="settings-app-version" style="color:var(--text2)">—</strong> · See the <button type="button" class="btn-ghost btn-sm" style="padding:2px 8px;vertical-align:baseline" onclick="openUpdatesTab()">Updates</button> tab for what's new in each version.</p>
-                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                    <button class="btn-accent btn-sm" onclick="manualUpdateCheck()">Check for Updates</button>
-                    <span style="font-size:.75rem;color:var(--text2)" id="updateCheckResult"></span>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -851,7 +894,6 @@ function refreshAppBackground(){
 async function init(){
     refreshAppBackground();
     await refreshTitlebarVersion();
-    await refreshSettingsAppVersion();
     loadChangelogData();
     await Promise.all([loadAccounts(),loadConfig(),loadStatus()]);
     startPolling();
@@ -864,13 +906,14 @@ function navTo(el){
     document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
     el.classList.add("active");
     const p=$("page-"+el.dataset.page);if(p)p.classList.add("active");
-    $("pageTitle").textContent=el.textContent.replace(/[^\w\s]/g,"").trim();
+    $("pageTitle").textContent=el.dataset.title||el.textContent.trim();
     const contentEl=document.querySelector(".content");if(contentEl)contentEl.scrollTop=0;
     if(el.dataset.page==="deals")loadDeals();
     if(el.dataset.page==="massbot")mcRenderAccounts();
     if(el.dataset.page==="artmaker"){amPopulateAccounts();bcSetZoom(75)}
-    if(el.dataset.page==="settings")refreshSettingsAppVersion();
+    if(el.dataset.page==="defaults")loadConfig();
     if(el.dataset.page==="updates")loadUpdatesPage();
+    if(el.dataset.page==="ideas")loadIdeasPage();
     const u=el.dataset.user;
     if(u)loadAcctPage(u);
 }
@@ -2162,6 +2205,7 @@ async function loadConfig(){
 async function saveGlobal(){
     const b={onlinestatus:parseInt($("cfgStatus").value)||null,afkMessage:$("cfgAfk").value,loginDelay:parseInt($("cfgLD").value)||2000,relogDelay:parseInt($("cfgRD").value)||15000,useLocalIP:$("cfgLIP").value==="true",logPlaytimeToFile:$("cfgLP").value==="true"};
     await A("PUT","/api/config",b);config={...config,...b};
+    alert("Bot defaults saved.");
 }
 
 // --- Add/Remove ---
@@ -2376,13 +2420,29 @@ function openReleaseDownloads(){
     window.open("https://github.com/garyrekted-commits/MonkeyIdler-Source/releases/latest","_blank");
 }
 
-async function refreshSettingsAppVersion(){
-    const el=$("settings-app-version");
-    if(!el)return;
-    try{
-        const v=window.electronAPI?.getAppVersion&&await window.electronAPI.getAppVersion();
-        el.textContent=v?"v"+v:"—";
-    }catch(e){el.textContent="—"}
+function openDefaultsTab(){
+    const tab=document.querySelector('.sb-item[data-page="defaults"]');
+    if(tab)navTo(tab);
+}
+
+let ideasCache=null;
+async function loadIdeasPage(){
+    const intro=$("ideasIntro"),list=$("ideasList");
+    if(!list)return;
+    if(!ideasCache){
+        try{ideasCache=await A("GET","/api/ideas")}catch(e){ideasCache=null}
+    }
+    const data=ideasCache;
+    if(!data||!data.categories){
+        if(intro)intro.textContent="Could not load ideas list.";
+        list.innerHTML="";
+        return;
+    }
+    if(intro)intro.textContent=data.intro||"Feature ideas for future versions.";
+    list.innerHTML=data.categories.map(cat=>{
+        const cards=(cat.ideas||[]).map(i=>'<div class="idea-card"><div class="idea-id">'+escHtml(i.id)+'</div><h5>'+escHtml(i.title)+'</h5><p>'+escHtml(i.desc)+'</p></div>').join("");
+        return'<div class="ideas-cat"><div class="ideas-cat-title">'+escHtml(cat.name)+'</div><div class="ideas-grid">'+cards+'</div></div>';
+    }).join("");
 }
 
 function semverNums(v){return String(v||"").replace(/^v/i,"").split(".").map(n=>parseInt(n,10)||0)}
@@ -2488,7 +2548,6 @@ async function installAppUpdate(){
     else{alert("Could not start the installer.");}
 }
 async function manualUpdateCheck(){
-    const el=$("updateCheckResult");
     const line=$("updates-check-line");
     let prefix="";
     try{
@@ -2503,21 +2562,18 @@ async function manualUpdateCheck(){
         }
     }catch(e){}
     const checking=prefix+"Checking updater…";
-    if(el)el.textContent=checking;
     if(line)line.textContent=checking;
     if(window.electronAPI&&window.electronAPI.checkForUpdate){
         window.electronAPI.checkForUpdate();
     }else{
-        const msg=(prefix||"")+"Updater not available (not running in the desktop app).";
-        if(el)el.textContent=msg;
-        if(line)line.textContent=msg;
+        if(line)line.textContent=(prefix||"")+"Updater not available (not running in the desktop app).";
     }
 }
 if(window.electronAPI&&window.electronAPI.onUpdateStatus){
     window.electronAPI.onUpdateStatus(function(data){
-        const banner=$("updateBanner"),msg=$("updateMsg"),sub=$("updateSub"),btn=$("updateInstallBtn"),result=$("updateCheckResult"),line=$("updates-check-line");
+        const banner=$("updateBanner"),msg=$("updateMsg"),sub=$("updateSub"),btn=$("updateInstallBtn"),line=$("updates-check-line");
         const cur=data.currentVersion||"";
-        const setLines=function(t){if(result)result.textContent=t;if(line)line.textContent=t};
+        const setLines=function(t){if(line)line.textContent=t};
         const afterNotes=async function(ver,notes,ready){
             await loadChangelogData();
             showUpdateNotes(ver,notes,ready);

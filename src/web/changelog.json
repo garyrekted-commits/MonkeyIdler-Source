@@ -1,6 +1,17 @@
 {
   "versions": [
     {
+      "version": "1.17.18",
+      "date": "2026-05-21",
+      "title": "Cleaner UI, Ideas tab",
+      "changes": [
+        "Removed Settings tab — bot defaults moved to sidebar",
+        "New Ideas tab with feature suggestions to pick from",
+        "Cleaner top navigation and page headers",
+        "Updates tab layout improved"
+      ]
+    },
+    {
       "version": "1.17.17",
       "date": "2026-05-21",
       "title": "Updates tab & release notes",

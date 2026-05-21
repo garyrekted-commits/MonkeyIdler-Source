@@ -1,0 +1,65 @@
+{
+  "intro": "Pick what you want built next — tell me which numbers to implement and which to skip.",
+  "categories": [
+    {
+      "id": "idle",
+      "name": "Idling & games",
+      "ideas": [
+        { "id": "idle-1", "title": "Idle schedule", "desc": "Start/stop idling on a daily schedule per account (e.g. only overnight)." },
+        { "id": "idle-2", "title": "Game queue", "desc": "Queue multiple games to idle one after another when playtime goals finish." },
+        { "id": "idle-3", "title": "Rotate games", "desc": "Automatically swap idle game every X hours to spread playtime." },
+        { "id": "idle-4", "title": "Family sharing aware", "desc": "Detect shared-library games and warn before idling." }
+      ]
+    },
+    {
+      "id": "accounts",
+      "name": "Accounts & reconnect",
+      "ideas": [
+        { "id": "acct-1", "title": "Account groups", "desc": "Tag accounts (Main, Alts, Trading) and start/stop by group." },
+        { "id": "acct-2", "title": "Reconnect dashboard", "desc": "One panel showing which accounts are offline, reconnecting, or stuck." },
+        { "id": "acct-3", "title": "Proxy health check", "desc": "Test each proxy before login and mark bad ones." },
+        { "id": "acct-4", "title": "Import/export accounts", "desc": "Backup accounts.txt and tokens in an encrypted file." }
+      ]
+    },
+    {
+      "id": "qol",
+      "name": "Quality of life",
+      "ideas": [
+        { "id": "qol-1", "title": "Desktop notifications", "desc": "Notify when an account drops, reconnects, or hits a playtime goal." },
+        { "id": "qol-2", "title": "Dark/light theme", "desc": "Optional lighter theme for daytime use." },
+        { "id": "qol-3", "title": "Search everything", "desc": "Global search for accounts, games, and log lines." },
+        { "id": "qol-4", "title": "Playtime charts", "desc": "Graph idle hours per account/game from playtime.txt." }
+      ]
+    },
+    {
+      "id": "automation",
+      "name": "Automation",
+      "ideas": [
+        { "id": "auto-1", "title": "Auto-accept gifts", "desc": "Optional auto-accept incoming gift licenses (with safelist)." },
+        { "id": "auto-2", "title": "Card farmer mode", "desc": "Idle badge/card games with suggested rotation list." },
+        { "id": "auto-3", "title": "Webhook alerts", "desc": "Send Discord/webhook when status changes or errors spike." },
+        { "id": "auto-4", "title": "Steam maintenance pause", "desc": "Pause all bots when Steam scheduled maintenance is detected." }
+      ]
+    },
+    {
+      "id": "ui",
+      "name": "UI & tools",
+      "ideas": [
+        { "id": "ui-1", "title": "Compact sidebar mode", "desc": "Narrow sidebar with icons only for more game space." },
+        { "id": "ui-2", "title": "Pinned accounts", "desc": "Pin favorite accounts to the top of the list." },
+        { "id": "ui-3", "title": "Bulk game picker", "desc": "Select many games from library with filters (never played, under 2h)." },
+        { "id": "ui-4", "title": "Log filters", "desc": "Filter All Logs by account, level (info/warn/error), and search." }
+      ]
+    },
+    {
+      "id": "integrations",
+      "name": "Integrations",
+      "ideas": [
+        { "id": "int-1", "title": "Steam wishlist deals", "desc": "Highlight deals for games on your wishlist." },
+        { "id": "int-2", "title": "Achievement tracker", "desc": "Show nearly-complete achievements for idle games." },
+        { "id": "int-3", "title": "Remote control", "desc": "Simple password-protected web link to start/stop from phone." },
+        { "id": "int-4", "title": "Multiple instances", "desc": "Run separate Monkey Idler profiles with different data folders." }
+      ]
+    }
+  ]
+}
