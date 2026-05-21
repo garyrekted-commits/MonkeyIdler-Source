@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 build/
+bin/
+obj/
+.gradle/
 *.exe
 *.blockmap
 *.nsis
